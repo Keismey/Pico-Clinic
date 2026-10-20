@@ -1,6 +1,6 @@
 # Pico-Clinic — État du projet
 
-Mis à jour : 2026-10-21 (C2 V0a). Jeu : https://keismey.github.io/pico-clinic/
+Mis à jour : 2026-10-21 (C2 V0a). Jeu : https://keismey.github.io/Pico-Clinic/
 
 ## Fait
 - C1 : dépôt, GitHub Pages, GDD découpé dans `docs/gdd/` (voir 00-base pour l'index des rubriques).
