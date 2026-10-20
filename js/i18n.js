@@ -1,0 +1,41 @@
+// Système de langues : tous les textes passent par t("clé").
+const dicts = {};
+let lang = 'fr';
+const warned = new Set();
+
+export const LANGS = ['fr', 'en'];
+
+export async function loadLanguages() {
+  const loaded = await Promise.all(
+    LANGS.map((l) => fetch(`lang/${l}.json`).then((r) => r.json()))
+  );
+  LANGS.forEach((l, i) => { dicts[l] = loaded[i]; });
+}
+
+export function detectLang() {
+  return (navigator.language || 'en').toLowerCase().startsWith('fr') ? 'fr' : 'en';
+}
+
+export function setLang(l) {
+  lang = dicts[l] ? l : 'en';
+  document.documentElement.lang = lang;
+  document.title = t('game.title');
+}
+
+export function getLang() {
+  return lang;
+}
+
+// t("clé", { n: 3 }) remplace {n} dans le texte.
+export function t(key, vars) {
+  let s = dicts[lang] && dicts[lang][key];
+  if (s === undefined) {
+    if (!warned.has(lang + key)) {
+      warned.add(lang + key);
+      console.warn(`[langue] clé manquante (${lang}) : ${key}`);
+    }
+    s = (dicts.fr && dicts.fr[key]) || key;
+  }
+  if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? vars[k] : m));
+  return s;
+}

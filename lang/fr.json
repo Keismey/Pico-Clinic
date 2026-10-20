@@ -1,0 +1,33 @@
+{
+  "game.title": "Pico-Clinic",
+  "title.subtitle": "L'atelier de micro-chirurgie des drones",
+  "title.play": "Jouer",
+  "title.language": "Langue",
+  "title.version": "Prototype {v}",
+
+  "patient.drone_jouet_v0": "Mini-drone jouet",
+
+  "op.hint.unscrew": "Pose le doigt sur une vis, puis tourne en rond autour pour la dévisser.",
+  "op.hint.rusty": "Vis rouillée : il faut tourner plus longtemps !",
+  "op.hint.cover": "Le capot s'en va…",
+  "op.hint.connector": "Le connecteur est débranché. Fais glisser la fiche jusqu'à sa prise.",
+  "op.hint.ready": "Tout est réparé ! Appuie sur Démarrer.",
+  "op.screws": "Vis retirées : {n}/{total}",
+  "op.slip": "Ça dérape !",
+  "op.cover_off": "Capot ouvert !",
+  "op.connected": "Branché !",
+  "op.fault_here": "Il reste une panne ici !",
+  "op.start": "Démarrer",
+
+  "reac.hint": "Tire la manette vers le bas !",
+  "reac.cough": "Kof ! Kof !",
+  "reac.fault_left": "Il reste une panne…",
+  "reac.success": "Ça redémarre !",
+
+  "done.title": "Réparé !",
+  "done.time": "Temps : {t}",
+  "done.slips": "Vis abîmées : {n}",
+  "done.attempts": "Démarrages : {n}",
+  "done.replay": "Rejouer",
+  "done.menu": "Menu"
+}

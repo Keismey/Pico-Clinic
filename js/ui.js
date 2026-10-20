@@ -1,0 +1,213 @@
+// Outils d'interface : couleurs, police, boutons, texte avec retour à la ligne.
+import { W, H } from './canvas.js';
+import { vibrate } from './feedback.js';
+
+export const C = {
+  copper: '#c47a3c',
+  copperDark: '#8f5426',
+  turquoise: '#3fd0bb',
+  turquoiseDark: '#25a08d',
+  orange: '#ff8a3d',
+  orangeDark: '#c4622a',
+  cream: '#f4e9d8',
+  paper: '#fff7ec',
+  ink: '#3a2a1e',
+  inkSoft: '#7a6350',
+  red: '#d64545',
+  green: '#3cbf6a',
+};
+
+export function font(size, weight = 700) {
+  return `${weight} ${size}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+}
+
+export function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+export function dist(ax, ay, bx, by) {
+  return Math.hypot(ax - bx, ay - by);
+}
+
+export function clamp(v, a, b) {
+  return Math.max(a, Math.min(b, v));
+}
+
+export function easeInOut(k) {
+  return k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+}
+
+// Découpe un texte en lignes qui tiennent dans maxW (respecte aussi les \n).
+export function wrapLines(ctx, text, maxW) {
+  const lines = [];
+  for (const para of String(text).split('\n')) {
+    let line = '';
+    for (const word of para.split(' ')) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxW && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    lines.push(line);
+  }
+  return lines;
+}
+
+// Texte centré verticalement autour de cy, avec retour à la ligne automatique.
+export function drawText(ctx, text, x, cy, maxW, size, opts = {}) {
+  const { color = C.ink, weight = 700, align = 'center', lineH = size * 1.25, stroke = null } = opts;
+  ctx.font = font(size, weight);
+  ctx.textAlign = align;
+  ctx.textBaseline = 'middle';
+  const lines = wrapLines(ctx, text, maxW);
+  let y = cy - ((lines.length - 1) * lineH) / 2;
+  for (const l of lines) {
+    if (stroke) {
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = size * 0.22;
+      ctx.strokeStyle = stroke;
+      ctx.strokeText(l, x, y);
+    }
+    ctx.fillStyle = color;
+    ctx.fillText(l, x, y);
+    y += lineH;
+  }
+}
+
+// Texte sur une ligne qui rétrécit si besoin pour tenir dans maxW.
+export function fitText(ctx, text, x, y, maxW, size, color = C.ink, weight = 800) {
+  let s = size;
+  ctx.font = font(s, weight);
+  while (ctx.measureText(text).width > maxW && s > 20) {
+    s -= 2;
+    ctx.font = font(s, weight);
+  }
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+}
+
+const STYLES = {
+  primary: { fill: C.orange, shadow: C.orangeDark, text: '#fff' },
+  secondary: { fill: C.paper, shadow: '#d9c3a3', text: C.ink },
+  on: { fill: C.turquoise, shadow: C.turquoiseDark, text: '#fff' },
+};
+
+let pulseClock = 0;
+export function tickUI(dt) {
+  pulseClock += dt;
+}
+
+export function drawButton(ctx, b, pressed) {
+  const st = STYLES[(b.selected && b.selected()) ? 'on' : (b.style || 'primary')];
+  const depth = 12;
+  const push = pressed ? depth - 3 : 0;
+  const pulse = b.pulse ? 1 + 0.03 * Math.sin(pulseClock * 6) : 1;
+  ctx.save();
+  ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
+  ctx.scale(pulse, pulse);
+  ctx.translate(-b.w / 2, -b.h / 2);
+  ctx.fillStyle = st.shadow;
+  roundRect(ctx, 0, depth, b.w, b.h - depth, 36);
+  ctx.fill();
+  ctx.fillStyle = st.fill;
+  roundRect(ctx, 0, push, b.w, b.h - depth, 36);
+  ctx.fill();
+  fitText(ctx, b.label(), b.w / 2, push + (b.h - depth) / 2 + 2, b.w - 48, b.size || 60, st.text);
+  ctx.restore();
+}
+
+function hit(b, x, y) {
+  return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+}
+
+// Un groupe de boutons : appui, relâchement sur le bouton = action.
+export class Buttons {
+  constructor() {
+    this.list = [];
+    this.pressed = null;
+  }
+
+  add(b) {
+    this.list.push(b);
+    return b;
+  }
+
+  pointer(type, x, y) {
+    if (type === 'down') {
+      const b = this.list.find((bb) => bb.visible !== false && hit(bb, x, y));
+      if (b) { this.pressed = b; return true; }
+      return false;
+    }
+    if (type === 'move') return !!this.pressed;
+    const b = this.pressed;
+    this.pressed = null;
+    if (!b) return false;
+    if (type === 'up' && hit(b, x, y) && b.visible !== false) {
+      vibrate(10);
+      b.onTap();
+    }
+    return true;
+  }
+
+  draw(ctx) {
+    for (const b of this.list) if (b.visible !== false) drawButton(ctx, b, b === this.pressed);
+  }
+}
+
+// Fonds d'écran.
+export function drawCreamBackground(ctx) {
+  const g = ctx.createRadialGradient(W / 2, H * 0.4, 100, W / 2, H * 0.4, H * 0.8);
+  g.addColorStop(0, '#fff6e6');
+  g.addColorStop(1, '#ead8bb');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+}
+
+export function drawMatBackground(ctx) {
+  drawCreamBackground(ctx);
+  ctx.fillStyle = 'rgba(63, 208, 187, 0.10)';
+  roundRect(ctx, 30, 260, W - 60, 1080, 50);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(63, 160, 150, 0.18)';
+  ctx.lineWidth = 2;
+  for (let x = 90; x < W - 30; x += 60) {
+    ctx.beginPath(); ctx.moveTo(x, 270); ctx.lineTo(x, 1330); ctx.stroke();
+  }
+  for (let y = 290; y < 1340; y += 60) {
+    ctx.beginPath(); ctx.moveTo(40, y); ctx.lineTo(W - 40, y); ctx.stroke();
+  }
+}
+
+// Panneau d'aide en bas d'écran.
+export function drawPanel(ctx, x, y, w, h) {
+  ctx.fillStyle = 'rgba(255, 250, 242, 0.92)';
+  roundRect(ctx, x, y, w, h, 40);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(196, 122, 60, 0.35)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+}
+
+// Message bref qui apparaît puis s'efface.
+export function drawToast(ctx, text, x, y, k, color) {
+  const a = Math.min(1, k * 3);
+  const pop = 1 + Math.max(0, (k - 0.8)) * 1.2;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.translate(x, y);
+  ctx.scale(pop, pop);
+  drawText(ctx, text, 0, 0, 900, 84, { color, weight: 900, stroke: '#fff' });
+  ctx.restore();
+}

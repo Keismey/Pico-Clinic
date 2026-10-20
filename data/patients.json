@@ -1,0 +1,12 @@
+{
+  "drone_jouet_v0": {
+    "id": "drone_jouet_v0",
+    "family": "drone",
+    "rank": 1,
+    "parts": ["screw x4", "connector x1"],
+    "rusty_screws": [2],
+    "faults": ["connector_unplugged"],
+    "target_time": 120,
+    "reward": 40
+  }
+}

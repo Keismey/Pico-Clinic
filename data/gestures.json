@@ -1,0 +1,19 @@
+{
+  "unscrew": {
+    "screw_radius": 44,
+    "turns": 1.5,
+    "turns_rusty": 3,
+    "slip_factor": 2.2,
+    "grab_factor": 2.0,
+    "slip_cleanliness": 5
+  },
+  "connector": {
+    "snap_radius": 24,
+    "grab_radius": 95,
+    "lift_offset": 90
+  },
+  "lever": {
+    "travel": 380,
+    "validate": 0.7
+  }
+}

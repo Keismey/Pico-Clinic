@@ -1,0 +1,33 @@
+{
+  "game.title": "Pico-Clinic",
+  "title.subtitle": "The drone micro-surgery workshop",
+  "title.play": "Play",
+  "title.language": "Language",
+  "title.version": "Prototype {v}",
+
+  "patient.drone_jouet_v0": "Mini toy drone",
+
+  "op.hint.unscrew": "Put your finger on a screw, then circle around it to unscrew it.",
+  "op.hint.rusty": "Rusty screw: keep turning a little longer!",
+  "op.hint.cover": "Off comes the cover…",
+  "op.hint.connector": "The connector is unplugged. Drag the plug to its socket.",
+  "op.hint.ready": "All fixed! Tap Start.",
+  "op.screws": "Screws removed: {n}/{total}",
+  "op.slip": "It slipped!",
+  "op.cover_off": "Cover off!",
+  "op.connected": "Plugged in!",
+  "op.fault_here": "Something's still broken here!",
+  "op.start": "Start",
+
+  "reac.hint": "Pull the lever down!",
+  "reac.cough": "Cough! Cough!",
+  "reac.fault_left": "Something's still broken…",
+  "reac.success": "It's alive!",
+
+  "done.title": "Fixed!",
+  "done.time": "Time: {t}",
+  "done.slips": "Damaged screws: {n}",
+  "done.attempts": "Start-ups: {n}",
+  "done.replay": "Play again",
+  "done.menu": "Menu"
+}
