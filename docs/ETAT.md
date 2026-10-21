@@ -22,8 +22,8 @@ Mis à jour : 2026-10-21 (C8 V3a + correctifs après tests PC et téléphone). J
 
 ## Prochaine étape
 - C9 V3b contenu : les 60 réparations en JSON, prototypes et pièces rares exigées, décorations, Atelier libre, équilibrage.
+- Décidé : l'Atelier libre (gains 50 %) est la façon de regagner des crédits ; rejouer une commande payée ne rapporte rien et les pièces cassées restent payantes.
 
 ## Plus tard
-- Économie à décider : rejouer une commande ne paie rien mais les pièces de rechange coûtent (crédits jamais sous 0). Pistes : Atelier libre (C9, gains 50 %), pièces gratuites en rejouant.
 - Images Gemini (clients, Gribouille, carnet, pièces rares, pièces des gestes secondaires) ; son du clic de vis. Chapitres 3 à 5, patients multiples, défi quotidien, succès.
 - Indice 20 s ; bouton pause à l'écran ; gaucher ; sauver une réparation en cours ; revoir le tutoriel depuis les réglages ; pannes secondaires cachées visibles dans la loupe ; bouton retour qui ferme d'abord la vue rapprochée.
