@@ -44,6 +44,10 @@ export function recordRepair(rep, r) {
   o.plays++;
   save.orders[id] = o;
   save.credits = Math.max(0, save.credits + paid);
+  // commande d'examen réussie (même avec 1 étoile) : nouveau rang
+  const exam = rep.patient.order && rep.patient.order.exam;
+  let rankUp = 0;
+  if (exam && save.rank < exam) { save.rank = exam; rankUp = exam; }
   persist();
-  return { firstPay, paid, record };
+  return { firstPay, paid, record, rankUp };
 }

@@ -1,14 +1,15 @@
 // Fin de réparation : 3 étoiles qui apparaissent une à une, paie, pourboire, crédits.
 import { W } from '../canvas.js';
 import { t } from '../i18n.js';
-import { Buttons, C, drawCreamBackground, drawText, fitText } from '../ui.js';
+import { Buttons, C, drawCreamBackground, drawText, fitText, roundRect } from '../ui.js';
 import { withDrone, drawShadow, drawFrame, drawCover } from '../drone.js';
 import { game } from '../state.js';
-import { save } from '../save.js';
+import { save, totalStars } from '../save.js';
 import { scoreRepair, recordRepair } from '../score.js';
 import { vibrate } from '../feedback.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
+import { orderState, nextOrder } from '../progress.js';
 
 const TAU = Math.PI * 2;
 const STAR_Y = 930;
@@ -16,7 +17,7 @@ const STAR_X = [W / 2 - 290, W / 2, W / 2 + 290];
 const STAR_KEYS = ['done.star.works', 'done.star.clean', 'done.star.precise'];
 const STAR_DELAY = 0.55;
 
-let rep, buttons, time, res, pay, shown, creditsShown;
+let rep, buttons, time, res, pay, shown, creditsShown, needStars;
 
 function fmt(sec) {
   const s = Math.round(sec);
@@ -57,9 +58,18 @@ export default {
     const before = save.credits;
     pay = recordRepair(rep, res);
     creditsShown = before;
+    // commande suivante si elle est jouable, sinon retour à la liste
+    const next = nextOrder(rep.patient.order);
+    const nextOk = next && orderState(next) === 'open';
+    needStars = next && orderState(next) === 'stars' ? next.stars_needed : 0;
     buttons = new Buttons();
-    buttons.add({ x: 190, y: 1500, w: 700, h: 170, size: 68, label: () => t('done.replay'), onTap: () => go('operation', {}) });
-    buttons.add({ x: 290, y: 1700, w: 500, h: 150, style: 'secondary', label: () => t('done.menu'), onTap: () => go('title') });
+    buttons.add({
+      x: 190, y: 1500, w: 700, h: 170, size: 68,
+      label: () => t(nextOk ? 'done.next' : 'done.orders'),
+      onTap: () => (nextOk ? go('operation', { order: next.id }) : go('orders')),
+    });
+    buttons.add({ x: 110, y: 1700, w: 410, h: 150, style: 'secondary', label: () => t('done.replay'), onTap: () => go('operation', { order: rep.patient.id }) });
+    buttons.add({ x: 560, y: 1700, w: 410, h: 150, style: 'secondary', label: () => t(nextOk ? 'done.orders' : 'done.menu'), onTap: () => go(nextOk ? 'orders' : 'title') });
   },
 
   update(dt) {
@@ -110,9 +120,21 @@ export default {
       lines.push([t('done.already_paid'), C.inkSoft]);
     }
     if (res.parts) lines.push([t('done.parts', { n: res.parts }), C.red]);
-    lines.forEach(([l, col], i) => fitText(ctx, l, W / 2, 1140 + i * 52, 900, 38, col, 700));
+    if (needStars) lines.push([t('done.need_stars', { n: needStars, s: totalStars() }), C.orangeDark]);
+    const y0 = 1140 - Math.max(0, lines.length - 5) * 30;
+    lines.forEach(([l, col], i) => fitText(ctx, l, W / 2, y0 + i * 52, 900, 38, col, 700));
     if (pay.record && time > 2.4) fitText(ctx, t('done.record'), W / 2, 1112, 600, 32, C.orangeDark, 900);
     fitText(ctx, t('done.credits', { n: Math.round(creditsShown) }), W / 2, 1432, 900, 54, C.turquoiseDark, 900);
+    if (pay.rankUp) {
+      const a = Math.min(1, Math.max(0, time - 2.4) * 3);
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.fillStyle = C.orange;
+      roundRect(ctx, 90, 300, W - 180, 110, 55);
+      ctx.fill();
+      fitText(ctx, t('done.rank_up', { r: pay.rankUp, name: t('rank.' + pay.rankUp) }), W / 2, 357, W - 260, 50, '#fff', 900);
+      ctx.restore();
+    }
     buttons.draw(ctx);
   },
 

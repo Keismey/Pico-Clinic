@@ -18,7 +18,6 @@ import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 
 const TAU = Math.PI * 2;
-const PATIENT = 'drone_jouet_v0';
 
 let rep, unscrew, connector, chip, solder, vacuum, lens, cap, buttons, startBtn;
 let finger = { x: 0, y: 0 };
@@ -43,9 +42,9 @@ function pct(v) {
 
 export default {
   init(params = {}) {
-    if (!params.resume || !game.repair) newRepair(PATIENT);
+    if (!params.resume || !game.repair) newRepair(params.order || game.lastOrder);
     rep = game.repair;
-    const g = game.data.gestures;
+    const g = rep.g; // réglages modifiés par les outils achetés
     closing = false;
     toast = null;
     time = 0;
@@ -109,7 +108,7 @@ export default {
     });
 
     const rank = rep.patient.rank || 1;
-    const tol = g.solder.tolerance_by_rank[Math.min(rank, 5) - 1];
+    const tol = g.solder.tolerance_by_rank[Math.min(rank, 5) - 1] + (g.solder.tolerance_bonus || 0);
     solder = createSolder(rep.weld, g.solder, tol, {
       onGrab: () => vibrate(8),
       onHot: () => { vibrate(18); showToast('op.solder_hot', C.orangeDark); },
@@ -187,6 +186,8 @@ export default {
         showToast('op.nothing', C.inkSoft, { s: g.magnifier.wrong_penalty });
       },
     });
+
+    if (rep.scanned && !params.resume) showToast('op.scanned', C.turquoiseDark);
 
     buttons = new Buttons();
     startBtn = buttons.add({
@@ -272,7 +273,7 @@ export default {
     }
     drawTray(ctx);
     drawPartBox(ctx);
-    fitText(ctx, t('patient.' + rep.patient.id), W / 2, 110, 480, 54, C.ink, 800);
+    fitText(ctx, t(rep.patient.name), W / 2, 110, 480, 54, C.ink, 800);
 
     drawFrame(ctx);
     if (rep.coverAnim > 0) drawInterior(ctx, rep, { glow: connector.glow, slotGlow: chip.slotGlow, time, warn: vacuum.active });
@@ -310,11 +311,11 @@ export default {
     this.drawLoosePieces(ctx);
     if (rep.coverAnim >= 1) this.drawDiag(ctx);
     this.drawCapacitors(ctx);
-    if (vacuum.active) drawVacuum(ctx, vacuum.pos.x, vacuum.pos.y, game.data.gestures.vacuum.radius, vacuum.sucking, time, finger);
+    if (vacuum.active) drawVacuum(ctx, vacuum.pos.x, vacuum.pos.y, rep.g.vacuum.radius, vacuum.sucking, time, finger);
 
     // fer à souder
     if (solder.active) drawIron(ctx, solder.tip.x, solder.tip.y, solder.heat);
-    if (lens.active) drawLens(ctx, rep, lens.lens, game.data.gestures.magnifier, { time, progress: lens.progress, finger });
+    if (lens.active) drawLens(ctx, rep, lens.lens, rep.g.magnifier, { time, progress: lens.progress, finger });
 
     // zone fautive qui clignote après un démarrage raté
     if (flash > 0 && rep.coverAnim >= 1 && rep.faults.size > 0) {
@@ -387,7 +388,7 @@ export default {
 
   // Pièces déjà vérifiées (coche verte) et, après 20 s de recherche, un indice qui pulse.
   drawDiag(ctx) {
-    const m = game.data.gestures.magnifier;
+    const m = rep.g.magnifier;
     for (const tg of rep.diag.targets) {
       if (tg.kind === 'decoy' && tg.done && rep.phase === 'diag') {
         ctx.fillStyle = 'rgba(60, 191, 106, 0.9)';
@@ -418,7 +419,7 @@ export default {
     }
     if (vacuum.active) return 'op.hint.vacuum';
     if (cap.held) return cap.held.what === 'old' ? 'op.hint.cap_drag_old' : 'op.hint.cap_drag_new';
-    const clean = cleanliness(rep) >= game.data.gestures.scoring.clean_min;
+    const clean = cleanliness(rep) >= rep.g.scoring.clean_min;
     // la rouille est présentée dès l'ouverture, tant que le joueur n'a pas essayé l'aspirateur
     if (!clean && !rep.vacuumUsed && flash <= 0) return 'op.hint.rust';
     if (solder.active) return solder.hot ? 'op.hint.trace' : 'op.hint.heating';
@@ -459,7 +460,7 @@ export default {
   // Jauge de chaleur puis de vitesse pendant la soudure.
   drawGauge(ctx) {
     const x = 190, y = 1560, w = W - 380, h = 34;
-    const p = game.data.gestures.solder;
+    const p = rep.g.solder;
     if (!solder.hot) {
       ctx.fillStyle = 'rgba(58, 42, 30, 0.12)';
       roundRect(ctx, x, y, w, h, h / 2); ctx.fill();
@@ -498,7 +499,7 @@ export default {
     if (vacuum.covers(x, y)) { vacuum.down(x, y); return; }
     if (connector.down(x, y) || solder.down(x, y)) return;
     const b = D.board + 40;
-    const ny = y - game.data.gestures.vacuum.offset_y;
+    const ny = y - rep.g.vacuum.offset_y;
     if (Math.abs(x - D.cx) < b && Math.abs(ny - D.cy) < b) vacuum.down(x, y);
   },
 

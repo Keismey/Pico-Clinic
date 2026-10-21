@@ -1,4 +1,5 @@
-// Mini-drone jouet dessiné en formes simples (remplacé plus tard par les images Gemini).
+// Patients dessinés en formes simples (remplacés plus tard par les images Gemini) :
+// drones, insectes et mascottes, avec les couleurs du modèle (LOOK).
 import { C, roundRect } from './ui.js';
 
 const TAU = Math.PI * 2;
@@ -20,8 +21,13 @@ export const D = {
   chip: { x: 335, y: 600, s: 140 },   // emplacement de la puce (coin haut gauche)
   slot: { x: 405, y: 670 },            // centre de l'emplacement
   box: { x: 905, y: 222 },             // boîte de pièces neuves
-  // piste coupée à souder : de la pastille A à la pastille B
-  solderPts: [[610, 600], [715, 600], [735, 675], [650, 705], [640, 775], [760, 800]],
+};
+
+// Pistes coupées à souder (de la pastille A à la pastille B), choisies par la commande.
+const TRACES = {
+  straight: [[610, 600], [690, 600], [770, 600]],
+  curve: [[610, 600], [715, 600], [735, 675], [650, 705], [640, 775], [760, 800]],
+  wave: [[610, 600], [750, 630], [630, 700], [750, 770], [770, 800]],
 };
 
 // Chemin de soudure échantillonné (Catmull-Rom) : points {x, y, s} avec s = longueur cumulée.
@@ -41,7 +47,18 @@ function buildPath(pts) {
   out.forEach((p, i) => { if (i) s += Math.hypot(p.x - out[i - 1].x, p.y - out[i - 1].y); p.s = s; });
   return { pts: out, len: s, a: out[0], b: out[out.length - 1] };
 }
-export const SOLDER = buildPath(D.solderPts);
+export const SOLDER = {};
+export function setTrace(name) {
+  Object.assign(SOLDER, buildPath(TRACES[name] || TRACES.curve));
+}
+setTrace('curve');
+
+// Apparence du patient en cours : famille, forme et couleurs (data/patients.json).
+const DEFAULT_LOOK = { family: 'drone', shape: 'mini', body: '#3fd0bb', trim: '#c47a3c', accent: '#ff8a3d' };
+export const LOOK = { ...DEFAULT_LOOK };
+export function setLook(l) {
+  Object.assign(LOOK, DEFAULT_LOOK, l || {});
+}
 
 // Point du chemin à la longueur s.
 export function pathAt(s) {
@@ -90,9 +107,52 @@ export function drawShadow(ctx, lift = 0) {
   ctx.restore();
 }
 
-// Bras, moteurs, hélices, lumières.
-export function drawFrame(ctx, { rotorAngle = 0, rotorSpeed = 0, lights = null } = {}) {
+// Ce qui dépasse du capot : hélices (drones), ailes (insectes), oreilles et pattes (mascottes).
+// rotorAngle / rotorSpeed animent hélices, battements d'ailes ou oreilles ; lights = 4 voyants.
+export function drawFrame(ctx, opts = {}) {
+  if (LOOK.family === 'insect') drawInsectFrame(ctx, opts);
+  else if (LOOK.family === 'mascot') drawMascotFrame(ctx, opts);
+  else drawDroneFrame(ctx, opts);
+}
+
+function socle(ctx) {
+  ctx.fillStyle = '#374151';
+  roundRect(ctx, D.cx - D.half - 6, D.cy - D.half - 6, (D.half + 6) * 2, (D.half + 6) * 2, 74);
+  ctx.fill();
+}
+
+function light(ctx, x, y, on, r = 17) {
+  if (on) {
+    ctx.fillStyle = 'rgba(63, 208, 187, 0.45)';
+    ctx.beginPath(); ctx.arc(x, y, r * 2, 0, TAU); ctx.fill();
+  }
+  ctx.fillStyle = on ? '#9ff5e7' : '#2b323c';
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+}
+
+function drawDroneFrame(ctx, { rotorAngle = 0, rotorSpeed = 0, lights = null } = {}) {
   ctx.lineCap = 'round';
+  const L = LOOK;
+  // accessoire sous le drone
+  if (L.shape === 'delivery') {
+    ctx.strokeStyle = '#4b5563'; ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.moveTo(D.cx - 60, D.cy + D.half); ctx.lineTo(D.cx - 60, D.cy + D.half + 60); ctx.moveTo(D.cx + 60, D.cy + D.half); ctx.lineTo(D.cx + 60, D.cy + D.half + 60); ctx.stroke();
+    ctx.fillStyle = '#c9965a';
+    roundRect(ctx, D.cx - 110, D.cy + D.half + 50, 220, 140, 14); ctx.fill();
+    ctx.fillStyle = '#e8c48a'; ctx.fillRect(D.cx - 18, D.cy + D.half + 50, 36, 140);
+  } else if (L.shape === 'photo') {
+    ctx.fillStyle = '#374151';
+    ctx.beginPath(); ctx.arc(D.cx, D.cy + D.half + 70, 90, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#111827';
+    ctx.beginPath(); ctx.arc(D.cx, D.cy + D.half + 80, 55, 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(95, 168, 224, 0.8)';
+    ctx.beginPath(); ctx.arc(D.cx - 15, D.cy + D.half + 65, 18, 0, TAU); ctx.fill();
+  } else if (L.shape === 'balcony') {
+    ctx.strokeStyle = '#4b5563'; ctx.lineWidth = 12;
+    ctx.beginPath(); ctx.moveTo(D.cx + 120, D.cy - D.half); ctx.lineTo(D.cx + 170, D.cy - D.half - 120); ctx.stroke();
+    ctx.fillStyle = L.accent;
+    ctx.beginPath(); ctx.arc(D.cx + 170, D.cy - D.half - 120, 22, 0, TAU); ctx.fill();
+  }
   for (const [sx, sy] of CORNERS) {
     const ex = D.cx + sx * D.rotorOff;
     const ey = D.cy + sy * D.rotorOff;
@@ -104,30 +164,37 @@ export function drawFrame(ctx, { rotorAngle = 0, rotorSpeed = 0, lights = null }
     ctx.beginPath(); ctx.moveTo(D.cx, D.cy); ctx.lineTo(ex, ey); ctx.stroke();
   }
   // socle sous le capot
-  ctx.fillStyle = '#374151';
-  roundRect(ctx, D.cx - D.half - 6, D.cy - D.half - 6, (D.half + 6) * 2, (D.half + 6) * 2, 74);
-  ctx.fill();
+  socle(ctx);
+  if (L.shape === 'race') {
+    // ailerons
+    ctx.fillStyle = L.trim;
+    for (const sx of [-1, 1]) {
+      ctx.beginPath(); ctx.moveTo(D.cx + sx * 120, D.cy + D.half); ctx.lineTo(D.cx + sx * 200, D.cy + D.half + 110); ctx.lineTo(D.cx + sx * 40, D.cy + D.half); ctx.closePath(); ctx.fill();
+    }
+  }
 
   CORNERS.forEach(([sx, sy], i) => {
     const rx = D.cx + sx * D.rotorOff;
     const ry = D.cy + sy * D.rotorOff;
     // protection d'hélice
-    ctx.strokeStyle = C.copper;
+    ctx.strokeStyle = L.trim;
     ctx.lineWidth = 14;
     ctx.beginPath(); ctx.arc(rx, ry, D.rotorR + 10, 0, TAU); ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,0.35)';
     ctx.beginPath(); ctx.arc(rx, ry, D.rotorR + 3, 0, TAU); ctx.fill();
     // flou de rotation
     if (rotorSpeed > 6) {
-      ctx.fillStyle = `rgba(255, 138, 61, ${Math.min(0.4, rotorSpeed / 90)})`;
+      ctx.globalAlpha = Math.min(0.4, rotorSpeed / 90);
+      ctx.fillStyle = L.accent;
       ctx.beginPath(); ctx.arc(rx, ry, D.rotorR, 0, TAU); ctx.fill();
+      ctx.globalAlpha = 1;
     }
     // pales
     ctx.save();
     ctx.translate(rx, ry);
     ctx.rotate(rotorAngle * (i % 2 ? 1 : -1) + i);
     ctx.globalAlpha = rotorSpeed > 18 ? 0.35 : 1;
-    ctx.fillStyle = C.orange;
+    ctx.fillStyle = L.accent;
     roundRect(ctx, -D.rotorR, -15, D.rotorR * 2, 30, 15);
     ctx.fill();
     ctx.globalAlpha = 1;
@@ -140,14 +207,166 @@ export function drawFrame(ctx, { rotorAngle = 0, rotorSpeed = 0, lights = null }
     // lumière sur le bras
     const lx = D.cx + sx * (D.rotorOff - 105);
     const ly = D.cy + sy * (D.rotorOff - 105);
-    const on = lights && lights[i];
-    if (on) {
-      ctx.fillStyle = 'rgba(63, 208, 187, 0.45)';
-      ctx.beginPath(); ctx.arc(lx, ly, 34, 0, TAU); ctx.fill();
-    }
-    ctx.fillStyle = on ? '#9ff5e7' : '#2b323c';
-    ctx.beginPath(); ctx.arc(lx, ly, 17, 0, TAU); ctx.fill();
+    light(ctx, lx, ly, lights && lights[i]);
   });
+}
+
+// Insectes : abdomen, pattes, 4 ailes qui battent, antennes (voyants au bout).
+function drawInsectFrame(ctx, { rotorAngle = 0, rotorSpeed = 0, lights = null } = {}) {
+  const L = LOOK;
+  const sh = L.shape;
+  const flap = rotorSpeed > 1 ? 0.35 + 0.65 * Math.abs(Math.sin(rotorAngle * 0.5)) : 1;
+  const bottom = D.cy + D.half;
+  ctx.lineCap = 'round';
+  // abdomen
+  if (sh === 'dragonfly') {
+    for (let k = 4; k >= 0; k--) {
+      ctx.fillStyle = k % 2 ? L.trim : L.body;
+      ctx.beginPath(); ctx.arc(D.cx, bottom + 10 + k * 48, 46 - k * 4, 0, TAU); ctx.fill();
+    }
+  } else {
+    ctx.fillStyle = sh === 'firefly' && lights && lights[0] ? '#fff2b0' : L.trim;
+    ctx.beginPath(); ctx.ellipse(D.cx, bottom + 30, 170, 130, 0, 0, TAU); ctx.fill();
+    if (sh === 'bee') {
+      ctx.fillStyle = L.body;
+      for (const dy of [60, 120]) { ctx.fillRect(D.cx - 150, bottom + dy - 18, 300, 30); }
+    }
+    if (sh === 'firefly') {
+      ctx.fillStyle = 'rgba(255, 242, 176, 0.35)';
+      ctx.beginPath(); ctx.ellipse(D.cx, bottom + 60, 210, 150, 0, 0, TAU); ctx.fill();
+    }
+  }
+  // pattes (la mante a des pattes avant repliées)
+  ctx.strokeStyle = '#4b5563';
+  ctx.lineWidth = 22;
+  for (const sx of [-1, 1]) {
+    for (const [dy, len] of [[-120, 150], [20, 170], [160, 150]]) {
+      const x0 = D.cx + sx * D.half;
+      ctx.beginPath(); ctx.moveTo(x0, D.cy + dy); ctx.lineTo(x0 + sx * len * 0.6, D.cy + dy + 40); ctx.lineTo(x0 + sx * len, D.cy + dy + 110); ctx.stroke();
+    }
+    if (sh === 'mantis') {
+      ctx.strokeStyle = L.trim;
+      ctx.lineWidth = 30;
+      ctx.beginPath(); ctx.moveTo(D.cx + sx * 150, D.cy - D.half); ctx.lineTo(D.cx + sx * 260, D.cy - D.half - 120); ctx.lineTo(D.cx + sx * 170, D.cy - D.half - 170); ctx.stroke();
+      ctx.strokeStyle = '#4b5563';
+      ctx.lineWidth = 22;
+    }
+  }
+  socle(ctx);
+  // ailes : supérieures et inférieures, de chaque côté
+  const wings = {
+    dragonfly: [168, 46], beetle: [140, 70], firefly: [140, 62], bee: [125, 72], mantis: [150, 52],
+  }[sh] || [140, 60];
+  for (const sx of [-1, 1]) {
+    for (const [rootY, ang, k] of [[D.cy - 110, -0.42, 1], [D.cy + 90, 0.32, 0.88]]) {
+      ctx.save();
+      ctx.translate(D.cx + sx * (D.half - 30), rootY);
+      ctx.scale(sx, 1);
+      ctx.rotate(ang);
+      ctx.scale(1, flap);
+      ctx.globalAlpha = 0.75;
+      ctx.fillStyle = L.accent;
+      ctx.beginPath(); ctx.ellipse(wings[0] * k, 0, wings[0] * k, wings[1] * k, 0, 0, TAU); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = L.trim;
+      ctx.lineWidth = 6;
+      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(wings[0] * k * 1.8, 0); ctx.stroke();
+      ctx.restore();
+    }
+  }
+  // antennes avec un voyant au bout (2 voyants), et 2 voyants sur les ailes
+  ctx.strokeStyle = '#4b5563';
+  ctx.lineWidth = 12;
+  const wob = rotorSpeed > 1 ? Math.sin(rotorAngle * 0.3) * 20 : 0;
+  [-1, 1].forEach((sx, i) => {
+    const ex = D.cx + sx * (150 + wob), ey = D.cy - D.half - 150;
+    ctx.beginPath(); ctx.moveTo(D.cx + sx * 50, D.cy - D.half); ctx.quadraticCurveTo(D.cx + sx * 40, ey + 20, ex, ey); ctx.stroke();
+    light(ctx, ex, ey, lights && lights[i], 20);
+    light(ctx, D.cx + sx * (D.half + 110), D.cy - 150, lights && lights[i + 2], 14);
+  });
+}
+
+// Mascottes : pieds, bras, oreilles selon le modèle ; voyants sur les oreilles et les pieds.
+function drawMascotFrame(ctx, { rotorAngle = 0, rotorSpeed = 0, lights = null } = {}) {
+  const L = LOOK;
+  const sh = L.shape;
+  const top = D.cy - D.half;
+  const bottom = D.cy + D.half;
+  const wig = rotorSpeed > 1 ? Math.sin(rotorAngle * 0.4) * 0.18 : 0;
+  ctx.lineCap = 'round';
+  // pieds (le lapin est posé sur un ressort)
+  if (sh === 'rabbit') {
+    ctx.strokeStyle = '#9aa3ad';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    for (let k = 0; k <= 8; k++) ctx.lineTo(D.cx + (k % 2 ? 70 : -70), bottom + 10 + k * 22);
+    ctx.stroke();
+  }
+  ctx.fillStyle = L.trim;
+  for (const sx of [-1, 1]) {
+    ctx.beginPath(); ctx.ellipse(D.cx + sx * 150, bottom + 40, 105, 58, 0, 0, TAU); ctx.fill();
+  }
+  // oreilles
+  ctx.fillStyle = L.body;
+  [-1, 1].forEach((sx) => {
+    ctx.save();
+    ctx.translate(D.cx + sx * 170, top + 20);
+    ctx.rotate(sx * (0.15 + wig));
+    ctx.strokeStyle = L.trim;
+    ctx.lineWidth = 12;
+    if (sh === 'rabbit') {
+      ctx.beginPath(); ctx.ellipse(0, -150, 58, 170, 0, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = L.accent;
+      ctx.beginPath(); ctx.ellipse(0, -150, 28, 120, 0, 0, TAU); ctx.fill();
+    } else if (sh === 'cat') {
+      ctx.beginPath(); ctx.moveTo(-90, 30); ctx.lineTo(0, -170); ctx.lineTo(90, 30); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = L.accent;
+      ctx.beginPath(); ctx.moveTo(-45, 10); ctx.lineTo(0, -100); ctx.lineTo(45, 10); ctx.closePath(); ctx.fill();
+    } else if (sh !== 'hedgehog') {
+      const r = sh === 'bear' ? 80 : 95;
+      ctx.beginPath(); ctx.arc(0, -40, r, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = L.accent;
+      ctx.beginPath(); ctx.arc(0, -40, r * 0.5, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+    ctx.fillStyle = L.body;
+  });
+  if (sh === 'hedgehog') {
+    // piquants et panneau solaire
+    ctx.fillStyle = L.trim;
+    for (let k = 0; k <= 10; k++) {
+      const a = Math.PI + (k / 10) * Math.PI;
+      const bx = D.cx + Math.cos(a) * 300, by = D.cy - 40 + Math.sin(a) * 300;
+      ctx.beginPath(); ctx.moveTo(bx + Math.cos(a + 1.57) * 40, by + Math.sin(a + 1.57) * 40); ctx.lineTo(D.cx + Math.cos(a) * 420, D.cy - 40 + Math.sin(a) * 420); ctx.lineTo(bx - Math.cos(a + 1.57) * 40, by - Math.sin(a + 1.57) * 40); ctx.fill();
+    }
+    ctx.fillStyle = '#2f5f8f';
+    roundRect(ctx, D.cx - 130, top - 150, 260, 110, 10); ctx.fill();
+    ctx.strokeStyle = L.accent; ctx.lineWidth = 4;
+    for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(D.cx - 130 + k * 65, top - 150); ctx.lineTo(D.cx - 130 + k * 65, top - 40); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(D.cx - 130, top - 95); ctx.lineTo(D.cx + 130, top - 95); ctx.stroke();
+  }
+  // bras
+  ctx.fillStyle = L.trim;
+  for (const sx of [-1, 1]) {
+    ctx.beginPath(); ctx.arc(D.cx + sx * (D.half + 60), D.cy + 60 + (sx > 0 ? wig * 200 : -wig * 200), 72, 0, TAU); ctx.fill();
+  }
+  socle(ctx);
+  // clé à remonter du chat
+  if (sh === 'cat') {
+    ctx.save();
+    ctx.translate(D.cx + D.half + 60, D.cy - 170);
+    ctx.rotate(rotorAngle * 0.2);
+    ctx.fillStyle = '#d9a441';
+    ctx.fillRect(-12, -60, 24, 120);
+    ctx.beginPath(); ctx.ellipse(0, -75, 50, 28, 0, 0, TAU); ctx.ellipse(0, 75, 50, 28, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  // voyants : 2 sur le haut, 2 sur les pieds
+  light(ctx, D.cx - 170, top - 30, lights && lights[0], 15);
+  light(ctx, D.cx + 170, top - 30, lights && lights[1], 15);
+  light(ctx, D.cx - 150, bottom + 45, lights && lights[2], 15);
+  light(ctx, D.cx + 150, bottom + 45, lights && lights[3], 15);
 }
 
 // Intérieur : carte, pistes, soudure, emplacement de puce, batterie, câble, prise et voyant.
@@ -435,23 +654,44 @@ export function drawCover(ctx, { offsetY = 0, rot = 0, alpha = 1, screws = null 
   ctx.translate(D.cx, D.cy + offsetY);
   ctx.rotate(rot);
   const h = D.half;
-  ctx.fillStyle = C.turquoise;
+  const L = LOOK;
+  ctx.fillStyle = L.body;
   roundRect(ctx, -h, -h, h * 2, h * 2, 70);
   ctx.fill();
-  ctx.strokeStyle = C.copper;
+  ctx.strokeStyle = L.trim;
   ctx.lineWidth = 14;
   ctx.stroke();
+  if (L.shape === 'race' || L.shape === 'bee') {
+    ctx.save();
+    roundRect(ctx, -h, -h, h * 2, h * 2, 70);
+    ctx.clip();
+    ctx.fillStyle = L.trim;
+    for (const y of L.shape === 'race' ? [-h + 40] : [-h + 60, h - 110]) ctx.fillRect(-h, y, h * 2, 50);
+    if (L.shape === 'race') { ctx.fillRect(-30, -h, 60, h * 2); }
+    ctx.restore();
+  }
+  if (L.shape === 'beetle') {
+    // ligne des élytres
+    ctx.strokeStyle = L.trim;
+    ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.moveTo(0, -h + 20); ctx.lineTo(0, h - 20); ctx.stroke();
+  }
   ctx.strokeStyle = 'rgba(255,255,255,0.4)';
   ctx.lineWidth = 6;
   roundRect(ctx, -h + 50, -h + 50, h * 2 - 100, h * 2 - 100, 40);
   ctx.stroke();
-  // visage
+  // visage (gros yeux pour les insectes, museau pour les mascottes)
+  const eye = L.family === 'insect' ? 46 : 30;
   ctx.fillStyle = '#1f2937';
-  ctx.beginPath(); ctx.arc(-75, -30, 30, 0, TAU); ctx.fill();
-  ctx.beginPath(); ctx.arc(75, -30, 30, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(-75, -30, eye, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(75, -30, eye, 0, TAU); ctx.fill();
   ctx.fillStyle = '#fff';
   ctx.beginPath(); ctx.arc(-65, -42, 10, 0, TAU); ctx.fill();
   ctx.beginPath(); ctx.arc(85, -42, 10, 0, TAU); ctx.fill();
+  if (L.family === 'mascot') {
+    ctx.fillStyle = L.trim;
+    ctx.beginPath(); ctx.ellipse(0, 10, 26, 18, 0, 0, TAU); ctx.fill();
+  }
   ctx.strokeStyle = '#1f2937';
   ctx.lineWidth = 12;
   ctx.lineCap = 'round';

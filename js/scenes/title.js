@@ -2,7 +2,7 @@
 import { W } from '../canvas.js';
 import { t, getLang } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawText, fitText } from '../ui.js';
-import { withDrone, drawShadow, drawFrame, drawCover } from '../drone.js';
+import { withDrone, drawShadow, drawFrame, drawCover, setLook } from '../drone.js';
 import { go } from '../scenes.js';
 import { changeLang, VERSION } from '../settings.js';
 import { save, resetSave, totalStars } from '../save.js';
@@ -13,10 +13,11 @@ let confirmReset = 0; // > 0 : en attente de la 2e touche pour effacer
 
 export default {
   init() {
+    setLook(null); // le mini-drone jouet de l'écran titre
     time = 0;
     confirmReset = 0;
     buttons = new Buttons();
-    buttons.add({ x: 200, y: 1360, w: 680, h: 170, size: 72, label: () => t('title.play'), onTap: () => go('operation', {}) });
+    buttons.add({ x: 200, y: 1360, w: 680, h: 170, size: 72, label: () => t('title.play'), onTap: () => go('orders') });
     buttons.add({ x: 200, y: 1590, w: 320, h: 130, style: 'secondary', label: () => 'Français', selected: () => getLang() === 'fr', onTap: () => changeLang('fr') });
     buttons.add({ x: 560, y: 1590, w: 320, h: 130, style: 'secondary', label: () => 'English', selected: () => getLang() === 'en', onTap: () => changeLang('en') });
     // Nouvelle partie : deux touches pour ne pas effacer par erreur
