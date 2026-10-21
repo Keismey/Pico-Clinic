@@ -10,14 +10,15 @@ Mis à jour : 2026-10-21 (C6 V2a). Jeu : https://keismey.github.io/Pico-Clinic/
 - Rangs (`data/ranks.json` : 18/45/70/96 étoiles, examens 10/22/34/46), écran « Nouveau rang ! » (`rank.js`), panneau de Gribouille si l'examen manque d'étoiles.
 - Carnet de Maître Ohm (`notebook.js`) : clients (fiche, bio, dernier mot), 12 pièces rares, 5 rangs avec barre d'étoiles.
 - Pièces rares (`data/rare_parts.json`) : 3 étoiles ou cadeau ; seul l'engrenage (commande 10) est gagnable aujourd'hui.
-- Testé en navigateur automatique (FR/EN, parcours complet), aucune erreur ; 247 clés FR = EN.
+- Correctifs V2a : langue choisie seulement sur l'écran titre (plus de boutons FR/EN en jeu) ; le doigt tient le manche du fer (rond orange), la pointe reste visible devant (`solder.grip`).
+- Testé en navigateur automatique (FR/EN, parcours complet, soudure), aucune erreur ; clés FR = EN.
 
 ## Écarts au GDD
 - Batterie gonflée, élytres, cœur-batterie remplacés par puce/connecteur (commandes 7 et 9) en attendant V3a.
 - Clients de passage (commandes 2 à 6) : répliques inventées (le GDD n'en donne pas).
 
 ## Valeurs à valider au doigt
-- Vitesse du texte (42 lettres/s) ; tailles des portraits ; `data/gestures.json`.
+- Vitesse du texte (42 lettres/s) ; tailles des portraits ; position du doigt sur le fer (`solder.grip` 65/130) ; `data/gestures.json`.
 
 ## Bugs connus
 - Vibrations absentes sur iPhone. En diagnostic, la fiche du connecteur peut attraper le doigt au lieu de la loupe.

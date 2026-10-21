@@ -26,7 +26,7 @@
   "op.hint.chip_drag_old": "Emmène-la hors de la carte verte, puis lâche.",
   "op.hint.chip_place": "Prends la puce neuve dans la boîte en haut à droite et pose-la sur le cadre.",
   "op.hint.chip_drag_new": "Vise le cadre : lâche quand il devient tout blanc.",
-  "op.hint.solder": "La piste est coupée. Pose le doigt sur la pastille qui clignote pour prendre le fer.",
+  "op.hint.solder": "La piste est coupée. Pose le doigt sur le rond orange, sur le manche du fer : la pointe reste devant ton doigt.",
   "op.hint.heating": "Le fer chauffe… ne bouge pas !",
   "op.hint.trace": "Suis le chemin jusqu'à l'autre pastille, sans lever le doigt.",
   "op.repairs": "Réparations : {n}/{total}",

@@ -1,6 +1,7 @@
 // Geste de soudure : poser le fer sur la pastille A, attendre qu'il chauffe,
 // puis suivre le chemin d'un trait continu jusqu'à la pastille B.
 // Progression = projection de la pointe sur la courbe (vers l'avant seulement).
+// Le doigt tient le manche (params.grip) : la pointe reste devant le doigt, bien visible.
 // Trop lent = brûlure ; trop rapide = soudure froide ; hors du chemin trop longtemps = court-circuit.
 import { SOLDER } from '../drone.js';
 
@@ -30,6 +31,8 @@ export function createSolder(weld, params, tolerance, hooks = {}) {
   let act = null;          // trait en cours
   let heatShown = 0;       // chaleur affichée (refroidit quand on lâche)
   const tip = { x: SOLDER.a.x, y: SOLDER.a.y };
+  // endroit du manche où poser le doigt pour prendre le fer
+  const grip = { x: SOLDER.a.x + params.grip[0], y: SOLDER.a.y + params.grip[1] };
 
   function reset() {
     weld.cells = new Array(n).fill(null);
@@ -57,6 +60,7 @@ export function createSolder(weld, params, tolerance, hooks = {}) {
 
   return {
     tip,
+    grip,
     get active() { return !!act; },
     get heat() { return act ? act.heat : heatShown; },
     get hot() { return !!act && act.heat >= 1; },
@@ -71,7 +75,7 @@ export function createSolder(weld, params, tolerance, hooks = {}) {
 
     down(x, y) {
       if (weld.done) return false;
-      if (Math.hypot(x - SOLDER.a.x, y - SOLDER.a.y) > params.grab_radius) return false;
+      if (Math.hypot(x - grip.x, y - grip.y) > params.grab_radius) return false;
       reset();
       finger.x = x; finger.y = y;
       act = { offX: SOLDER.a.x - x, offY: SOLDER.a.y - y, heat: 0, offT: 0, dwell: 0, speed: 0 };

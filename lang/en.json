@@ -26,7 +26,7 @@
   "op.hint.chip_drag_old": "Take it off the green board, then let go.",
   "op.hint.chip_place": "Take the new chip from the box at the top right and set it on the frame.",
   "op.hint.chip_drag_new": "Aim for the frame: let go when it turns bright white.",
-  "op.hint.solder": "The track is cut. Put your finger on the blinking pad to pick up the iron.",
+  "op.hint.solder": "The track is cut. Put your finger on the orange ring, on the iron's handle: the tip stays ahead of your finger.",
   "op.hint.heating": "The iron is heating up… hold still!",
   "op.hint.trace": "Follow the path to the other pad without lifting your finger.",
   "op.repairs": "Repairs: {n}/{total}",

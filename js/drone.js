@@ -577,20 +577,22 @@ export function drawPartBox(ctx) {
   ctx.fill();
 }
 
-// Fer à souder tenu par le doigt : pointe en (x, y), chaleur 0 → 1.
-export function drawIron(ctx, x, y, heat) {
-  const dx = 0.55, dy = -0.83;
+// Fer à souder : pointe en (x, y), chaleur 0 → 1. Le manche part vers le bas à droite,
+// là où le doigt le tient (gestures.json solder.grip), pour que la pointe reste visible.
+export function drawIron(ctx, x, y, heat, alpha = 1) {
+  const dx = 0.45, dy = 0.89;
   const at = (d) => [x + dx * d, y + dy * d];
   ctx.save();
+  ctx.globalAlpha = alpha;
   ctx.lineCap = 'round';
   // ombre
   ctx.strokeStyle = 'rgba(0,0,0,0.2)';
   ctx.lineWidth = 40;
-  ctx.beginPath(); ctx.moveTo(...at(170).map((v, i) => v + (i ? 26 : 18))); ctx.lineTo(...at(330).map((v, i) => v + (i ? 26 : 18))); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(...at(110).map((v, i) => v + (i ? 26 : 18))); ctx.lineTo(...at(320).map((v, i) => v + (i ? 26 : 18))); ctx.stroke();
   // tige et pointe
   ctx.strokeStyle = '#9aa3ad';
   ctx.lineWidth = 16;
-  ctx.beginPath(); ctx.moveTo(...at(30)); ctx.lineTo(...at(180)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(...at(30)); ctx.lineTo(...at(120)); ctx.stroke();
   const hot = Math.min(1, heat);
   ctx.strokeStyle = `rgb(${120 + 135 * hot}, ${120 - 40 * hot}, ${120 - 90 * hot})`;
   ctx.lineWidth = 9;
@@ -598,7 +600,7 @@ export function drawIron(ctx, x, y, heat) {
   // poignée
   ctx.strokeStyle = C.orangeDark;
   ctx.lineWidth = 44;
-  ctx.beginPath(); ctx.moveTo(...at(185)); ctx.lineTo(...at(330)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(...at(110)); ctx.lineTo(...at(320)); ctx.stroke();
   ctx.strokeStyle = C.orange;
   ctx.lineWidth = 34;
   ctx.stroke();

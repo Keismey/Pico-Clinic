@@ -313,8 +313,15 @@ export default {
     this.drawCapacitors(ctx);
     if (vacuum.active) drawVacuum(ctx, vacuum.pos.x, vacuum.pos.y, rep.g.vacuum.radius, vacuum.sucking, time, finger);
 
-    // fer à souder
+    // fer à souder : posé sur la pastille en attendant, un rond clignote sur le manche
     if (solder.active) drawIron(ctx, solder.tip.x, solder.tip.y, solder.heat);
+    else if (rep.coverAnim >= 1 && rep.phase !== 'diag' && rep.faults.has('trace_cut') && !isHidden(rep, 'trace_cut') && !vacuum.active) {
+      drawIron(ctx, SOLDER.a.x, SOLDER.a.y, 0, 0.55);
+      const p = 0.5 + 0.5 * Math.sin(time * 6);
+      ctx.strokeStyle = `rgba(255, 138, 61, ${0.5 + 0.5 * p})`;
+      ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.arc(solder.grip.x, solder.grip.y, 44 + 10 * p, 0, Math.PI * 2); ctx.stroke();
+    }
     if (lens.active) drawLens(ctx, rep, lens.lens, rep.g.magnifier, { time, progress: lens.progress, finger });
 
     // zone fautive qui clignote après un démarrage raté

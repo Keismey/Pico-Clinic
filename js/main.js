@@ -1,11 +1,10 @@
-// Démarrage, boucle de jeu, doigt (un seul à la fois), pause automatique, sélecteur FR/EN.
+// Démarrage, boucle de jeu, doigt (un seul à la fois), pause automatique.
 import { canvas, ctx, resize, beginFrame, toLogical } from './canvas.js';
-import { loadLanguages, detectLang, setLang, getLang } from './i18n.js';
+import { loadLanguages, detectLang, setLang } from './i18n.js';
 import { save } from './save.js';
-import { changeLang } from './settings.js';
 import { loadData } from './state.js';
-import { register, go, scene, sceneName } from './scenes.js';
-import { Buttons, tickUI } from './ui.js';
+import { register, go, scene } from './scenes.js';
+import { tickUI } from './ui.js';
 import * as fx from './particles.js';
 import title from './scenes/title.js';
 import operation from './scenes/operation.js';
@@ -17,21 +16,12 @@ import counter from './scenes/counter.js';
 import notebook from './scenes/notebook.js';
 import rank from './scenes/rank.js';
 
-// Petit sélecteur FR/EN en haut à droite (sur tous les écrans sauf le titre).
-const langPill = new Buttons();
-for (const [i, l] of ['fr', 'en'].entries()) {
-  langPill.add({
-    x: 780 + i * 150, y: 30, w: 140, h: 130, size: 46, style: 'secondary',
-    label: () => l.toUpperCase(),
-    selected: () => getLang() === l,
-    onTap: () => changeLang(l),
-  });
-}
+// La langue se choisit uniquement sur l'écran titre.
 
 let last = 0;
 let paused = false;
 let activeId = null;
-let owner = null; // 'pill' ou 'scene'
+let owner = null; // 'scene' tant qu'un doigt est posé
 
 function loop(ts) {
   requestAnimationFrame(loop);
@@ -44,7 +34,6 @@ function loop(ts) {
   beginFrame();
   scene().draw(ctx);
   fx.draw(ctx);
-  if (sceneName() !== 'title') langPill.draw(ctx);
 }
 
 function onPointer(type, e) {
@@ -57,11 +46,8 @@ function onPointer(type, e) {
   }
   e.preventDefault();
   const p = toLogical(e);
-  if (type === 'down') {
-    owner = sceneName() !== 'title' && langPill.pointer('down', p.x, p.y) ? 'pill' : 'scene';
-  }
-  if (owner === 'pill') langPill.pointer(type, p.x, p.y);
-  else scene().pointer(type, p.x, p.y);
+  if (type === 'down') owner = 'scene';
+  scene().pointer(type, p.x, p.y);
   if (type === 'up' || type === 'cancel') { activeId = null; owner = null; }
 }
 
