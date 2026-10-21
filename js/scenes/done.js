@@ -74,8 +74,11 @@ export default {
     }
     // le compteur de crédits monte après les étoiles
     const target = save.credits;
-    if (time > 0.6 + 3 * STAR_DELAY && creditsShown < target) {
-      creditsShown = Math.min(target, creditsShown + Math.max(1, (target - creditsShown) * dt * 4));
+    if (time > 0.6 + 3 * STAR_DELAY && Math.abs(creditsShown - target) > 0.5) {
+      const step = Math.max(1, Math.abs(target - creditsShown) * dt * 4);
+      creditsShown += Math.sign(target - creditsShown) * Math.min(step, Math.abs(target - creditsShown));
+    } else if (time > 0.6 + 3 * STAR_DELAY) {
+      creditsShown = target;
     }
   },
 
@@ -97,7 +100,7 @@ export default {
     }
 
     const lines = [
-      [t('done.clean', { p: res.clean }) + (res.broken ? '  ·  ' + t('done.broken', { n: res.broken }) : ''), C.ink],
+      [t('done.clean', { p: res.clean }), C.ink],
       [t('done.precision', { p: res.prec }), C.ink],
       [t('done.time_target', { t: fmt(rep.elapsed), c: fmt(rep.patient.target_time) }), res.onTime ? C.green : C.ink],
     ];
@@ -106,9 +109,10 @@ export default {
     } else {
       lines.push([t('done.already_paid'), C.inkSoft]);
     }
-    lines.forEach(([l, col], i) => fitText(ctx, l, W / 2, 1150 + i * 56, 900, 40, col, 700));
+    if (res.parts) lines.push([t('done.parts', { n: res.parts }), C.red]);
+    lines.forEach(([l, col], i) => fitText(ctx, l, W / 2, 1140 + i * 52, 900, 38, col, 700));
     if (pay.record && time > 2.4) fitText(ctx, t('done.record'), W / 2, 1112, 600, 32, C.orangeDark, 900);
-    fitText(ctx, t('done.credits', { n: Math.round(creditsShown) }), W / 2, 1420, 900, 54, C.turquoiseDark, 900);
+    fitText(ctx, t('done.credits', { n: Math.round(creditsShown) }), W / 2, 1432, 900, 54, C.turquoiseDark, 900);
     buttons.draw(ctx);
   },
 

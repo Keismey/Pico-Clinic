@@ -66,11 +66,20 @@ export function createCapacitor(rep, params, hooks = {}) {
         } else if (hooks.onStay) hooks.onStay();
         return;
       }
-      if (Math.hypot(x - comp.x, y - comp.y) <= params.snap_radius) {
-        comp.broken = false;
-        comp.removed = false;
-        comp.wear = 0;
-        if (hooks.onPlace) hooks.onPlace(comp);
+      // un condensateur neuf va sur n'importe quel emplacement vide (le plus proche)
+      let spot = null;
+      let best = params.snap_radius;
+      for (const c of rep.fragile) {
+        if (!c.removed) continue;
+        const d = Math.hypot(x - c.x, y - c.y);
+        if (d <= best) { best = d; spot = c; }
+      }
+      if (spot) {
+        spot.broken = false;
+        spot.removed = false;
+        spot.wear = 0;
+        rep.partsUsed = (rep.partsUsed || 0) + 1;
+        if (hooks.onPlace) hooks.onPlace(spot);
       } else if (hooks.onMiss) hooks.onMiss();
     },
   };

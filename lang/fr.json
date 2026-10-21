@@ -61,12 +61,11 @@
   "op.hint.rust_left": "Encore de la rouille : frotte-la du doigt pour l'aspirer, ou appuie sur Démarrer.",
   "op.clean": "Propreté : {p} %",
   "op.fragile": "Attention, c'est fragile !",
-  "op.fragile_broken": "Aïe ! Condensateur cassé : il faudra le changer.",
+  "op.fragile_broken": "Aïe ! Condensateur cassé : il faudra en acheter un neuf.",
   "done.star.works": "Fonctionnel",
   "done.star.clean": "Propre",
   "done.star.precise": "Précis",
   "done.clean": "Propreté : {p} %",
-  "done.broken": "Pièces abîmées : {n}",
   "done.time_target": "Temps : {t}  (objectif {c})",
   "done.pay": "Paie : {b}",
   "done.tip": "Pourboire : +{n}",
@@ -76,10 +75,11 @@
   "done.credits": "Crédits : {n}",
   "op.hint.rust": "De la rouille (taches brunes) ! Frotte-la vite du doigt : l'aspirateur apparaît juste au-dessus. Évite les condensateurs bleus.",
   "op.hint.cap_remove": "Un condensateur est cassé : le drone ne démarrera pas. Attrape-le et sors-le de la carte.",
-  "op.hint.cap_place": "Prends le condensateur neuf (près de la boîte) et pose-le sur l'emplacement qui clignote.",
+  "op.hint.cap_place": "Prends un condensateur neuf (près de la boîte) et pose-le sur un emplacement qui clignote.",
   "op.hint.cap_drag_new": "Pose-le sur l'emplacement qui clignote.",
   "op.cap_out": "Condensateur cassé retiré !",
   "op.cap_miss": "Pas tout à fait… vise l'emplacement.",
-  "op.cap_in": "Condensateur neuf posé !",
-  "op.hint.cap_drag_old": "Emmène-le hors de la carte verte, puis lâche."
+  "op.cap_in": "Condensateur neuf posé ! (−{n} crédits)",
+  "op.hint.cap_drag_old": "Emmène-le hors de la carte verte, puis lâche.",
+  "done.parts": "Pièces de rechange : −{n}"
 }

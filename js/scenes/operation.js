@@ -164,7 +164,7 @@ export default {
         rep.faults.delete('capacitor_' + c.i);
         vibrate([10, 20, 35]);
         fx.spawn(c.x, c.y, { count: 18, color: C.turquoise, speed: 380, size: 7 });
-        showToast('op.cap_in', C.green);
+        showToast('op.cap_in', C.green, { n: g.scoring.capacitor_cost });
       },
     });
 

@@ -21,10 +21,11 @@ export function scoreRepair(rep) {
   const p = rep.patient;
   const clean = cleanliness(rep);
   const prec = precision(rep);
-  const broken = rep.fragile.filter((c) => c.breaks > 0).length;
-  const stars = [rep.faults.size === 0, clean >= g.clean_min && broken === 0, prec >= g.precise_min];
+  // un condensateur cassé ne retire pas d'étoile : la pièce de rechange se paie en crédits
+  const parts = (rep.partsUsed || 0) * g.capacitor_cost;
+  const stars = [rep.faults.size === 0, clean >= g.clean_min, prec >= g.precise_min];
   const onTime = rep.elapsed <= p.target_time;
-  return { stars, clean, prec, broken, onTime, base: p.reward, tip: onTime ? Math.round(p.reward * g.tip_ratio) : 0 };
+  return { stars, clean, prec, parts, onTime, base: p.reward, tip: onTime ? Math.round(p.reward * g.tip_ratio) : 0 };
 }
 
 // À appeler une seule fois par réparation terminée. Une commande ne paie qu'une fois :
@@ -33,7 +34,7 @@ export function recordRepair(rep, r) {
   const id = rep.patient.id;
   const o = save.orders[id] || { stars: [false, false, false], best_time: null, paid: false, plays: 0 };
   const firstPay = !o.paid;
-  const paid = firstPay ? r.base + r.tip : 0;
+  const paid = (firstPay ? r.base + r.tip : 0) - r.parts;
   const count = (a) => a.filter(Boolean).length;
   const record = o.plays > 0 && count(r.stars) > count(o.stars);
   if (count(r.stars) >= count(o.stars)) o.stars = r.stars.slice();
@@ -42,7 +43,7 @@ export function recordRepair(rep, r) {
   o.paid = true;
   o.plays++;
   save.orders[id] = o;
-  save.credits += paid;
+  save.credits = Math.max(0, save.credits + paid);
   persist();
   return { firstPay, paid, record };
 }
