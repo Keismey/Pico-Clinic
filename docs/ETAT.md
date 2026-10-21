@@ -20,13 +20,11 @@ Mis à jour : 2026-10-21 (C7 V2b). Jeu : https://keismey.github.io/Pico-Clinic/
 - Seuil de la plaque (160 px vers le haut) ; vitesse de la main fantôme ; taille des bulles de Gribouille ; `data/gestures.json`.
 
 ## Bugs connus
-- Vibrations absentes sur iPhone. En diagnostic, la fiche du connecteur peut attraper le doigt avant la loupe.
-- Panneau d'aide (hors tutoriel) : les indices longs (rouille) débordent un peu en haut.
+- Vibrations absentes sur iPhone. En diagnostic, la fiche peut attraper le doigt avant la loupe. Panneau d'aide (hors tutoriel) : les indices longs (rouille) débordent un peu en haut.
 
 ## Prochaine étape
 - C8 V3a : gestes secondaires (batterie, engrenage, capteur, broches, ressort, piles, circuit oxydé), puis remettre les vraies pannes des commandes ci-dessus.
 
 ## Plus tard
-- Images Gemini (clients, Gribouille, carnet, pièces rares) ; sons du tutoriel (clic de la vis).
-- Commandes 23 à 60, chapitres 3 à 5, patients multiples, prototypes à pièces rares, Atelier libre, défi quotidien, succès.
+- Images Gemini (clients, Gribouille, carnet, pièces rares) ; son du clic de vis. Commandes 23 à 60, chapitres 3 à 5, patients multiples, prototypes à pièces rares, Atelier libre, défi quotidien, succès.
 - Indice 20 s ; pause ; gaucher ; sauver une réparation en cours ; revoir le tutoriel depuis les réglages.
