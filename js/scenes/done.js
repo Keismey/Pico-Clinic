@@ -9,7 +9,8 @@ import { scoreRepair, recordRepair } from '../score.js';
 import { vibrate } from '../feedback.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
-import { orderState, nextOrder } from '../progress.js';
+import { orderState, nextOrder, examStars } from '../progress.js';
+import { drawRarePart } from '../portraits.js';
 
 const TAU = Math.PI * 2;
 const STAR_Y = 930;
@@ -61,12 +62,18 @@ export default {
     // commande suivante si elle est jouable, sinon retour à la liste
     const next = nextOrder(rep.patient.order);
     const nextOk = next && orderState(next) === 'open';
-    needStars = next && orderState(next) === 'stars' ? next.stars_needed : 0;
+    needStars = next && orderState(next) === 'stars' ? examStars(next) : 0;
     buttons = new Buttons();
+    // nouveau rang : on passe d'abord par l'écran du rang
     buttons.add({
       x: 190, y: 1500, w: 700, h: 170, size: 68,
-      label: () => t(nextOk ? 'done.next' : 'done.orders'),
-      onTap: () => (nextOk ? go('operation', { order: next.id }) : go('orders')),
+      pulse: !!pay.rankUp,
+      label: () => t(pay.rankUp ? 'done.continue' : nextOk ? 'done.next' : 'done.orders'),
+      onTap: () => {
+        if (pay.rankUp) go('rank', { rank: pay.rankUp });
+        else if (nextOk) go('counter', { order: next.id, mode: 'intro' });
+        else go('orders');
+      },
     });
     buttons.add({ x: 110, y: 1700, w: 410, h: 150, style: 'secondary', label: () => t('done.replay'), onTap: () => go('operation', { order: rep.patient.id }) });
     buttons.add({ x: 560, y: 1700, w: 410, h: 150, style: 'secondary', label: () => t(nextOk ? 'done.orders' : 'done.menu'), onTap: () => go(nextOk ? 'orders' : 'title') });
@@ -125,14 +132,20 @@ export default {
     lines.forEach(([l, col], i) => fitText(ctx, l, W / 2, y0 + i * 52, 900, 38, col, 700));
     if (pay.record && time > 2.4) fitText(ctx, t('done.record'), W / 2, 1112, 600, 32, C.orangeDark, 900);
     fitText(ctx, t('done.credits', { n: Math.round(creditsShown) }), W / 2, 1432, 900, 54, C.turquoiseDark, 900);
-    if (pay.rankUp) {
+    // bandeau : pièce rare gagnée, sinon nouveau rang (qui a aussi son propre écran juste après)
+    const banner = pay.part
+      ? { text: t('done.rare', { name: t('rare.' + pay.part.id) }), color: C.copper, part: pay.part.id }
+      : pay.rankUp ? { text: t('done.rank_up', { r: pay.rankUp, name: t('rank.' + pay.rankUp) }), color: C.orange } : null;
+    if (banner) {
       const a = Math.min(1, Math.max(0, time - 2.4) * 3);
       ctx.save();
       ctx.globalAlpha = a;
-      ctx.fillStyle = C.orange;
+      ctx.fillStyle = banner.color;
       roundRect(ctx, 90, 300, W - 180, 110, 55);
       ctx.fill();
-      fitText(ctx, t('done.rank_up', { r: pay.rankUp, name: t('rank.' + pay.rankUp) }), W / 2, 357, W - 260, 50, '#fff', 900);
+      const off = banner.part ? 50 : 0;
+      fitText(ctx, banner.text, W / 2 + off, 357, W - 260 - off * 2, 46, '#fff', 900);
+      if (banner.part) drawRarePart(ctx, banner.part, 160, 355, 52, true, time);
       ctx.restore();
     }
     buttons.draw(ctx);

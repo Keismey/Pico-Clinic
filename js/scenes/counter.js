@@ -1,0 +1,282 @@
+// Comptoir : le client apporte son patient (accueil) ou vient le chercher réparé (merci).
+// Bulles de dialogue qui s'écrivent lettre à lettre ; toucher l'écran avance.
+import { W } from '../canvas.js';
+import { t } from '../i18n.js';
+import { Buttons, C, drawCreamBackground, fitText, font, roundRect, wrapLines } from '../ui.js';
+import { withDrone, drawShadow, drawFrame, drawCover, setLook } from '../drone.js';
+import { drawPerson, drawGribouille } from '../portraits.js';
+import { game, getOrder, buildPatient } from '../state.js';
+import { meetClient } from '../progress.js';
+import { vibrate } from '../feedback.js';
+import { go } from '../scenes.js';
+import { leftText } from './orders.js';
+
+const TAU = Math.PI * 2;
+const PERSON = { x: 360, y: 650, s: 1.12 };
+const PATIENT = { x: 800, y: 880, s: 0.3 };
+const GRIB = { x: 118, y: 938, s: 0.52 };
+const COUNTER_Y = 1000;
+const BOX = { x: 50, y: 1190, w: W - 100, h: 340 };
+const TEXT = { x: 100, y: 1262, w: W - 200, size: 48, lineH: 62 };
+const CPS = 42; // lettres par seconde
+
+let order, mode, lines, idx, shown, time, lineTime, buttons, wrapped, rep;
+
+function speakerName(who) {
+  if (who === 'gribouille') return t('name.gribouille');
+  if (who === 'passage') return t('name.passage');
+  return t('client.' + who);
+}
+
+function speakerColor(who) {
+  const c = game.data.clients.list[who];
+  return c ? c.color : C.copper;
+}
+
+// Bulles de la commande : « clé » (le client parle) ou « gribouille:clé ».
+function buildLines(o, m) {
+  const keys = (m === 'intro' ? o.intro : o.thanks) || [];
+  const out = keys.map((k) => (k.startsWith('gribouille:')
+    ? { who: 'gribouille', key: k.slice(11) }
+    : { who: o.client, key: k }));
+  if (m === 'intro' && o.exam) out.push({ who: 'gribouille', key: 'counter.exam_line', vars: { r: o.exam } });
+  return out;
+}
+
+function current() {
+  return lines[idx];
+}
+
+function fullText() {
+  const l = current();
+  return l ? t(l.key, l.vars) : '';
+}
+
+function atEnd() {
+  return idx >= lines.length - 1 && shown >= fullText().length;
+}
+
+function finish() {
+  if (mode === 'intro') go('operation', { order: order.id });
+  else go('done');
+}
+
+function advance() {
+  const len = fullText().length;
+  if (shown < len) { shown = len; return; }
+  if (idx < lines.length - 1) {
+    idx++;
+    shown = 0;
+    lineTime = 0;
+    wrapped = null;
+    vibrate(8);
+    return;
+  }
+  finish();
+}
+
+// Fond : le mur de l'atelier, l'enseigne, le panneau à outils et l'étagère.
+function drawWorkshop(ctx) {
+  drawCreamBackground(ctx);
+  const g = ctx.createLinearGradient(0, 200, 0, COUNTER_Y);
+  g.addColorStop(0, 'rgba(232, 205, 166, 0.0)');
+  g.addColorStop(1, 'rgba(214, 180, 136, 0.55)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 200, W, COUNTER_Y - 200);
+
+  // enseigne
+  ctx.strokeStyle = '#8f5426';
+  ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(130, 210); ctx.lineTo(160, 262); ctx.moveTo(450, 210); ctx.lineTo(420, 262); ctx.stroke();
+  ctx.fillStyle = '#8f5426';
+  roundRect(ctx, 70, 258, 440, 104, 22); ctx.fill();
+  ctx.fillStyle = '#c47a3c';
+  roundRect(ctx, 80, 250, 420, 100, 20); ctx.fill();
+  fitText(ctx, t('counter.sign'), 290, 302, 380, 52, '#fff7ec', 900);
+
+  // panneau à outils
+  ctx.fillStyle = '#d2ac80';
+  roundRect(ctx, 600, 230, 420, 380, 24); ctx.fill();
+  ctx.fillStyle = 'rgba(90, 61, 34, 0.25)';
+  for (let y = 262; y < 600; y += 44) for (let x = 632; x < 1000; x += 44) {
+    ctx.beginPath(); ctx.arc(x, y, 5, 0, TAU); ctx.fill();
+  }
+  // tournevis, pince et fer accrochés
+  ctx.save();
+  ctx.translate(690, 330); ctx.rotate(0.15);
+  ctx.fillStyle = '#ff8a3d'; roundRect(ctx, -22, -60, 44, 100, 18); ctx.fill();
+  ctx.fillStyle = '#9aa3ad'; ctx.fillRect(-6, 40, 12, 150);
+  ctx.restore();
+  ctx.save();
+  ctx.translate(820, 360);
+  ctx.strokeStyle = '#3fd0bb'; ctx.lineWidth = 22; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-40, -70); ctx.lineTo(-6, 60); ctx.moveTo(40, -70); ctx.lineTo(6, 60); ctx.stroke();
+  ctx.strokeStyle = '#6b7684'; ctx.lineWidth = 12;
+  ctx.beginPath(); ctx.moveTo(-6, 60); ctx.lineTo(-4, 150); ctx.moveTo(6, 60); ctx.lineTo(4, 150); ctx.stroke();
+  ctx.restore();
+  ctx.save();
+  ctx.translate(950, 340); ctx.rotate(-0.12);
+  ctx.fillStyle = '#3a2a1e'; roundRect(ctx, -18, -70, 36, 120, 14); ctx.fill();
+  ctx.fillStyle = '#c47a3c'; ctx.fillRect(-7, 50, 14, 110);
+  ctx.restore();
+
+  // étagère avec bocaux de vis
+  ctx.fillStyle = '#8f5426';
+  ctx.fillRect(560, 690, 480, 20);
+  for (const [x, c, h] of [[610, '#5fb8e8', 90], [700, '#ffd166', 70], [780, '#e0453a', 100], [880, '#7cc68a', 80], [970, '#d9a8ef', 66]]) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+    roundRect(ctx, x - 34, 690 - h, 68, h, 12); ctx.fill();
+    ctx.fillStyle = c;
+    roundRect(ctx, x - 26, 690 - h * 0.6, 52, h * 0.6 - 6, 8); ctx.fill();
+    ctx.fillStyle = '#8f5426';
+    ctx.fillRect(x - 30, 690 - h - 10, 60, 14);
+  }
+}
+
+function drawCounter(ctx) {
+  ctx.fillStyle = '#b9783f';
+  ctx.fillRect(0, COUNTER_Y + 30, W, 150);
+  ctx.strokeStyle = 'rgba(90, 50, 20, 0.25)';
+  ctx.lineWidth = 4;
+  for (let x = 120; x < W; x += 180) {
+    ctx.beginPath(); ctx.moveTo(x, COUNTER_Y + 40); ctx.lineTo(x, COUNTER_Y + 180); ctx.stroke();
+  }
+  ctx.fillStyle = '#d9a066';
+  roundRect(ctx, -20, COUNTER_Y - 10, W + 40, 48, 14); ctx.fill();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+  ctx.fillRect(0, COUNTER_Y - 4, W, 8);
+}
+
+function drawPatient(ctx) {
+  const done = mode === 'thanks';
+  const hover = done ? 30 + Math.sin(time * 3) * 14 : 0;
+  withDrone(ctx, PATIENT.x, PATIENT.y + 40, PATIENT.s, () => drawShadow(ctx, done ? 0.5 : 0));
+  withDrone(ctx, PATIENT.x, PATIENT.y - hover, PATIENT.s, () => {
+    drawFrame(ctx, {
+      rotorAngle: done ? time * 40 : 0.3,
+      rotorSpeed: done ? 40 : 0,
+      lights: done ? [0, 1, 2, 3].map((i) => (Math.floor(time * 4) + i) % 2 === 0) : [false, false, false, false],
+    });
+    drawCover(ctx, { screws: done && rep ? rep.screws : null });
+  });
+}
+
+function drawBox(ctx) {
+  const l = current();
+  if (!l) return;
+  // cadre
+  ctx.fillStyle = '#d9c3a3';
+  roundRect(ctx, BOX.x, BOX.y + 10, BOX.w, BOX.h, 40); ctx.fill();
+  ctx.fillStyle = C.paper;
+  roundRect(ctx, BOX.x, BOX.y, BOX.w, BOX.h, 40); ctx.fill();
+  ctx.strokeStyle = speakerColor(l.who);
+  ctx.lineWidth = 6;
+  ctx.stroke();
+  // étiquette du nom
+  const name = speakerName(l.who);
+  ctx.font = font(38, 900);
+  const nw = Math.min(BOX.w - 80, ctx.measureText(name).width + 70);
+  ctx.fillStyle = speakerColor(l.who);
+  roundRect(ctx, BOX.x + 40, BOX.y - 40, nw, 76, 38); ctx.fill();
+  fitText(ctx, name, BOX.x + 40 + nw / 2, BOX.y - 1, nw - 40, 38, '#fff', 900);
+  // texte qui s'écrit
+  ctx.font = font(TEXT.size, 700);
+  if (!wrapped) wrapped = wrapLines(ctx, fullText(), TEXT.w);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = C.ink;
+  let left = Math.floor(shown);
+  wrapped.forEach((line, i) => {
+    if (left <= 0) return;
+    ctx.fillText(line.slice(0, left), TEXT.x, TEXT.y + i * TEXT.lineH);
+    left -= line.length + 1;
+  });
+  // petite flèche quand la bulle est complète
+  if (shown >= fullText().length && Math.sin(time * 6) > -0.3) {
+    ctx.fillStyle = C.orange;
+    const x = BOX.x + BOX.w - 60, y = BOX.y + BOX.h - 46;
+    ctx.beginPath(); ctx.moveTo(x - 18, y - 10); ctx.lineTo(x + 18, y - 10); ctx.lineTo(x, y + 12); ctx.closePath(); ctx.fill();
+  }
+  // points : une bulle sur n
+  if (lines.length > 1) {
+    lines.forEach((_, i) => {
+      ctx.fillStyle = i === idx ? C.copper : 'rgba(58, 42, 30, 0.2)';
+      ctx.beginPath(); ctx.arc(W / 2 + (i - (lines.length - 1) / 2) * 34, 1860, 10, 0, TAU); ctx.fill();
+    });
+  }
+}
+
+export default {
+  init(params = {}) {
+    order = getOrder(params.order || game.lastOrder);
+    mode = params.mode === 'thanks' ? 'thanks' : 'intro';
+    rep = mode === 'thanks' ? game.repair : null;
+    lines = buildLines(order, mode);
+    idx = 0;
+    shown = 0;
+    time = 0;
+    lineTime = 0;
+    wrapped = null;
+    setLook(buildPatient(order.id).look);
+    if (mode === 'intro') meetClient(order.client);
+    buttons = new Buttons();
+    buttons.add({
+      x: 60, y: 1640, w: 300, h: 140, size: 44, style: 'secondary',
+      label: () => t('counter.skip'),
+      visible: true,
+      onTap: () => finish(),
+    });
+    buttons.add({
+      x: 400, y: 1620, w: 620, h: 170, size: 58,
+      label: () => (atEnd() ? t(mode === 'intro' ? 'counter.take' : 'counter.results') : t('counter.next')),
+      onTap: () => advance(),
+    });
+    if (!lines.length) finish();
+  },
+
+  update(dt) {
+    time += dt;
+    lineTime += dt;
+    // le client arrive au comptoir avant de parler
+    if (mode === 'intro' && time < 0.45) return;
+    const len = fullText().length;
+    if (shown < len) shown = Math.min(len, shown + CPS * dt);
+    buttons.list[0].visible = idx < lines.length - 1;
+    buttons.list[1].pulse = atEnd();
+  },
+
+  draw(ctx) {
+    drawWorkshop(ctx);
+    const l = current();
+    const clientTalks = l && l.who === order.client && shown < fullText().length;
+    const gribTalks = l && l.who === 'gribouille' && shown < fullText().length;
+    const cinfo = game.data.clients.list[order.client] || {};
+    const mood = mode === 'intro' ? cinfo.mood || 'neutral' : cinfo.thanks_mood || 'happy';
+    const enter = mode === 'intro' ? Math.min(1, time / 0.45) : 1;
+    const px = -260 + (PERSON.x + 260) * (1 - Math.pow(1 - enter, 3));
+    drawPerson(ctx, order.client, px, PERSON.y, PERSON.s, { time, talk: clientTalks, mood, seed: order.id });
+    drawCounter(ctx);
+    drawPatient(ctx);
+    if (lines.some((x) => x.who === 'gribouille')) {
+      const hop = gribTalks ? Math.abs(Math.sin(time * 8)) * 10 : 0;
+      drawGribouille(ctx, GRIB.x, GRIB.y - hop, GRIB.s, { time, talk: gribTalks });
+    }
+
+    // en-tête : numéro de la commande, patient, examen
+    const name = order.name ? t(order.name) : t('patient.' + order.model);
+    leftText(ctx, t('counter.order', { n: order.n, name }), 60, 90, 680, 46, C.copperDark, 900);
+    if (order.exam) {
+      ctx.fillStyle = C.orange;
+      roundRect(ctx, 56, 132, 420, 64, 32); ctx.fill();
+      fitText(ctx, t('counter.exam', { r: order.exam }), 266, 165, 380, 34, '#fff', 900);
+    }
+
+    drawBox(ctx);
+    buttons.draw(ctx);
+  },
+
+  pointer(type, x, y) {
+    if (buttons.pointer(type, x, y)) return;
+    if (type === 'up' && !(mode === 'intro' && time < 0.45)) advance();
+  },
+};

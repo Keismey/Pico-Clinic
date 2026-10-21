@@ -1,17 +1,18 @@
 // Liste des commandes : une ligne par réparation, débloquées l'une après l'autre.
 import { W } from '../canvas.js';
 import { t } from '../i18n.js';
-import { Buttons, C, drawCreamBackground, drawToast, roundRect, font } from '../ui.js';
+import { Buttons, C, drawCreamBackground, drawToast, drawText, fitText, roundRect, font } from '../ui.js';
 import { game } from '../state.js';
 import { save, totalStars } from '../save.js';
-import { orderState, orderStars } from '../progress.js';
+import { orderState, orderStars, examStars } from '../progress.js';
+import { drawGribouille } from '../portraits.js';
 import { vibrate } from '../feedback.js';
 import { go } from '../scenes.js';
 
 const TAU = Math.PI * 2;
 const ROW = { x: 50, y: 270, w: W - 100, h: 112, step: 122 };
 
-let buttons, toast, pressed, time;
+let buttons, toast, pressed, time, grib;
 
 // Texte aligné à gauche, rétréci s'il est trop long.
 export function leftText(ctx, text, x, y, maxW, size, color, weight = 800) {
@@ -53,6 +54,23 @@ function rowAt(x, y) {
   return y - ROW.y - i * ROW.step <= ROW.h ? i : -1;
 }
 
+// Gribouille explique qu'il manque des étoiles pour l'examen.
+function drawGribPanel(ctx) {
+  const k = Math.min(1, grib.t * 4);
+  ctx.save();
+  ctx.globalAlpha = k;
+  ctx.fillStyle = 'rgba(58, 42, 30, 0.45)';
+  ctx.fillRect(0, 0, W, 1920);
+  ctx.fillStyle = '#d9c3a3';
+  roundRect(ctx, 60, 712, W - 120, 560, 44); ctx.fill();
+  ctx.fillStyle = C.paper;
+  roundRect(ctx, 60, 700, W - 120, 560, 44); ctx.fill();
+  drawGribouille(ctx, 200, 960, 0.75, { time: grib.t, talk: grib.t < 3 });
+  drawText(ctx, t('orders.gribouille_stars', { n: grib.n, s: grib.s }), 640, 950, 560, 40, { color: C.ink, weight: 700, lineH: 52 });
+  fitText(ctx, t('orders.tap_close'), W / 2, 1205, 800, 30, C.inkSoft, 700);
+  ctx.restore();
+}
+
 function showToast(key, vars, color = C.inkSoft) {
   toast = { key, vars, color, t: 2.2, max: 2.2 };
 }
@@ -60,23 +78,28 @@ function showToast(key, vars, color = C.inkSoft) {
 function open(o) {
   const st = orderState(o);
   if (st === 'locked') { vibrate([15, 25, 15]); showToast('orders.locked'); return; }
-  if (st === 'stars') { vibrate([15, 25, 15]); showToast('orders.need_stars', { n: o.stars_needed, s: totalStars() }, C.orangeDark); return; }
-  go('operation', { order: o.id });
+  if (st === 'stars') { vibrate([15, 25, 15]); grib = { n: examStars(o), s: totalStars(), t: 0 }; return; }
+  // déjà réussie : on rejoue directement ; sinon le client passe d'abord au comptoir
+  if (st === 'done') go('operation', { order: o.id });
+  else go('counter', { order: o.id, mode: 'intro' });
 }
 
 export default {
   init() {
     toast = null;
+    grib = null;
     pressed = -1;
     time = 0;
     buttons = new Buttons();
-    buttons.add({ x: 60, y: 1560, w: 460, h: 160, size: 58, label: () => t('orders.shop'), onTap: () => go('shop') });
-    buttons.add({ x: 560, y: 1560, w: 460, h: 160, size: 58, style: 'secondary', label: () => t('orders.menu'), onTap: () => go('title') });
+    buttons.add({ x: 50, y: 1570, w: 310, h: 160, size: 52, label: () => t('orders.shop'), onTap: () => go('shop') });
+    buttons.add({ x: 385, y: 1570, w: 310, h: 160, size: 52, label: () => t('orders.notebook'), onTap: () => go('notebook') });
+    buttons.add({ x: 720, y: 1570, w: 310, h: 160, size: 52, style: 'secondary', label: () => t('orders.menu'), onTap: () => go('title') });
   },
 
   update(dt) {
     time += dt;
     if (toast) { toast.t -= dt; if (toast.t <= 0) toast = null; }
+    if (grib) grib.t += dt;
   },
 
   draw(ctx) {
@@ -120,7 +143,7 @@ export default {
       } else if (st === 'stars') {
         miniStar(ctx, rx - 110, cy - 3, 26, true);
         ctx.font = font(36, 900); ctx.textAlign = 'right'; ctx.fillStyle = C.ink;
-        ctx.fillText(`${totalStars()}/${o.stars_needed}`, rx + 20, cy - 1);
+        ctx.fillText(`${totalStars()}/${examStars(o)}`, rx + 20, cy - 1);
       } else {
         drawLock(ctx, rx - 10, cy);
       }
@@ -129,9 +152,11 @@ export default {
 
     buttons.draw(ctx);
     if (toast) drawToast(ctx, t(toast.key, toast.vars), W / 2, 950, toast.t / toast.max, toast.color);
+    if (grib) drawGribPanel(ctx);
   },
 
   pointer(type, x, y) {
+    if (grib) { if (type === 'up') grib = null; return; }
     if (buttons.pointer(type, x, y)) return;
     if (type === 'down') pressed = rowAt(x, y);
     else if (type === 'up') {

@@ -13,6 +13,9 @@ import reactivation from './scenes/reactivation.js';
 import done from './scenes/done.js';
 import orders from './scenes/orders.js';
 import shop from './scenes/shop.js';
+import counter from './scenes/counter.js';
+import notebook from './scenes/notebook.js';
+import rank from './scenes/rank.js';
 
 // Petit sélecteur FR/EN en haut à droite (sur tous les écrans sauf le titre).
 const langPill = new Buttons();
@@ -74,6 +77,9 @@ async function boot() {
   register('done', done);
   register('orders', orders);
   register('shop', shop);
+  register('counter', counter);
+  register('notebook', notebook);
+  register('rank', rank);
 
   canvas.addEventListener('pointerdown', (e) => onPointer('down', e));
   canvas.addEventListener('pointermove', (e) => onPointer('move', e));

@@ -2,6 +2,7 @@
 import { game } from './state.js';
 import { save, persist } from './save.js';
 import { rustCleaned } from './gestures/vacuum.js';
+import { partEarned } from './progress.js';
 
 // Propreté (%) : rouille aspirée, moins les vis abîmées.
 export function cleanliness(rep) {
@@ -48,6 +49,9 @@ export function recordRepair(rep, r) {
   const exam = rep.patient.order && rep.patient.order.exam;
   let rankUp = 0;
   if (exam && save.rank < exam) { save.rank = exam; rankUp = exam; }
+  // pièce rare : 3 étoiles sur une commande clé, ou cadeau du client
+  const part = rep.patient.order ? partEarned(rep.patient.order, count(o.stars)) : null;
+  if (part) save.rare_parts.push(part.id);
   persist();
-  return { firstPay, paid, record, rankUp };
+  return { firstPay, paid, record, rankUp, part };
 }

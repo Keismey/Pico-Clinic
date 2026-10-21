@@ -82,7 +82,7 @@ export default {
         fx.spawn(DX, DY, { count: 40, color: C.turquoise, speed: 700, life: 0.9, size: 10, gravity: 500 });
         fx.spawn(DX, DY, { count: 30, color: C.orange, speed: 600, life: 0.9, size: 9, gravity: 500 });
       }
-      if (st > 3.8) go('done');
+      if (st > 3.8) go('counter', { order: rep.patient.id, mode: 'thanks' });
     }
     rotorAngle += rotorSpeed * dt;
   },

@@ -1,31 +1,32 @@
 # Pico-Clinic — État du projet
 
-Mis à jour : 2026-10-21 (C5 V1b). Jeu : https://keismey.github.io/Pico-Clinic/
+Mis à jour : 2026-10-21 (C6 V2a). Jeu : https://keismey.github.io/Pico-Clinic/
 
 ## Fait
-- C1-C4 (V0, V1a) : canvas, FR/EN, dévissage, connecteur, soudure, puce, loupe, aspirateur, condensateurs, réactivation, 3 étoiles, paie et pourboire, sauvegarde.
-- C5 V1b : `data/patients.json` = 15 modèles en 3 familles (drones, insectes, mascottes), chacun dessiné avec sa forme et ses couleurs (`js/drone.js`, provisoire en attendant les images).
-- `data/orders.json` = les 10 commandes du rang 1 (clients, pannes, rouille, piste droite/courbe/vague, temps, paie). Écran Commandes (`js/scenes/orders.js`) : débloquées une à une.
-- Commande 10 = examen : 18 étoiles nécessaires, la réussir donne le rang 2 (bandeau sur l'écran de fin).
-- Boutique (`js/scenes/shop.js`, `data/tools.json`) : fer, aspirateur, loupe, pince, 3 niveaux, prix et rangs du GDD. Effets : chemin de soudure plus large, aspirateur plus large, loupe plus rapide, scanner = pannes visibles d'emblée, pince qui aimante mieux.
-- Sauvegarde v3 (ancienne partie migrée, ancien drone d'essai retiré).
-- Testé en navigateur automatique : 10 réparations d'affilée, rang 2, achats, sauvegarde après rechargement, aucune erreur.
+- C1-C5 (V0, V1) : 7 gestes, loupe, aspirateur, 3 étoiles, paie, sauvegarde v3, 15 modèles, 10 commandes du rang 1, boutique 3 niveaux.
+- C6 V2a : `data/clients.json` (6 clients + passage + Gribouille), portraits provisoires en formes (`js/portraits.js`).
+- Comptoir (`js/scenes/counter.js`) : accueil avant, merci après, bulles lettre à lettre, Passer. Commande déjà réussie = rejouée sans comptoir.
+- Dialogues des commandes 1 à 10 (`intro`/`thanks` dans `orders.json`, clés `arc.client.n.*`), Gribouille annonce les examens.
+- Rangs (`data/ranks.json` : 18/45/70/96 étoiles, examens 10/22/34/46), écran « Nouveau rang ! » (`rank.js`), panneau de Gribouille si l'examen manque d'étoiles.
+- Carnet de Maître Ohm (`notebook.js`) : clients (fiche, bio, dernier mot), 12 pièces rares, 5 rangs avec barre d'étoiles.
+- Pièces rares (`data/rare_parts.json`) : 3 étoiles ou cadeau ; seul l'engrenage (commande 10) est gagnable aujourd'hui.
+- Testé en navigateur automatique (FR/EN, parcours complet), aucune erreur ; 247 clés FR = EN.
 
-## Écarts au GDD (en attendant les gestes de V3a)
-- Batterie gonflée, élytres, cœur-batterie : remplacés par puce/connecteur dans les commandes 7 et 9 (`gdd_faults` dans `orders.json`).
+## Écarts au GDD
+- Batterie gonflée, élytres, cœur-batterie remplacés par puce/connecteur (commandes 7 et 9) en attendant V3a.
+- Clients de passage (commandes 2 à 6) : répliques inventées (le GDD n'en donne pas).
 
 ## Valeurs à valider au doigt
-- `data/gestures.json` (aspirateur 28 px, loupe 125 px, tolérance soudure 36 px) ; paie des commandes 30 à 60 crédits.
+- Vitesse du texte (42 lettres/s) ; tailles des portraits ; `data/gestures.json`.
 
 ## Bugs connus
-- Aucun connu. Vibrations absentes sur iPhone. En diagnostic, la fiche du connecteur peut attraper le doigt au lieu de la loupe.
+- Vibrations absentes sur iPhone. En diagnostic, la fiche du connecteur peut attraper le doigt au lieu de la loupe.
 
 ## Prochaine étape
-- C6 selon le plan des conversations (V2).
+- C7 V2b : tutoriel avec Gribouille, 10 premières réparations, chapitres 1 et 2.
 
 ## Plus tard
-- Animations de réactivation propres à chaque famille (ailes, danse) ; images Gemini des 15 modèles.
-- Commandes 11 à 60, Atelier libre, défi quotidien, pièces rares, décorations.
-- Broche tordue, batterie, engrenage, capteur, ressort, piles (V3a). Pompe magnétique qui ramasse les vis.
-- Indice 20 s pour tous les gestes ; pause ; gaucher. Sauver une réparation en cours si l'onglet se ferme.
-- Rouille qui cache une vis ou une pastille ; son d'aspiration (V4a).
+- Images Gemini des clients, de Gribouille et des pièces rares ; animations de réactivation par famille.
+- Commandes 11 à 60, prototypes qui exigent des pièces rares, Atelier libre, défi quotidien, décorations, succès.
+- Gestes V3a (batterie, engrenage, capteur, broches, ressort, piles). Pompe magnétique qui ramasse les vis.
+- Indice 20 s ; pause ; gaucher ; sauver une réparation en cours. Rouille qui cache une vis ; sons (V4a).
