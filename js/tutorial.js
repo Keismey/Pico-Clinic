@@ -28,6 +28,11 @@ function kf(list) {
   return { keys: out, dur: tt };
 }
 
+function guided(dm) {
+  dm.guide = true;
+  return dm;
+}
+
 export const demo = {
   // toucher un point
   tap(x, y) {
@@ -46,11 +51,11 @@ export const demo = {
   },
   // appuyer, glisser de a à b, lâcher
   drag(ax, ay, bx, by, hold = 0.25, dur = 1.0) {
-    return kf([[0, ax + 70, ay + 110, 0], [0.45, ax, ay, 0], [0.15, ax, ay, 1], [hold, ax, ay, 1],
-      [dur, bx, by, 1], [0.25, bx, by, 1], [0.15, bx, by, 0], [0.3, bx, by, 0]]);
+    return guided(kf([[0, ax + 70, ay + 110, 0], [0.45, ax, ay, 0], [0.15, ax, ay, 1], [hold, ax, ay, 1],
+      [dur, bx, by, 1], [0.25, bx, by, 1], [0.15, bx, by, 0], [0.3, bx, by, 0]]));
   },
   // appuyer, attendre (hold), puis suivre un chemin de points
-  path(pts, hold = 0.2, speed = 220) {
+  path(pts, hold = 0.2, speed = 220, guide = true) {
     const [x0, y0] = pts[0];
     const l = [[0, x0 + 70, y0 + 110, 0], [0.45, x0, y0, 0], [0.15, x0, y0, 1], [hold, x0, y0, 1]];
     for (let i = 1; i < pts.length; i++) {
@@ -59,13 +64,13 @@ export const demo = {
     }
     const [xn, yn] = pts[pts.length - 1];
     l.push([0.2, xn, yn, 1], [0.15, xn, yn, 0], [0.3, xn, yn, 0]);
-    return kf(l);
+    return guide ? guided(kf(l)) : kf(l);
   },
   // frotter en zigzag sur une zone
   sweep(cx, cy, w, h) {
     const pts = [];
     for (let i = 0; i <= 6; i++) pts.push([cx + (i % 2 ? w / 2 : -w / 2), cy - h / 2 + (i / 6) * h]);
-    return this.path(pts, 0.1, 700);
+    return this.path(pts, 0.1, 700, false);
   },
 };
 
@@ -84,45 +89,108 @@ function sample(dm, tt) {
   return { x: l.x, y: l.y, d: l.d, time, dur: dm.dur };
 }
 
-// Main fantôme : l'index pointe sur (x, y).
+// Main fantôme : une main gantée blanche, l'index pointé sur (x, y).
+// Dessinée d'un seul contour (doigts repliés, pouce, manchette turquoise), avec une ombre douce.
+function handPath(ctx) {
+  ctx.beginPath();
+  ctx.moveTo(-15, 22);
+  ctx.arc(0, 15, 15, Math.PI, 0);                     // bout de l'index
+  ctx.lineTo(15, 60);
+  ctx.quadraticCurveTo(29, 44, 44, 60);               // majeur replié
+  ctx.quadraticCurveTo(58, 52, 68, 70);               // annulaire
+  ctx.quadraticCurveTo(84, 66, 86, 88);               // auriculaire
+  ctx.quadraticCurveTo(92, 112, 78, 132);             // tranche de la main
+  ctx.quadraticCurveTo(46, 146, 12, 134);             // poignet
+  ctx.quadraticCurveTo(-16, 120, -34, 92);            // pouce
+  ctx.quadraticCurveTo(-44, 74, -28, 70);
+  ctx.quadraticCurveTo(-18, 70, -15, 82);
+  ctx.closePath();
+}
+
 export function drawHand(ctx, x, y, { press = 0, alpha = 1, time = 0 } = {}) {
   ctx.save();
   ctx.globalAlpha = alpha;
-  // onde quand le doigt appuie
+  // onde sous le doigt quand il appuie
   if (press) {
-    const p = (time * 2.2) % 1;
-    ctx.strokeStyle = `rgba(255, 255, 255, ${0.9 * (1 - p)})`;
-    ctx.lineWidth = 8;
-    ctx.beginPath(); ctx.arc(x, y, 26 + p * 46, 0, TAU); ctx.stroke();
-    ctx.fillStyle = 'rgba(255, 138, 61, 0.55)';
-    ctx.beginPath(); ctx.arc(x, y, 24, 0, TAU); ctx.fill();
+    for (let i = 0; i < 2; i++) {
+      const p = (time * 1.8 + i / 2) % 1;
+      ctx.strokeStyle = `rgba(255, 138, 61, ${0.85 * (1 - p)})`;
+      ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.arc(x, y, 18 + p * 60, 0, TAU); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(255, 138, 61, 0.45)';
+    ctx.beginPath(); ctx.arc(x, y, 20, 0, TAU); ctx.fill();
   }
-  const s = press ? 0.92 : 1;
   ctx.translate(x, y);
-  ctx.rotate(-0.35);
+  ctx.rotate(-0.42);
+  // le doigt s'enfonce un peu quand il appuie
+  const s = 1.25 * (press ? 0.93 : 1);
   ctx.scale(s, s);
+  ctx.translate(0, press ? 4 : -4);
+  // manchette
+  ctx.fillStyle = '#3fd0bb';
+  ctx.strokeStyle = '#25a08d';
+  ctx.lineWidth = 6;
   ctx.lineJoin = 'round';
-  ctx.lineWidth = 7;
-  ctx.strokeStyle = 'rgba(58, 42, 30, 0.75)';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-  // paume, doigts repliés et index tendu
   ctx.beginPath();
-  roundRect(ctx, -34, 70, 98, 104, 36);
+  ctx.moveTo(4, 128); ctx.quadraticCurveTo(44, 142, 84, 126);
+  ctx.lineTo(90, 162); ctx.quadraticCurveTo(46, 180, 2, 164);
+  ctx.closePath();
   ctx.fill(); ctx.stroke();
-  for (let i = 0; i < 3; i++) {
-    ctx.beginPath();
-    roundRect(ctx, 6 + i * 20, 52, 26, 50, 13);
-    ctx.fill(); ctx.stroke();
-  }
+  // main : ombre puis gant blanc
+  ctx.save();
+  ctx.shadowColor = 'rgba(58, 42, 30, 0.35)';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetX = 6;
+  ctx.shadowOffsetY = 10;
+  handPath(ctx);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.restore();
+  handPath(ctx);
+  ctx.strokeStyle = '#3a2a1e';
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  // plis des doigts et du gant
+  ctx.strokeStyle = 'rgba(58, 42, 30, 0.45)';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
   ctx.beginPath();
-  roundRect(ctx, -22, -8, 34, 112, 17);
-  ctx.fill(); ctx.stroke();
+  ctx.moveTo(44, 62); ctx.quadraticCurveTo(44, 76, 40, 86);
+  ctx.moveTo(68, 72); ctx.quadraticCurveTo(68, 84, 64, 92);
+  ctx.moveTo(15, 64); ctx.quadraticCurveTo(18, 80, 14, 92);
+  ctx.moveTo(-6, 4); ctx.quadraticCurveTo(0, 0, 6, 4);
+  ctx.stroke();
+  // reflet
+  ctx.strokeStyle = 'rgba(63, 208, 187, 0.35)';
+  ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(-6, 26); ctx.lineTo(-6, 52); ctx.stroke();
+  ctx.restore();
+}
+
+// Chemin pointillé que suit le doigt pendant l'appui, avec une flèche au bout.
+function drawGuide(ctx, dm, [ox, oy], time) {
+  const pts = dm.keys.filter((k) => k.d);
+  if (pts.length < 2) return;
+  const a = pts[0], z = pts[pts.length - 1];
+  if (Math.hypot(z.x - a.x, z.y - a.y) < 30) return;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+  ctx.lineWidth = 9;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.setLineDash([2, 22]);
+  ctx.lineDashOffset = -time * 30;
   ctx.beginPath();
-  roundRect(ctx, -58, 100, 46, 34, 17);
-  ctx.fill(); ctx.stroke();
-  // ongle
-  ctx.fillStyle = 'rgba(242, 167, 181, 0.6)';
-  ctx.beginPath(); roundRect(ctx, -14, 0, 18, 22, 8); ctx.fill();
+  pts.forEach((k, i) => (i ? ctx.lineTo(k.x + ox, k.y + oy) : ctx.moveTo(k.x + ox, k.y + oy)));
+  ctx.stroke();
+  // flèche
+  const y1 = pts[pts.length - 2];
+  const ang = Math.atan2(z.y - y1.y, z.x - y1.x);
+  ctx.setLineDash([]);
+  ctx.translate(z.x + ox, z.y + oy);
+  ctx.rotate(ang);
+  ctx.beginPath(); ctx.moveTo(-26, -18); ctx.lineTo(0, 0); ctx.lineTo(-26, 18); ctx.stroke();
   ctx.restore();
 }
 
@@ -193,7 +261,8 @@ export function drawGribBox(ctx, r, text, shown, time, { sub = null, more = fals
 }
 
 // ---------- Suite de leçons pendant un geste ----------
-// lessons : [{ id, key: string | () => string, start(), done(), demo?() → démonstration, ring?() → {x, y, r}, praise? }]
+// lessons : [{ id, key: string | () => string, start(), done(), demo?() → démonstration, ring?() → {x, y, r}, praise?,
+//   offset?() → [dx, dy] (où se trouve l'outil par rapport au doigt), carry?(ctx, x, y) (outil fantôme dessiné là) }]
 export function createCoach(lessons, { enabled = true } = {}) {
   const list = enabled ? lessons.filter((l) => !seen(l.id)) : [];
   let i = 0;
@@ -262,10 +331,17 @@ export function createCoach(lessons, { enabled = true } = {}) {
       const dm = cur.demo && cur.demo();
       if (!dm || touching || idle < 1.5) return;
       const p = sample(dm, time);
-      const fadeIn = Math.min(1, p.time / 0.3);
-      const fadeOut = Math.min(1, (p.dur - p.time) / 0.3);
-      // trace du chemin pendant l'appui
-      drawHand(ctx, p.x, p.y, { press: p.d, alpha: Math.min(fadeIn, fadeOut), time });
+      const alpha = Math.min(1, p.time / 0.3, (p.dur - p.time) / 0.3);
+      const off = cur.offset ? cur.offset() : [0, 0];
+      // chemin à suivre, pièce transportée (fantôme), puis la main
+      if (dm.guide) drawGuide(ctx, dm, off, time);
+      if (cur.carry && p.d) {
+        ctx.save();
+        ctx.globalAlpha = 0.7 * alpha;
+        cur.carry(ctx, p.x + off[0], p.y + off[1], p);
+        ctx.restore();
+      }
+      drawHand(ctx, p.x, p.y, { press: p.d, alpha, time });
     },
   };
 }

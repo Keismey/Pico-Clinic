@@ -225,6 +225,22 @@ export default {
     const opened = () => rep.coverAnim >= 1 && !closing;
     const firstScrew = () => rep.screws.find((s) => !s.out) || rep.screws[0];
     const lensY = g.magnifier.offset_y;
+    const grip = g.solder.grip;
+    // outils fantômes portés par la main de démonstration
+    const ghostPlug = (c, x, y) => {
+      c.fillStyle = '#ffffff'; c.strokeStyle = '#3a2a1e'; c.lineWidth = 4;
+      roundRect(c, x - D.plugW / 2, y - D.plugH / 2, D.plugW, D.plugH, 10); c.fill(); c.stroke();
+    };
+    const ghostLens = (c, x, y) => {
+      c.strokeStyle = '#3a2a1e'; c.lineWidth = 10;
+      c.fillStyle = 'rgba(191, 233, 255, 0.5)';
+      c.beginPath(); c.arc(x, y, g.magnifier.radius * 0.8, 0, TAU); c.fill(); c.stroke();
+    };
+    const solderLesson = {
+      offset: () => [-grip[0], -grip[1]],
+      carry: (c, x, y, p) => drawIron(c, x, y, 1),
+      demo: () => demo.path(SOLDER.pts.filter((_, i) => i % 6 === 0).concat([SOLDER.b]).map((p) => [p.x + grip[0], p.y + grip[1]]), 1.4, 150),
+    };
     const L = {
       1: [
         { id: 'open', key: 'tuto.open', start: () => true, done: () => intro >= 1,
@@ -239,6 +255,7 @@ export default {
         { id: 'connector', key: 'tuto.connector', praise: 'tuto.bravo', start: opened,
           done: () => rep.plug.connected,
           demo: () => demo.drag(D.plugStart.x, D.plugStart.y, D.socket.x, D.socket.y + g.connector.lift_offset),
+          offset: () => [0, -g.connector.lift_offset], carry: ghostPlug,
           ring: () => (connector.dragging ? null : { x: rep.plug.x, y: rep.plug.y, r: 70 }) },
         { id: 'start', key: 'tuto.start', start: () => startBtn.visible && rep.faults.size === 0, done: () => closing,
           demo: () => demo.tap(540, 1735) },
@@ -250,34 +267,39 @@ export default {
         { id: 'vacuum', key: () => (rep.vacuumUsed ? 'tuto.vacuum2' : 'tuto.vacuum'), praise: 'tuto.clean',
           start: () => opened() && rep.rust.cells.length > 0,
           done: () => cleanliness(rep) >= g.scoring.clean_min,
-          demo: () => { const [x, y, r] = rep.patient.rust[0]; return demo.sweep(x, y + g.vacuum.offset_y, r * 1.6, r * 1.2); } },
+          demo: () => { const [x, y, r] = rep.patient.rust[0]; return demo.sweep(x, y + g.vacuum.offset_y, r * 1.6, r * 1.2); },
+          offset: () => [0, -g.vacuum.offset_y],
+          carry: (c, x, y) => drawVacuum(c, x, y, g.vacuum.radius, true, time, { x, y: y + g.vacuum.offset_y }) },
       ],
       3: [
         { id: 'solder', key: () => (solder.hot ? 'gribouille.hint2' : 'tuto.solder'), praise: 'tuto.bravo',
           start: () => opened() && rep.phase === 'repair' && rep.faults.has('trace_cut'),
           done: () => rep.weld.done,
-          demo: () => demo.path(SOLDER.pts.filter((_, i) => i % 6 === 0).concat([SOLDER.b]).map((p) => [p.x + g.solder.grip[0], p.y + g.solder.grip[1]]), 1.4, 150),
+          ...solderLesson,
           ring: () => (solder.active ? null : { x: solder.grip.x, y: solder.grip.y, r: 60 }) },
       ],
       4: [
         { id: 'chip_out', key: 'tuto.chip_out', start: () => opened() && rep.faults.has('chip_burnt'),
           done: () => rep.chip.old.state === 'tray' || rep.chip.old.state === 'gone',
-          demo: () => demo.drag(D.slot.x, D.slot.y, 230, 560) },
+          demo: () => demo.drag(D.slot.x, D.slot.y, 230, 560),
+          offset: () => [0, -g.chip.lift_offset], carry: (c, x, y) => drawChip(c, x, y, 1, true) },
         { id: 'chip_in', key: 'tuto.chip_in', praise: 'tuto.bravo', start: () => opened(),
           done: () => !rep.faults.has('chip_burnt'),
           demo: () => demo.drag(D.box.x, D.box.y, D.slot.x, D.slot.y + g.chip.lift_offset),
+          offset: () => [0, -g.chip.lift_offset], carry: (c, x, y) => drawChip(c, x, y, 1, false),
           ring: () => (chip.dragging ? null : { x: D.box.x, y: D.box.y, r: 70 }) },
       ],
       5: [
         { id: 'diag', key: () => (lens.active ? 'tuto.diag2' : 'tuto.diag'), praise: 'tuto.diag_done',
           start: () => opened() && rep.phase === 'diag', done: () => rep.phase === 'repair',
-          demo: () => demo.path([[D.cx - 170, D.cy - 150 + lensY], [D.cx + 170, D.cy - 150 + lensY], [D.cx + 170, D.cy + 60 + lensY], [D.cx - 170, D.cy + 60 + lensY], [D.cx - 170, D.cy + 200 + lensY], [D.cx + 170, D.cy + 200 + lensY]], 0.3, 260) },
+          demo: () => demo.path([[D.cx - 170, D.cy - 150 + lensY], [D.cx + 170, D.cy - 150 + lensY], [D.cx + 170, D.cy + 60 + lensY], [D.cx - 170, D.cy + 60 + lensY], [D.cx - 170, D.cy + 200 + lensY], [D.cx + 170, D.cy + 200 + lensY]], 0.3, 260),
+          offset: () => [0, -lensY], carry: ghostLens },
       ],
       6: [
         { id: 'curve', key: 'tuto.curve', praise: 'tuto.bravo',
           start: () => opened() && rep.phase === 'repair' && rep.faults.has('trace_cut'),
           done: () => rep.weld.done,
-          demo: () => demo.path(SOLDER.pts.filter((_, i) => i % 6 === 0).concat([SOLDER.b]).map((p) => [p.x + g.solder.grip[0], p.y + g.solder.grip[1]]), 1.4, 150) },
+          ...solderLesson },
       ],
     };
     return L[n] || [];
@@ -444,11 +466,12 @@ export default {
     }
     ctx.restore();
 
-    coach.draw(ctx);
     this.drawHint(ctx);
 
     if (toast) drawToast(ctx, t(toast.key, toast.vars), W / 2, 1260, toast.t / toast.max, toast.color);
     buttons.draw(ctx);
+    // la main de Gribouille passe au-dessus de tout, boutons compris
+    coach.draw(ctx);
 
     if (white > 0) {
       ctx.fillStyle = `rgba(255, 255, 240, ${white})`;
