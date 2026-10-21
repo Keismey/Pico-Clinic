@@ -76,7 +76,7 @@ function advance() {
 }
 
 // Fond : le mur de l'atelier, l'enseigne, le panneau à outils et l'étagère.
-function drawWorkshop(ctx) {
+export function drawWorkshop(ctx) {
   drawCreamBackground(ctx);
   const g = ctx.createLinearGradient(0, 200, 0, COUNTER_Y);
   g.addColorStop(0, 'rgba(232, 205, 166, 0.0)');
@@ -133,7 +133,7 @@ function drawWorkshop(ctx) {
   }
 }
 
-function drawCounter(ctx) {
+export function drawCounter(ctx) {
   ctx.fillStyle = '#b9783f';
   ctx.fillRect(0, COUNTER_Y + 30, W, 150);
   ctx.strokeStyle = 'rgba(90, 50, 20, 0.25)';

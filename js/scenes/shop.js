@@ -9,11 +9,15 @@ import { vibrate } from '../feedback.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 import { leftText } from './orders.js';
+import { seen, markSeen, drawGribBox } from '../tutorial.js';
+
+// Première visite : Gribouille présente la boutique (tutoriel, après la commande 1).
+const TUTO = ['tuto.shop_here', 'tuto.shop_here2'];
 
 const TAU = Math.PI * 2;
 const CARD = { x: 40, y: 270, w: W - 80, h: 272, step: 300 };
 
-let buttons, toast, time;
+let buttons, toast, time, tuto;
 
 function showToast(key, vars, color = C.inkSoft) {
   toast = { key, vars, color, t: 2, max: 2 };
@@ -71,6 +75,7 @@ function tap(k, i) {
 
 export default {
   init() {
+    tuto = seen('shop') ? null : { i: 0, shown: 0 };
     toast = null;
     time = 0;
     buttons = new Buttons();
@@ -91,6 +96,8 @@ export default {
 
   update(dt) {
     time += dt;
+    if (tuto) tuto.shown = Math.min(t(TUTO[tuto.i]).length, tuto.shown + 42 * dt);
+    for (const b of buttons.list) b.visible = !tuto;
     if (toast) { toast.t -= dt; if (toast.t <= 0) toast = null; }
     // bouton orange seulement si l'achat est possible
     TOOL_KEYS.forEach((k, i) => {
@@ -134,10 +141,19 @@ export default {
     });
 
     buttons.draw(ctx);
+    if (tuto) drawGribBox(ctx, { x: 60, y: 1530, w: W - 120, h: 300 }, t(TUTO[tuto.i]), tuto.shown, time, { more: true, size: 42 });
     if (toast) drawToast(ctx, t(toast.key, toast.vars), W / 2, 1800, toast.t / toast.max, toast.color);
   },
 
   pointer(type, x, y) {
+    if (tuto) {
+      if (type !== 'up') return;
+      const len = t(TUTO[tuto.i]).length;
+      if (tuto.shown < len) { tuto.shown = len; return; }
+      vibrate(8);
+      if (tuto.i < TUTO.length - 1) { tuto.i++; tuto.shown = 0; } else { tuto = null; markSeen('shop'); }
+      return;
+    }
     buttons.pointer(type, x, y);
   },
 };

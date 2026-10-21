@@ -14,6 +14,8 @@ function defaults() {
     orders: {},
     clients: {},
     rare_parts: [],
+    // tutoriel et histoire : leçons de Gribouille et scènes déjà vues
+    story: [],
     settings: { lang: null, sound: true, vibration: true, lefty: false },
   };
 }
@@ -28,6 +30,7 @@ function migrate(d) {
   out.orders = {};
   for (const [k, v] of Object.entries(d.orders || {})) if (/^o\d+$/.test(k)) out.orders[k] = v;
   out.clients = { ...(d.clients || {}) };
+  out.story = Array.isArray(d.story) ? d.story : [];
   out.version = VERSION;
   return out;
 }

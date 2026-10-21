@@ -1,0 +1,9 @@
+{
+  "_doc": "Scènes d'histoire (GDD 04-histoire, chapitres). chapter = carte de chapitre au début (titre : clés chapter.N.title et chapter.N.sub). backdrop = workshop (Gribouille sur le comptoir) ou notebook (le carnet de Maître Ohm). lines = bulles de Gribouille (clés de langue). Scène « chN » = ouverture du chapitre N, jouée après l'écran du nouveau rang N (ch1 : au tout premier lancement). after_order = scène jouée après la première réussite de la commande n. Chaque scène n'est jouée qu'une fois (save.story).",
+  "scenes": {
+    "ch1": { "chapter": 1, "backdrop": "workshop", "lines": ["story.ch1.1", "story.ch1.2", "story.ch1.3", "story.ch1.4"] },
+    "notebook": { "backdrop": "notebook", "lines": ["story.nb.1", "story.nb.2", "story.nb.3"] },
+    "ch2": { "chapter": 2, "backdrop": "workshop", "lines": ["story.ch2.1", "story.ch2.2", "story.ch2.3", "story.ch2.4"] }
+  },
+  "after_order": { "3": "notebook" }
+}

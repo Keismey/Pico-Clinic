@@ -1,5 +1,6 @@
 // Écran opération : dévisser le capot, diagnostic à la loupe, puis réparer
 // (connecteur, puce, soudure, rouille à l'aspirateur) et démarrer.
+// Première fois : Gribouille montre chaque nouveau geste (js/tutorial.js).
 import { W, H } from '../canvas.js';
 import { t } from '../i18n.js';
 import { Buttons, C, drawMatBackground, drawPanel, drawText, drawToast, fitText, easeInOut, roundRect } from '../ui.js';
@@ -16,6 +17,8 @@ import { game, newRepair } from '../state.js';
 import { vibrate } from '../feedback.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
+import { save } from '../save.js';
+import { createCoach, demo, drawGribBox } from '../tutorial.js';
 
 const TAU = Math.PI * 2;
 
@@ -31,6 +34,18 @@ let white = 0;        // éclair blanc
 let smokeT = 0;
 let buzzT = 0;
 let paceWarnT = 0;
+let coach;
+let intro = 1;        // < 1 : le drone est encore posé de loin (tutoriel : toucher pour zoomer)
+let zooming = false;
+let swipe = null;     // glissement de la plaque une fois les 4 vis sorties
+let swipeDy = 0;
+
+// Inverse de easeInOut (pour reprendre l'animation de la plaque là où le doigt l'a laissée).
+function unease(v) {
+  let a = 0, b = 1;
+  for (let i = 0; i < 20; i++) { const m = (a + b) / 2; if (easeInOut(m) < v) a = m; else b = m; }
+  return (a + b) / 2;
+}
 
 function showToast(key, color = C.ink, vars) {
   toast = { key, color, vars, t: 1.4, max: 1.4 };
@@ -71,9 +86,9 @@ export default {
         vibrate(30);
         fx.spawn(s.x, s.y, { count: 14, color: '#ffd36b', speed: 380, size: 7 });
         if (rep.screws.every((sc) => sc.out)) {
-          rep.coverOpen = true;
+          rep.coverLoose = true;
           vibrate([20, 40, 20]);
-          showToast('op.cover_off', C.turquoiseDark);
+          showToast('op.cover_loose', C.turquoiseDark);
         }
       },
     });
@@ -189,6 +204,13 @@ export default {
 
     if (rep.scanned && !params.resume) showToast('op.scanned', C.turquoiseDark);
 
+    swipe = null;
+    swipeDy = 0;
+    zooming = false;
+    const firstTime = !(save.orders[rep.patient.id] && save.orders[rep.patient.id].paid);
+    coach = createCoach(this.lessons(rep.patient.order.n), { enabled: firstTime });
+    intro = coach.has('open') && !params.resume ? 0 : 1;
+
     buttons = new Buttons();
     startBtn = buttons.add({
       x: 190, y: 1660, w: 700, h: 170, size: 68,
@@ -197,13 +219,84 @@ export default {
     });
   },
 
+  // Leçons de Gribouille, par commande (GDD : un indice la première fois seulement).
+  lessons(n) {
+    const g = rep.g;
+    const opened = () => rep.coverAnim >= 1 && !closing;
+    const firstScrew = () => rep.screws.find((s) => !s.out) || rep.screws[0];
+    const lensY = g.magnifier.offset_y;
+    const L = {
+      1: [
+        { id: 'open', key: 'tuto.open', start: () => true, done: () => intro >= 1,
+          demo: () => demo.tap(D.cx, D.cy) },
+        { id: 'screw1', key: 'gribouille.hint1', praise: 'tuto.click', start: () => intro >= 1,
+          done: () => rep.screws.some((s) => s.out),
+          demo: () => { const s = firstScrew(); return demo.circle(s.x, s.y, s.r * 1.25); },
+          ring: () => { const s = firstScrew(); return { x: s.x, y: s.y, r: s.r * 1.9 }; } },
+        { id: 'screws', key: 'tuto.screws', start: () => true, done: () => rep.screws.every((s) => s.out) },
+        { id: 'cover', key: 'tuto.cover', start: () => rep.coverLoose, done: () => rep.coverOpen,
+          demo: () => demo.drag(D.cx, D.cy + 120, D.cx, D.cy - 260, 0.1, 0.6) },
+        { id: 'connector', key: 'tuto.connector', praise: 'tuto.bravo', start: opened,
+          done: () => rep.plug.connected,
+          demo: () => demo.drag(D.plugStart.x, D.plugStart.y, D.socket.x, D.socket.y + g.connector.lift_offset),
+          ring: () => (connector.dragging ? null : { x: rep.plug.x, y: rep.plug.y, r: 70 }) },
+        { id: 'start', key: 'tuto.start', start: () => startBtn.visible && rep.faults.size === 0, done: () => closing,
+          demo: () => demo.tap(540, 1735) },
+      ],
+      2: [
+        { id: 'rusty', key: 'tuto.rusty', start: () => intro >= 1 && rep.screws.some((s) => s.rusty && !s.out),
+          done: () => rep.screws.every((s) => !s.rusty || s.out),
+          ring: () => { const s = rep.screws.find((x) => x.rusty && !x.out); return s ? { x: s.x, y: s.y, r: s.r * 1.9 } : null; } },
+        { id: 'vacuum', key: () => (rep.vacuumUsed ? 'tuto.vacuum2' : 'tuto.vacuum'), praise: 'tuto.clean',
+          start: () => opened() && rep.rust.cells.length > 0,
+          done: () => cleanliness(rep) >= g.scoring.clean_min,
+          demo: () => { const [x, y, r] = rep.patient.rust[0]; return demo.sweep(x, y + g.vacuum.offset_y, r * 1.6, r * 1.2); } },
+      ],
+      3: [
+        { id: 'solder', key: () => (solder.hot ? 'gribouille.hint2' : 'tuto.solder'), praise: 'tuto.bravo',
+          start: () => opened() && rep.phase === 'repair' && rep.faults.has('trace_cut'),
+          done: () => rep.weld.done,
+          demo: () => demo.path(SOLDER.pts.filter((_, i) => i % 6 === 0).concat([SOLDER.b]).map((p) => [p.x + g.solder.grip[0], p.y + g.solder.grip[1]]), 1.4, 150),
+          ring: () => (solder.active ? null : { x: solder.grip.x, y: solder.grip.y, r: 60 }) },
+      ],
+      4: [
+        { id: 'chip_out', key: 'tuto.chip_out', start: () => opened() && rep.faults.has('chip_burnt'),
+          done: () => rep.chip.old.state === 'tray' || rep.chip.old.state === 'gone',
+          demo: () => demo.drag(D.slot.x, D.slot.y, 230, 560) },
+        { id: 'chip_in', key: 'tuto.chip_in', praise: 'tuto.bravo', start: () => opened(),
+          done: () => !rep.faults.has('chip_burnt'),
+          demo: () => demo.drag(D.box.x, D.box.y, D.slot.x, D.slot.y + g.chip.lift_offset),
+          ring: () => (chip.dragging ? null : { x: D.box.x, y: D.box.y, r: 70 }) },
+      ],
+      5: [
+        { id: 'diag', key: () => (lens.active ? 'tuto.diag2' : 'tuto.diag'), praise: 'tuto.diag_done',
+          start: () => opened() && rep.phase === 'diag', done: () => rep.phase === 'repair',
+          demo: () => demo.path([[D.cx - 170, D.cy - 150 + lensY], [D.cx + 170, D.cy - 150 + lensY], [D.cx + 170, D.cy + 60 + lensY], [D.cx - 170, D.cy + 60 + lensY], [D.cx - 170, D.cy + 200 + lensY], [D.cx + 170, D.cy + 200 + lensY]], 0.3, 260) },
+      ],
+      6: [
+        { id: 'curve', key: 'tuto.curve', praise: 'tuto.bravo',
+          start: () => opened() && rep.phase === 'repair' && rep.faults.has('trace_cut'),
+          done: () => rep.weld.done,
+          demo: () => demo.path(SOLDER.pts.filter((_, i) => i % 6 === 0).concat([SOLDER.b]).map((p) => [p.x + g.solder.grip[0], p.y + g.solder.grip[1]]), 1.4, 150) },
+      ],
+    };
+    return L[n] || [];
+  },
+
   release() {
     unscrew.up(); connector.up(); chip.up(); solder.up(); vacuum.up(); lens.up(); cap.up();
   },
 
   update(dt) {
     time += dt;
+    coach.update(dt);
+    if (intro < 1) {
+      if (zooming) intro = Math.min(1, intro + dt / 0.7);
+      return; // le chrono attend que le drone soit sur l'établi
+    }
     if (!closing) rep.elapsed += dt;
+    // la plaque retombe si on la lâche trop tôt
+    if (!swipe && !rep.coverOpen) swipeDy *= Math.max(0, 1 - dt * 12);
 
     if (rep.coverOpen && !closing && rep.coverAnim < 1) rep.coverAnim = Math.min(1, rep.coverAnim + dt / 0.7);
     if (closing) {
@@ -275,10 +368,26 @@ export default {
     drawPartBox(ctx);
     fitText(ctx, t(rep.patient.name), W / 2, 110, 480, 54, C.ink, 800);
 
+    if (intro < 1) {
+      // tutoriel : le drone attend sur l'établi, on le touche pour zoomer
+      const z = 0.55 + 0.45 * easeInOut(intro);
+      ctx.save();
+      ctx.translate(D.cx, D.cy);
+      ctx.scale(z, z);
+      ctx.translate(-D.cx, -D.cy);
+      drawFrame(ctx);
+      drawCover(ctx, {});
+      for (const s of rep.screws) drawScrew(ctx, s.x, s.y, s.r, s);
+      ctx.restore();
+      ctx.restore();
+      coach.draw(ctx);
+      this.drawHint(ctx);
+      return;
+    }
     drawFrame(ctx);
-    if (rep.coverAnim > 0) drawInterior(ctx, rep, { glow: connector.glow, slotGlow: chip.slotGlow, time, warn: vacuum.active });
+    if (rep.coverAnim > 0 || swipeDy > 0) drawInterior(ctx, rep, { glow: connector.glow, slotGlow: chip.slotGlow, time, warn: vacuum.active });
 
-    const k = easeInOut(rep.coverAnim);
+    const k = Math.max(easeInOut(rep.coverAnim), closing ? 0 : swipeDy / 1150);
     drawCover(ctx, {
       offsetY: -k * 1150,
       rot: -k * 0.35,
@@ -291,6 +400,7 @@ export default {
       for (const s of rep.screws) {
         if (!s.out) drawScrew(ctx, s.x, s.y, s.r, s);
       }
+      if (rep.coverLoose && !swipe) this.drawLiftArrows(ctx);
     }
 
     // vis qui volent vers la coupelle, puis vis rangées
@@ -334,6 +444,7 @@ export default {
     }
     ctx.restore();
 
+    coach.draw(ctx);
     this.drawHint(ctx);
 
     if (toast) drawToast(ctx, t(toast.key, toast.vars), W / 2, 1260, toast.t / toast.max, toast.color);
@@ -343,6 +454,21 @@ export default {
       ctx.fillStyle = `rgba(255, 255, 240, ${white})`;
       ctx.fillRect(0, 0, W, H);
     }
+  },
+
+  // Chevrons qui montent sur la plaque : « glisse vers le haut ».
+  drawLiftArrows(ctx) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 16;
+    for (let i = 0; i < 3; i++) {
+      const o = ((time * 1.2 + i / 3) % 1);
+      const y = D.cy + 130 - o * 260;
+      ctx.strokeStyle = `rgba(255, 255, 255, ${Math.sin(o * Math.PI) * 0.95})`;
+      ctx.beginPath(); ctx.moveTo(D.cx - 60, y + 34); ctx.lineTo(D.cx, y - 26); ctx.lineTo(D.cx + 60, y + 34); ctx.stroke();
+    }
+    ctx.restore();
   },
 
   // Puces hors de l'emplacement : dans la boîte, dans la coupelle, posées, en vol ou tenues.
@@ -418,6 +544,7 @@ export default {
   },
 
   hintKey() {
+    if (!rep.coverOpen && rep.coverLoose) return 'op.hint.lift';
     if (!rep.coverOpen) return unscrew.active && unscrew.active.rusty ? 'op.hint.rusty' : 'op.hint.unscrew';
     if (rep.coverAnim < 1) return 'op.hint.cover';
     if (rep.phase === 'diag') {
@@ -457,6 +584,13 @@ export default {
         + '   ·   ' + t('op.clean', { p: cleanliness(rep) });
     }
 
+    // Gribouille parle à la place du panneau d'aide (tutoriel)
+    const said = coach.text();
+    if (said) {
+      drawGribBox(ctx, { x: 60, y: 1380, w: W - 120, h: 250 }, said, coach.shown, coach.time, { sub: solder.active ? null : sub, size: 40, reserve: solder.active ? 110 : 0 });
+      if (solder.active) this.drawGauge(ctx);
+      return;
+    }
     drawPanel(ctx, 70, 1370, W - 140, 262);
     const gauge = solder.active;
     drawText(ctx, t(key), W / 2, sub || gauge ? 1460 : 1501, W - 220, 44, { color: key === 'op.fault_here' ? C.red : C.ink });
@@ -512,12 +646,20 @@ export default {
 
   pointer(type, x, y) {
     if (closing) return;
+    coach.touch(type);
+    if (intro < 1) {
+      if (type === 'up' && !zooming && Math.hypot(x - D.cx, y - D.cy) < 420) { zooming = true; vibrate(15); }
+      return;
+    }
     if (buttons.pointer(type, x, y)) return;
     finger.x = x; finger.y = y;
     if (type === 'down') {
-      if (!rep.coverOpen) unscrew.down(x, y);
+      if (rep.coverLoose && !rep.coverOpen) {
+        if (Math.abs(x - D.cx) < D.half + 80 && Math.abs(y - D.cy) < D.half + 80) swipe = { y0: y + swipeDy };
+      } else if (!rep.coverOpen) unscrew.down(x, y);
       else if (rep.coverAnim >= 1) this.routeDown(x, y);
     } else if (type === 'move') {
+      if (swipe) swipeDy = Math.max(0, Math.min(700, swipe.y0 - y));
       unscrew.move(x, y);
       connector.move(x, y);
       chip.move(x, y);
@@ -526,6 +668,17 @@ export default {
       lens.move(x, y);
       cap.move(x, y);
     } else {
+      if (swipe) {
+        swipe = null;
+        // plaque assez soulevée : elle s'envole, sinon elle retombe
+        if (swipeDy > 160 && type === 'up') {
+          rep.coverOpen = true;
+          rep.coverAnim = unease(Math.min(0.99, swipeDy / 1150));
+          swipeDy = 0;
+          vibrate([15, 30, 15]);
+          showToast('op.cover_off', C.turquoiseDark);
+        }
+      }
       this.release();
     }
   },

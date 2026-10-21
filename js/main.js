@@ -15,6 +15,7 @@ import shop from './scenes/shop.js';
 import counter from './scenes/counter.js';
 import notebook from './scenes/notebook.js';
 import rank from './scenes/rank.js';
+import story from './scenes/story.js';
 
 // La langue se choisit uniquement sur l'écran titre.
 
@@ -66,6 +67,7 @@ async function boot() {
   register('counter', counter);
   register('notebook', notebook);
   register('rank', rank);
+  register('story', story);
 
   canvas.addEventListener('pointerdown', (e) => onPointer('down', e));
   canvas.addEventListener('pointermove', (e) => onPointer('move', e));

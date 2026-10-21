@@ -8,6 +8,8 @@ import { vibrate } from '../feedback.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 import { miniStar } from './orders.js';
+import { chapterStory } from './story.js';
+import { save } from '../save.js';
 
 const TAU = Math.PI * 2;
 let r, time, buttons, burst;
@@ -18,7 +20,11 @@ export default {
     time = 0;
     burst = false;
     buttons = new Buttons();
-    buttons.add({ x: 190, y: 1680, w: 700, h: 170, size: 64, label: () => t('done.continue'), onTap: () => go('orders') });
+    buttons.add({ x: 190, y: 1680, w: 700, h: 170, size: 64, label: () => t('done.continue'), onTap: () => {
+      // nouveau chapitre : Gribouille raconte la suite (une seule fois)
+      const ch = chapterStory(save.rank);
+      if (ch) go('story', { id: ch, then: { scene: 'orders' } }); else go('orders');
+    } });
   },
 
   update(dt) {

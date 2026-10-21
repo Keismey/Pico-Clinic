@@ -11,6 +11,12 @@ import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 import { orderState, nextOrder, examStars } from '../progress.js';
 import { drawRarePart } from '../portraits.js';
+import { seen, markSeen, drawGribBox, drawRing } from '../tutorial.js';
+import { storyAfter } from './story.js';
+
+// Tutoriel (commande 1) : Gribouille explique les étoiles, les crédits, puis ouvre la boutique.
+const TUTO = ['tuto.stars', 'tuto.credits', 'tuto.shop'];
+const CPS = 42;
 
 const TAU = Math.PI * 2;
 const STAR_Y = 930;
@@ -18,7 +24,7 @@ const STAR_X = [W / 2 - 290, W / 2, W / 2 + 290];
 const STAR_KEYS = ['done.star.works', 'done.star.clean', 'done.star.precise'];
 const STAR_DELAY = 0.55;
 
-let rep, buttons, time, res, pay, shown, creditsShown, needStars;
+let rep, buttons, time, res, pay, shown, creditsShown, needStars, tuto;
 
 function fmt(sec) {
   const s = Math.round(sec);
@@ -63,6 +69,9 @@ export default {
     const next = nextOrder(rep.patient.order);
     const nextOk = next && orderState(next) === 'open';
     needStars = next && orderState(next) === 'stars' ? examStars(next) : 0;
+    tuto = rep.patient.order.n === 1 && pay.firstPay && !seen('results') ? { i: 0, shown: 0 } : null;
+    // scène d'histoire après cette commande (ex. : le carnet de Maître Ohm après la commande 3)
+    const story = pay.firstPay ? storyAfter(rep.patient.order) : null;
     buttons = new Buttons();
     // nouveau rang : on passe d'abord par l'écran du rang
     buttons.add({
@@ -71,6 +80,7 @@ export default {
       label: () => t(pay.rankUp ? 'done.continue' : nextOk ? 'done.next' : 'done.orders'),
       onTap: () => {
         if (pay.rankUp) go('rank', { rank: pay.rankUp });
+        else if (story) go('story', { id: story, then: nextOk ? { scene: 'counter', params: { order: next.id, mode: 'intro' } } : { scene: 'orders' } });
         else if (nextOk) go('counter', { order: next.id, mode: 'intro' });
         else go('orders');
       },
@@ -81,6 +91,8 @@ export default {
 
   update(dt) {
     time += dt;
+    for (const b of buttons.list) b.visible = !tuto;
+    if (tuto && time > 0.6 + 3 * STAR_DELAY + 0.5) tuto.shown = Math.min(t(TUTO[tuto.i]).length, tuto.shown + CPS * dt);
     // une étoile toutes les 0,55 s, avec vibration et étincelles si elle est gagnée
     while (shown < 3 && time > 0.6 + shown * STAR_DELAY) {
       if (res.stars[shown]) {
@@ -149,9 +161,31 @@ export default {
       ctx.restore();
     }
     buttons.draw(ctx);
+    if (tuto && time > 0.6 + 3 * STAR_DELAY + 0.5) this.drawTuto(ctx);
+  },
+
+  drawTuto(ctx) {
+    if (tuto.i === 0) for (const x of STAR_X) drawRing(ctx, x, STAR_Y, 125, time);
+    if (tuto.i === 1) {
+      const a = 0.5 + 0.5 * Math.sin(time * 6);
+      ctx.strokeStyle = `rgba(255, 138, 61, ${0.45 + 0.55 * a})`;
+      ctx.lineWidth = 9;
+      roundRect(ctx, 120 - a * 8, 1380 - a * 6, W - 240 + a * 16, 104 + a * 12, 52); ctx.stroke();
+    }
+    drawGribBox(ctx, { x: 60, y: 1540, w: W - 120, h: 300 }, t(TUTO[tuto.i]), tuto.shown, time, { more: true, size: 42 });
   },
 
   pointer(type, x, y) {
+    if (tuto) {
+      if (type !== 'up' || time < 0.6 + 3 * STAR_DELAY + 0.5) return;
+      const len = t(TUTO[tuto.i]).length;
+      if (tuto.shown < len) { tuto.shown = len; return; }
+      vibrate(8);
+      if (tuto.i < TUTO.length - 1) { tuto.i++; tuto.shown = 0; return; }
+      markSeen('results');
+      go('shop', { first: true });
+      return;
+    }
     buttons.pointer(type, x, y);
   },
 };

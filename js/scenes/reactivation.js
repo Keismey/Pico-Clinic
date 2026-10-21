@@ -9,6 +9,8 @@ import { vibrate } from '../feedback.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 import { orderState } from '../progress.js';
+import { save } from '../save.js';
+import { createCoach, demo, drawGribBox } from '../tutorial.js';
 
 const TAU = Math.PI * 2;
 const TRACK_TOP = 1300;
@@ -17,7 +19,7 @@ const DX = W / 2;
 const DY = 640;
 const DS = 0.75;
 
-let rep, params, lever, grab, state, st, rotorAngle, rotorSpeed, lift, smokeT, burst;
+let rep, params, lever, grab, state, st, rotorAngle, rotorSpeed, lift, smokeT, burst, coach;
 
 // position écran d'un point du drone
 function toScreen(x, y) {
@@ -54,10 +56,17 @@ export default {
     lift = 0;
     smokeT = 0;
     burst = false;
+    // tutoriel : Gribouille montre la manette la première fois
+    const firstTime = !(save.orders[rep.patient.id] && save.orders[rep.patient.id].paid);
+    coach = createCoach([{
+      id: 'lever', key: 'tuto.lever', start: () => true, done: () => state !== 'idle',
+      demo: () => demo.drag(DX, TRACK_TOP, DX, TRACK_TOP + params.travel * 0.85, 0.15, 0.7),
+    }], { enabled: firstTime });
   },
 
   update(dt) {
     st += dt;
+    coach.update(dt);
     if (state === 'idle') {
       if (!grab) lever += (0 - lever) * Math.min(1, dt * 10);
     } else {
@@ -113,7 +122,10 @@ export default {
     });
 
     // textes
-    if (state === 'idle') {
+    const said = coach.text();
+    if (state === 'idle' && said) {
+      drawGribBox(ctx, { x: 60, y: 1010, w: W - 120, h: 170 }, said, coach.shown, coach.time, { size: 38 });
+    } else if (state === 'idle') {
       drawPanel(ctx, 110, 1055, W - 220, 115);
       drawText(ctx, t('reac.hint'), W / 2, 1112, W - 280, 50);
     } else if (state === 'cough') {
@@ -124,6 +136,7 @@ export default {
     }
 
     this.drawLever(ctx);
+    coach.draw(ctx);
   },
 
   drawLever(ctx) {
@@ -172,6 +185,7 @@ export default {
   },
 
   pointer(type, x, y) {
+    coach.touch(type);
     if (state !== 'idle') return;
     if (type === 'down') {
       if (Math.hypot(x - DX, y - knobY()) < KNOB_R + 60) {

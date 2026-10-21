@@ -5,8 +5,8 @@ import { save } from './save.js';
 export const game = { data: {}, repair: null, lastOrder: 'o01' };
 
 export async function loadData() {
-  const [gestures, patients, orders, tools, clients, ranks, rare] = await Promise.all(
-    ['gestures', 'patients', 'orders', 'tools', 'clients', 'ranks', 'rare_parts'].map((n) => fetch(`data/${n}.json`).then((r) => r.json()))
+  const [gestures, patients, orders, tools, clients, ranks, rare, story] = await Promise.all(
+    ['gestures', 'patients', 'orders', 'tools', 'clients', 'ranks', 'rare_parts', 'story'].map((n) => fetch(`data/${n}.json`).then((r) => r.json()))
   );
   delete patients._doc;
   game.data.gestures = gestures;
@@ -16,6 +16,7 @@ export async function loadData() {
   game.data.clients = clients;
   game.data.ranks = ranks.list;
   game.data.rareParts = rare.list;
+  game.data.story = story;
 }
 
 export function getOrder(id) {
