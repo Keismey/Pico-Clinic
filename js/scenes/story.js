@@ -217,6 +217,12 @@ export default {
     drawCard(ctx);
   },
 
+  // Bouton retour = Passer.
+  back() {
+    finish();
+    return true;
+  },
+
   pointer(type, x, y) {
     if (phase === 'talk' && buttons.pointer(type, x, y)) return;
     if (type === 'up') advance();

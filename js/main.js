@@ -16,6 +16,7 @@ import counter from './scenes/counter.js';
 import notebook from './scenes/notebook.js';
 import rank from './scenes/rank.js';
 import story from './scenes/story.js';
+import { initBack, asking, tickAsk, askPointer, drawAsk } from './back.js';
 
 // La langue se choisit uniquement sur l'écran titre.
 
@@ -30,11 +31,13 @@ function loop(ts) {
   const dt = last ? Math.min(0.05, (ts - last) / 1000) : 0;
   last = ts;
   tickUI(dt);
-  scene().update(dt);
-  fx.update(dt);
+  // « Quitter la réparation ? » : le jeu est en pause derrière la question
+  if (asking()) tickAsk(dt);
+  else { scene().update(dt); fx.update(dt); }
   beginFrame();
   scene().draw(ctx);
   fx.draw(ctx);
+  if (asking()) drawAsk(ctx);
 }
 
 function onPointer(type, e) {
@@ -48,7 +51,8 @@ function onPointer(type, e) {
   e.preventDefault();
   const p = toLogical(e);
   if (type === 'down') owner = 'scene';
-  scene().pointer(type, p.x, p.y);
+  if (asking()) askPointer(type, p.x, p.y);
+  else scene().pointer(type, p.x, p.y);
   if (type === 'up' || type === 'cancel') { activeId = null; owner = null; }
 }
 
@@ -88,6 +92,12 @@ async function boot() {
   const loading = document.getElementById('loading');
   if (loading) loading.remove();
   go('title');
+  // bouton retour du téléphone : on remonte d'un écran au lieu de quitter le jeu
+  initBack(() => {
+    if (activeId !== null && owner === 'scene') scene().pointer('cancel', 0, 0);
+    activeId = null;
+    owner = null;
+  });
   requestAnimationFrame(loop);
 }
 

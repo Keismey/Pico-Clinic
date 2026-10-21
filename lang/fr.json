@@ -320,5 +320,9 @@
   "arc.ampere.21.intro": "Mon drone ne vole plus droit. Il y avait un plan, quelque part, dans une autre poche.",
   "arc.ampere.21.thanks": "Il vole droit ! Un homme faisait pareil, avant, avec ces mêmes gestes.",
   "arc.volute.22.intro": "Mes deux joyaux, Cléo et Auguste, avant mon exposition. Tout doit être parfait.",
-  "arc.volute.22.thanks": "Parfait ! Vous êtes officiellement le réparateur de ma collection."
+  "arc.volute.22.thanks": "Parfait ! Vous êtes officiellement le réparateur de ma collection.",
+  "back.title": "Quitter la réparation ?",
+  "back.text": "Le patient retourne sur la liste des commandes. Ce que tu as déjà réparé sera perdu.",
+  "back.leave": "Quitter",
+  "back.stay": "Continuer"
 }

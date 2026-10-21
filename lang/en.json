@@ -320,5 +320,9 @@
   "arc.ampere.21.intro": "My drone doesn't fly straight anymore. There was a plan somewhere, in another pocket.",
   "arc.ampere.21.thanks": "It flies straight! A man used to do the same, with those same moves.",
   "arc.volute.22.intro": "My two jewels, Cleo and Auguste, before my exhibition. Everything must be perfect.",
-  "arc.volute.22.thanks": "Perfect! You are officially the repairer of my collection."
+  "arc.volute.22.thanks": "Perfect! You are officially the repairer of my collection.",
+  "back.title": "Leave this repair?",
+  "back.text": "The patient goes back to the order list. What you've already fixed will be lost.",
+  "back.leave": "Leave",
+  "back.stay": "Keep going"
 }

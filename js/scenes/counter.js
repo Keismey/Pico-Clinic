@@ -275,6 +275,12 @@ export default {
     buttons.draw(ctx);
   },
 
+  // Bouton retour : avant la réparation on revient aux commandes, après on va voir les étoiles.
+  back() {
+    if (mode === 'thanks') finish(); else go('orders');
+    return true;
+  },
+
   pointer(type, x, y) {
     if (buttons.pointer(type, x, y)) return;
     if (type === 'up' && !(mode === 'intro' && time < 0.45)) advance();

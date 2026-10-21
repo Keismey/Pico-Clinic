@@ -7,7 +7,7 @@ Mis à jour : 2026-10-21 (C7 V2b). Jeu : https://keismey.github.io/Pico-Clinic/
 - C7 V2b tutoriel (`js/tutorial.js`) : Gribouille parle dans le panneau d'aide + main fantôme qui fait le geste, une seule fois (`save.story`). Commande 1 : toucher le drone (zoom), 1re vis, 3 autres, plaque à glisser vers le haut (nouveau geste, toutes commandes), fiche, Démarrer, manette ; résultats (étoiles, crédits) puis boutique présentée.
 - Indices 1re fois : vis rouillée + aspirateur (2), soudure (3), puce (4), loupe (5), soudure courbe (6) ; ligne de Gribouille sur le pourboire (8).
 - Scènes d'histoire (`js/scenes/story.js`, `data/story.json`) : carte « Chapitre 1 – L'héritage » au premier Jouer, carnet de Maître Ohm trouvé après la commande 3, « Chapitre 2 » après le rang 2.
-- Boutique visible après la commande 1, Carnet après la commande 3. Liste des commandes en onglets de chapitres.
+- Boutique visible après la commande 1, Carnet après la commande 3. Liste des commandes en onglets de chapitres. Bouton retour du téléphone (`js/back.js`) : remonte d'un écran ; en réparation, pause « Quitter la réparation ? » ; à l'écran titre, quitte le jeu.
 - Chapitre 2 : commandes 11 à 22 (Brindille, Turbo, Volute, Léa, Ampère, passages) avec dialogues FR/EN ; examen du rang 3 = commande 22.
 - Testé en navigateur automatique (FR/EN, tutoriel complet, leçons 2-6, chapitre 2), aucune erreur ; clés FR = EN (322).
 
@@ -27,4 +27,4 @@ Mis à jour : 2026-10-21 (C7 V2b). Jeu : https://keismey.github.io/Pico-Clinic/
 
 ## Plus tard
 - Images Gemini (clients, Gribouille, carnet, pièces rares) ; son du clic de vis. Commandes 23 à 60, chapitres 3 à 5, patients multiples, prototypes à pièces rares, Atelier libre, défi quotidien, succès.
-- Indice 20 s ; pause ; gaucher ; sauver une réparation en cours ; revoir le tutoriel depuis les réglages.
+- Indice 20 s ; bouton pause à l'écran (le retour du téléphone fait déjà pause) ; gaucher ; sauver une réparation en cours ; revoir le tutoriel depuis les réglages.
