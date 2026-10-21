@@ -1,5 +1,5 @@
 // État partagé : données JSON chargées et réparation en cours.
-import { D, faultSpot } from './drone.js';
+import { D, faultSpot, spots } from './drone.js';
 
 export const game = { data: {}, repair: null };
 
@@ -77,10 +77,12 @@ export function newRepair(patientId) {
       penalty: 0,
     },
     rust: buildRust(p.rust, game.data.gestures.vacuum.cell),
-    fragile: (p.fragile || []).map(([x, y, w, h]) => ({ x, y, w, h, wear: 0, broken: false })),
+    // fragile : wear = temps frotté, broken = à remplacer, removed = sorti, breaks = nombre de casses
+    fragile: (p.fragile || []).map(([x, y, w, h], i) => ({ i, x, y, w, h, wear: 0, broken: false, removed: false, breaks: 0 })),
     slips: 0,
     elapsed: 0,
     attempts: 0,
   };
+  spots.fragile = game.repair.fragile;
   return game.repair;
 }

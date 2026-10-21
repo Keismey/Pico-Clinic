@@ -1,5 +1,6 @@
 // Aspirateur micro : frotter la rouille (grille de cellules dont l'opacité baisse à chaque passage).
 // Il faut bouger assez vite (pas de simple tapotement). Frotter un composant fragile l'abîme.
+// L'embout flotte au-dessus du doigt (offset_y) pour que le pouce ne cache pas la zone.
 export function createVacuum(rep, params, hooks = {}) {
   let active = false;
   let last = null;      // dernier point {x, y, t}
@@ -31,7 +32,7 @@ export function createVacuum(rep, params, hooks = {}) {
     }
     if (cleaned > 0) suckT = 0.15;
     for (const comp of rep.fragile) {
-      if (comp.broken || !overlapsRect(x, y, r * 0.8, comp)) continue;
+      if (comp.broken || comp.removed || !overlapsRect(x, y, r * 0.8, comp)) continue;
       if (comp.wear === 0 || warnT <= 0) {
         warnT = params.fragile_warn_cooldown;
         if (hooks.onFragileTouch) hooks.onFragileTouch(comp);
@@ -39,6 +40,8 @@ export function createVacuum(rep, params, hooks = {}) {
       comp.wear += dt;
       if (comp.wear >= params.fragile_grace) {
         comp.broken = true;
+        comp.breaks++;
+        rep.faults.add('capacitor_' + comp.i);
         if (hooks.onFragileBreak) hooks.onFragileBreak(comp);
       }
     }
@@ -50,13 +53,15 @@ export function createVacuum(rep, params, hooks = {}) {
     get sucking() { return suckT > 0; },
     get speed() { return speed; },
 
-    // Vrai si le point touche de la rouille ou un composant fragile.
-    covers(x, y) {
+    // Vrai si l'embout (au-dessus du doigt en x, y) toucherait de la rouille ou un composant fragile.
+    covers(fx, fy) {
+      const x = fx, y = fy - params.offset_y;
       for (const c of rep.rust.cells) if (c.a > 0.05 && Math.hypot(c.x - x, c.y - y) < params.cell) return true;
-      return rep.fragile.some((c) => !c.broken && overlapsRect(x, y, 10, c));
+      return rep.fragile.some((c) => !c.broken && !c.removed && overlapsRect(x, y, 10, c));
     },
 
-    down(x, y) {
+    down(fx, fy) {
+      const x = fx, y = fy - params.offset_y;
       active = true;
       pos.x = x; pos.y = y;
       last = { x, y, t: performance.now() };
@@ -65,8 +70,9 @@ export function createVacuum(rep, params, hooks = {}) {
       return true;
     },
 
-    move(x, y) {
+    move(fx, fy) {
       if (!active) return;
+      const x = fx, y = fy - params.offset_y;
       const now = performance.now();
       const dt = Math.max(0.001, (now - last.t) / 1000);
       const d = Math.hypot(x - last.x, y - last.y);

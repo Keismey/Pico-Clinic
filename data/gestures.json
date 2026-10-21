@@ -43,7 +43,8 @@
     "rate": 0.011,
     "cell": 20,
     "fragile_grace": 0.3,
-    "fragile_warn_cooldown": 1.2
+    "fragile_warn_cooldown": 1.2,
+    "offset_y": 150
   },
   "magnifier": {
     "radius": 125,
@@ -58,5 +59,11 @@
     "clean_min": 80,
     "precise_min": 85,
     "tip_ratio": 0.25
+  },
+  "capacitor": {
+    "grab_pad": 30,
+    "grab_radius": 80,
+    "lift_offset": 110,
+    "snap_radius": 40
   }
 }

@@ -21,7 +21,7 @@ export function scoreRepair(rep) {
   const p = rep.patient;
   const clean = cleanliness(rep);
   const prec = precision(rep);
-  const broken = rep.fragile.filter((c) => c.broken).length;
+  const broken = rep.fragile.filter((c) => c.breaks > 0).length;
   const stars = [rep.faults.size === 0, clean >= g.clean_min && broken === 0, prec >= g.precise_min];
   const onTime = rep.elapsed <= p.target_time;
   return { stars, clean, prec, broken, onTime, base: p.reward, tip: onTime ? Math.round(p.reward * g.tip_ratio) : 0 };

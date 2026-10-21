@@ -57,11 +57,11 @@
   "op.found.trace_cut": "Broken trace!",
   "op.nothing": "Nothing here (+{s} s)",
   "op.diag_done": "Diagnosis complete!",
-  "op.hint.vacuum": "Rub the rust quickly. Avoid the little blue capacitors!",
+  "op.hint.vacuum": "The vacuum follows your finger, just above it. Rub quickly and avoid the circled capacitors!",
   "op.hint.rust_left": "Still some rust: rub it with your finger to vacuum it, or press Start.",
   "op.clean": "Clean: {p}%",
   "op.fragile": "Careful, that's fragile!",
-  "op.fragile_broken": "Ouch! Capacitor damaged.",
+  "op.fragile_broken": "Ouch! Broken capacitor: you'll have to replace it.",
   "done.star.works": "Working",
   "done.star.clean": "Clean",
   "done.star.precise": "Precise",
@@ -73,5 +73,13 @@
   "done.no_tip": "no tip",
   "done.already_paid": "Order already paid: replay for 3 stars!",
   "done.record": "New record!",
-  "done.credits": "Credits: {n}"
+  "done.credits": "Credits: {n}",
+  "op.hint.rust": "Rust (brown spots)! Rub it quickly with your finger: the vacuum appears just above it. Avoid the blue capacitors.",
+  "op.hint.cap_remove": "A capacitor is broken: the drone won't start. Grab it and take it off the board.",
+  "op.hint.cap_place": "Take the new capacitor (next to the box) and put it on the blinking spot.",
+  "op.hint.cap_drag_new": "Drop it on the blinking spot.",
+  "op.cap_out": "Broken capacitor removed!",
+  "op.cap_miss": "Not quite… aim for the spot.",
+  "op.cap_in": "New capacitor in!",
+  "op.hint.cap_drag_old": "Take it off the green board, then let go."
 }

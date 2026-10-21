@@ -3,7 +3,8 @@
 import { W, H } from '../canvas.js';
 import { t } from '../i18n.js';
 import { Buttons, C, drawMatBackground, drawPanel, drawText, drawToast, fitText, easeInOut, roundRect } from '../ui.js';
-import { D, SOLDER, drawFrame, drawInterior, drawCover, drawScrew, drawTray, trayPos, drawChip, drawPartBox, drawIron, faultSpot, drawVacuum, drawLens, isHidden } from '../drone.js';
+import { D, SOLDER, drawFrame, drawInterior, drawCover, drawScrew, drawTray, trayPos, drawChip, drawPartBox, drawIron, faultSpot, drawVacuum, drawLens, isHidden, drawCapacitor } from '../drone.js';
+import { createCapacitor, SPARE } from '../gestures/capacitor.js';
 import { createVacuum } from '../gestures/vacuum.js';
 import { createMagnifier } from '../gestures/magnifier.js';
 import { cleanliness } from '../score.js';
@@ -19,7 +20,7 @@ import { go } from '../scenes.js';
 const TAU = Math.PI * 2;
 const PATIENT = 'drone_jouet_v0';
 
-let rep, unscrew, connector, chip, solder, vacuum, lens, buttons, startBtn;
+let rep, unscrew, connector, chip, solder, vacuum, lens, cap, buttons, startBtn;
 let finger = { x: 0, y: 0 };
 let closing = false;
 let toast = null;
@@ -150,6 +151,23 @@ export default {
       },
     });
 
+    cap = createCapacitor(rep, g.capacitor, {
+      onGrab: () => vibrate(8),
+      onRemove: (c) => {
+        vibrate([15, 30, 15]);
+        fx.spawn(c.x, c.y, { count: 4, color: '#6b6f75', speed: 70, life: 0.9, size: 12, gravity: -120, kind: 'smoke', dir: -Math.PI / 2, spread: 1 });
+        showToast('op.cap_out', C.turquoiseDark);
+      },
+      onStay: () => showToast('op.chip_off_board', C.inkSoft),
+      onMiss: () => { vibrate(12); showToast('op.cap_miss', C.inkSoft); },
+      onPlace: (c) => {
+        rep.faults.delete('capacitor_' + c.i);
+        vibrate([10, 20, 35]);
+        fx.spawn(c.x, c.y, { count: 18, color: C.turquoise, speed: 380, size: 7 });
+        showToast('op.cap_in', C.green);
+      },
+    });
+
     lens = createMagnifier(rep, rep.diag.targets, g.magnifier, {
       onStart: () => vibrate(6),
       onReveal: (tg) => {
@@ -179,7 +197,7 @@ export default {
   },
 
   release() {
-    unscrew.up(); connector.up(); chip.up(); solder.up(); vacuum.up(); lens.up();
+    unscrew.up(); connector.up(); chip.up(); solder.up(); vacuum.up(); lens.up(); cap.up();
   },
 
   update(dt) {
@@ -203,6 +221,8 @@ export default {
     solder.update(dt);
     vacuum.update(dt);
     lens.update(dt);
+    cap.update(dt);
+    if (vacuum.active) rep.vacuumUsed = true;
     if (rep.phase === 'diag' && rep.coverAnim >= 1) rep.diag.time += dt;
     if (vacuum.active && vacuum.sucking) vibrate(3);
 
@@ -255,7 +275,7 @@ export default {
     fitText(ctx, t('patient.' + rep.patient.id), W / 2, 110, 480, 54, C.ink, 800);
 
     drawFrame(ctx);
-    if (rep.coverAnim > 0) drawInterior(ctx, rep, { glow: connector.glow, slotGlow: chip.slotGlow, time });
+    if (rep.coverAnim > 0) drawInterior(ctx, rep, { glow: connector.glow, slotGlow: chip.slotGlow, time, warn: vacuum.active });
 
     const k = easeInOut(rep.coverAnim);
     drawCover(ctx, {
@@ -289,7 +309,8 @@ export default {
 
     this.drawLoosePieces(ctx);
     if (rep.coverAnim >= 1) this.drawDiag(ctx);
-    if (vacuum.active) drawVacuum(ctx, vacuum.pos.x, vacuum.pos.y, game.data.gestures.vacuum.radius, vacuum.sucking, time);
+    this.drawCapacitors(ctx);
+    if (vacuum.active) drawVacuum(ctx, vacuum.pos.x, vacuum.pos.y, game.data.gestures.vacuum.radius, vacuum.sucking, time, finger);
 
     // fer à souder
     if (solder.active) drawIron(ctx, solder.tip.x, solder.tip.y, solder.heat);
@@ -344,6 +365,26 @@ export default {
     }
   },
 
+  // Condensateur neuf qui attend (à côté de la boîte), et pièce tenue à la pince.
+  drawCapacitors(ctx) {
+    const sp = cap.spare;
+    const held = cap.held;
+    if (sp && !(held && held.what === 'new')) {
+      const a = 0.5 + 0.5 * Math.sin(time * 6);
+      ctx.fillStyle = `rgba(63, 208, 187, ${0.2 + 0.25 * a})`;
+      ctx.beginPath(); ctx.arc(SPARE.x, SPARE.y, 55, 0, TAU); ctx.fill();
+      drawCapacitor(ctx, SPARE.x, SPARE.y, sp.w, sp.h, false);
+    }
+    if (held) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 10;
+      drawCapacitor(ctx, held.x, held.y, held.comp.w * 1.1, held.comp.h * 1.1, held.what === 'old');
+      ctx.restore();
+    }
+  },
+
   // Pièces déjà vérifiées (coche verte) et, après 20 s de recherche, un indice qui pulse.
   drawDiag(ctx) {
     const m = game.data.gestures.magnifier;
@@ -376,6 +417,10 @@ export default {
       return 'op.hint.diag';
     }
     if (vacuum.active) return 'op.hint.vacuum';
+    if (cap.held) return cap.held.what === 'old' ? 'op.hint.cap_drag_old' : 'op.hint.cap_drag_new';
+    const clean = cleanliness(rep) >= game.data.gestures.scoring.clean_min;
+    // la rouille est présentée dès l'ouverture, tant que le joueur n'a pas essayé l'aspirateur
+    if (!clean && !rep.vacuumUsed && flash <= 0) return 'op.hint.rust';
     if (solder.active) return solder.hot ? 'op.hint.trace' : 'op.hint.heating';
     if (chip.dragOld) return 'op.hint.chip_drag_old';
     if (chip.dragNew) return rep.chip.old.state === 'tray' ? 'op.hint.chip_drag_new' : 'op.hint.chip_remove';
@@ -384,8 +429,12 @@ export default {
       if (f === 'connector_unplugged') return 'op.hint.connector';
       if (f === 'chip_burnt') return rep.chip.old.state === 'slot' ? 'op.hint.chip_remove' : 'op.hint.chip_place';
       if (f === 'trace_cut') return 'op.hint.solder';
+      if (f.startsWith('capacitor_')) {
+        const c = rep.fragile[+f.split('_')[1]];
+        return c && c.removed ? 'op.hint.cap_place' : 'op.hint.cap_remove';
+      }
     }
-    if (cleanliness(rep) < game.data.gestures.scoring.clean_min) return 'op.hint.rust_left';
+    if (!clean) return 'op.hint.rust_left';
     return 'op.hint.ready';
   },
 
@@ -395,7 +444,8 @@ export default {
     if (!rep.coverOpen) sub = t('op.screws', { n: rep.screws.filter((s) => s.out).length, total: rep.screws.length });
     else if (rep.phase === 'diag') sub = t('op.found', { n: rep.diag.revealed.size, total: rep.diag.hidden.size });
     else if (rep.coverAnim >= 1) {
-      sub = t('op.repairs', { n: rep.patient.faults.length - rep.faults.size, total: rep.patient.faults.length })
+      const total = rep.patient.faults.length + rep.fragile.filter((c) => c.breaks > 0).length;
+      sub = t('op.repairs', { n: total - rep.faults.size, total })
         + '   ·   ' + t('op.clean', { p: cleanliness(rep) });
     }
 
@@ -442,12 +492,14 @@ export default {
       lens.down(x, y);
       return;
     }
+    if (cap.down(x, y)) return;
     if (chip.down(x, y)) return;
     if (onPlug && connector.down(x, y)) return;
     if (vacuum.covers(x, y)) { vacuum.down(x, y); return; }
     if (connector.down(x, y) || solder.down(x, y)) return;
     const b = D.board + 40;
-    if (Math.abs(x - D.cx) < b && Math.abs(y - D.cy) < b) vacuum.down(x, y);
+    const ny = y - game.data.gestures.vacuum.offset_y;
+    if (Math.abs(x - D.cx) < b && Math.abs(ny - D.cy) < b) vacuum.down(x, y);
   },
 
   pointer(type, x, y) {
@@ -464,6 +516,7 @@ export default {
       solder.move(x, y);
       vacuum.move(x, y);
       lens.move(x, y);
+      cap.move(x, y);
     } else {
       this.release();
     }

@@ -57,7 +57,11 @@ export function pathAt(s) {
 }
 
 // Endroit à faire clignoter pour une panne restante.
+// Composants fragiles de la réparation en cours (remplis par newRepair).
+export const spots = { fragile: [] };
+
 export function faultSpot(fault) {
+  if (fault.startsWith('capacitor_')) { const c = spots.fragile[+fault.split('_')[1]]; if (c) return { x: c.x, y: c.y, r: 70 }; }
   if (fault === 'chip_burnt') return { x: D.slot.x, y: D.slot.y, r: 120 };
   if (fault === 'trace_cut') { const p = pathAt(SOLDER.len / 2); return { x: p.x, y: p.y, r: 140 }; }
   return { x: D.socket.x, y: D.socket.y, r: 110 };
@@ -153,7 +157,7 @@ export function isHidden(rep, fault) {
 }
 
 // xray = vue dans la loupe : les pannes cachées sont visibles.
-export function drawInterior(ctx, rep, { glow = 0, slotGlow = 0, time = 0, xray = false } = {}) {
+export function drawInterior(ctx, rep, { glow = 0, slotGlow = 0, time = 0, xray = false, warn = false } = {}) {
   const b = D.board;
   ctx.fillStyle = '#2f8a5b';
   roundRect(ctx, D.cx - b, D.cy - b, b * 2, b * 2, 40);
@@ -184,7 +188,7 @@ export function drawInterior(ctx, rep, { glow = 0, slotGlow = 0, time = 0, xray 
   const traceHidden = !xray && isHidden(rep, 'trace_cut');
   drawSolder(ctx, rep.weld, (rep.faults.has('trace_cut') && !traceHidden) || rep.weld.done, time, xray);
   drawSlot(ctx, rep.chip, slotGlow, !xray && isHidden(rep, 'chip_burnt'));
-  drawFragile(ctx, rep, time);
+  drawFragile(ctx, rep, time, warn);
 
   // batterie
   ctx.fillStyle = '#f2c14e';
@@ -526,44 +530,72 @@ function drawRust(ctx, rep) {
   }
 }
 
-// Petits condensateurs fragiles (bleus) ; fendus et gris s'ils sont abîmés.
-function drawFragile(ctx, rep, time) {
+// Un condensateur (bleu), fendu et gris s'il est abîmé.
+export function drawCapacitor(ctx, cx, cy, w, h, broken = false) {
+  const x = cx - w / 2, y = cy - h / 2;
+  ctx.fillStyle = '#c9ced4';
+  ctx.fillRect(cx - 9, cy + h / 2 - 4, 4, 14);
+  ctx.fillRect(cx + 5, cy + h / 2 - 4, 4, 14);
+  ctx.fillStyle = broken ? '#7c848c' : '#3f7fd6';
+  roundRect(ctx, x, y, w, h, 10); ctx.fill();
+  ctx.fillStyle = broken ? '#9aa1a8' : '#8fb9f0';
+  roundRect(ctx, x + 4, y + 4, w - 8, 10, 5); ctx.fill();
+  if (broken) {
+    ctx.strokeStyle = '#2b2f33';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x + 8, y + 12); ctx.lineTo(x + 16, y + 24); ctx.lineTo(x + 10, y + 32); ctx.lineTo(x + 20, y + h - 6);
+    ctx.stroke();
+  }
+}
+
+// Condensateurs fragiles sur la carte. warn = aspirateur en main : on les entoure pour les repérer.
+function drawFragile(ctx, rep, time, warn) {
   for (const c of rep.fragile || []) {
     const x = c.x - c.w / 2, y = c.y - c.h / 2;
-    ctx.fillStyle = '#c9ced4';
-    ctx.fillRect(c.x - 9, c.y + c.h / 2 - 4, 4, 14);
-    ctx.fillRect(c.x + 5, c.y + c.h / 2 - 4, 4, 14);
-    ctx.fillStyle = c.broken ? '#7c848c' : '#3f7fd6';
-    roundRect(ctx, x, y, c.w, c.h, 10); ctx.fill();
-    ctx.fillStyle = c.broken ? '#9aa1a8' : '#8fb9f0';
-    roundRect(ctx, x + 4, y + 4, c.w - 8, 10, 5); ctx.fill();
-    if (c.broken) {
-      ctx.strokeStyle = '#2b2f33';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(x + 8, y + 12); ctx.lineTo(x + 16, y + 24); ctx.lineTo(x + 10, y + 32); ctx.lineTo(x + 20, y + c.h - 6);
-      ctx.stroke();
-    } else if (c.wear > 0) {
-      const a = 0.5 + 0.5 * Math.sin(time * 14);
-      ctx.strokeStyle = `rgba(214, 69, 69, ${0.5 + 0.5 * a})`;
+    if (c.removed) {
+      // emplacement vide : deux pastilles et un cadre qui clignote
+      ctx.fillStyle = '#d9a441';
+      ctx.fillRect(c.x - 11, c.y + c.h / 2 - 2, 8, 10);
+      ctx.fillRect(c.x + 3, c.y + c.h / 2 - 2, 8, 10);
+      const a = 0.5 + 0.5 * Math.sin(time * 6);
+      ctx.save();
+      ctx.setLineDash([8, 8]);
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.4 + 0.5 * a})`;
       ctx.lineWidth = 4;
-      roundRect(ctx, x - 6, y - 6, c.w + 12, c.h + 12, 12); ctx.stroke();
+      roundRect(ctx, x, y, c.w, c.h, 10); ctx.stroke();
+      ctx.restore();
+      continue;
+    }
+    if (c.held) continue;
+    drawCapacitor(ctx, c.x, c.y, c.w, c.h, c.broken);
+    if (!c.broken && (c.wear > 0 || warn)) {
+      const a = 0.5 + 0.5 * Math.sin(time * (c.wear > 0 ? 14 : 5));
+      ctx.strokeStyle = c.wear > 0 ? `rgba(214, 69, 69, ${0.5 + 0.5 * a})` : `rgba(255, 211, 107, ${0.45 + 0.45 * a})`;
+      ctx.lineWidth = 5;
+      roundRect(ctx, x - 8, y - 8, c.w + 16, c.h + 16, 12); ctx.stroke();
     }
   }
 }
 
-// Embout de l'aspirateur sous le doigt, avec son tuyau.
-export function drawVacuum(ctx, x, y, r, sucking, time) {
+// Aspirateur : l'embout flotte au-dessus du doigt (x, y), relié par un manche, puis le tuyau.
+export function drawVacuum(ctx, x, y, r, sucking, time, finger) {
   ctx.save();
+  ctx.lineCap = 'round';
   ctx.strokeStyle = '#8a929c';
   ctx.lineWidth = 26;
-  ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.moveTo(x + r * 0.5, y + r * 0.5);
-  ctx.quadraticCurveTo(x + 160, y + 120, x + 220, y + 420);
+  ctx.moveTo(finger.x, finger.y + 20);
+  ctx.quadraticCurveTo(finger.x + 140, finger.y + 120, finger.x + 200, finger.y + 420);
   ctx.stroke();
   ctx.strokeStyle = '#b8c0c9';
   ctx.lineWidth = 12;
+  ctx.stroke();
+  ctx.strokeStyle = '#6f7882';
+  ctx.lineWidth = 22;
+  ctx.beginPath(); ctx.moveTo(x, y + r * 0.9); ctx.lineTo(finger.x, finger.y + 20); ctx.stroke();
+  ctx.strokeStyle = '#aeb6c0';
+  ctx.lineWidth = 8;
   ctx.stroke();
   const wob = sucking ? Math.sin(time * 60) * 2 : 0;
   ctx.fillStyle = 'rgba(200, 210, 220, 0.35)';
