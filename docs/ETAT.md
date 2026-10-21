@@ -1,30 +1,28 @@
 # Pico-Clinic — État du projet
 
-Mis à jour : 2026-10-21 (C7 V2b). Jeu : https://keismey.github.io/Pico-Clinic/
+Mis à jour : 2026-10-21 (C8 V3a). Jeu : https://keismey.github.io/Pico-Clinic/ · Essai des gestes : https://keismey.github.io/Pico-Clinic/?essai
 
 ## Fait
-- C1-C6 (V0, V1, V2a) : 7 gestes, loupe, aspirateur, 3 étoiles, paie, sauvegarde v3, boutique, comptoir, dialogues, rangs, Carnet, pièces rares.
-- C7 V2b tutoriel (`js/tutorial.js`) : Gribouille parle dans le panneau d'aide + main fantôme qui fait le geste, une seule fois (`save.story`). Commande 1 : toucher le drone (zoom), 1re vis, 3 autres, plaque à glisser vers le haut (nouveau geste, toutes commandes), fiche, Démarrer, manette ; résultats (étoiles, crédits) puis boutique présentée.
-- Indices 1re fois : vis rouillée + aspirateur (2), soudure (3), puce (4), loupe (5), soudure courbe (6) ; ligne de Gribouille sur le pourboire (8).
-- Scènes d'histoire (`js/scenes/story.js`, `data/story.json`) : carte « Chapitre 1 – L'héritage » au premier Jouer, carnet de Maître Ohm trouvé après la commande 3, « Chapitre 2 » après le rang 2.
-- Boutique visible après la commande 1, Carnet après la commande 3. Liste des commandes en onglets de chapitres. Bouton retour du téléphone (`js/back.js`) : remonte d'un écran ; en réparation, pause « Quitter la réparation ? » ; à l'écran titre, quitte le jeu.
-- Chapitre 2 : commandes 11 à 22 (Brindille, Turbo, Volute, Léa, Ampère, passages) avec dialogues FR/EN ; examen du rang 3 = commande 22.
-- Testé en navigateur automatique (FR/EN, tutoriel complet, leçons 2-6, chapitre 2), aucune erreur ; clés FR = EN (322).
+- C1-C7 (V0 à V2b) : 7 gestes de base, loupe, aspirateur, étoiles, paie, sauvegarde v3, boutique, comptoir, rangs, Carnet, pièces rares, tutoriel de Gribouille, chapitres 1 et 2 (commandes 1 à 22), bouton retour du téléphone.
+- C8 V3a gestes secondaires en « vue rapprochée » (`js/closeup.js`, `js/gestures/`) : la pièce en panne clignote sur la carte, on la touche, un grand panneau s'ouvre ; réussi, il se referme seul (croix = revenir plus tard). Batterie gonflée et cœur-batterie (rail, jauge de risque, bords rouges), engrenage (débris, axe, quart de tour à 20°, aide verte après 3 essais), capteur (2 curseurs, son qui monte, zone 12 % tenue 0,8 s), broches (1 à 4, à 6°), ressort (3 tours, jauge de vitesse, saute si trop vite), piles (2 piles aimantées + panneau à frotter à 90 %), circuit oxydé (pinceau fin, composants fragiles, 90 %).
+- Maladresses = -propreté (`rep.care`), réglages et alignements = précision (`rep.scores`). Réglages dans `data/gestures.json` ; la pince aide aussi pour les piles et les broches.
+- Vraies pannes remises : 7 et 19 (batterie), 9 et 17 (cœur-batterie), 13 et 20 (engrenage), 14 (capteur), 18 (oxydation). Leçon de Gribouille la 1re fois pour chaque geste.
+- Atelier d'essai (lien `?essai`, `js/scenes/bench.js`, `tests` dans `data/orders.json`) : 8 boutons, rien n'est payé ni enregistré.
+- Testé en navigateur automatique : les 8 gestes réussis au doigt simulé, démarrage raté puis réparé, retour à l'atelier d'essai, commandes 1 à 22 chargées sans erreur ; clés FR = EN (417).
 
 ## Écarts au GDD
-- Gestes V3a absents, remplacés par puce/connecteur/soudure : commandes 7, 9, 13 (engrenage), 14 (capteur), 17 (cœur, coutures), 18 (oxydation), 19 (batterie), 20.
-- Une seule piste par patient (16 et 21 en prévoient 2) ; commande 22 = un seul patient (scarabée) au lieu de 2.
-- Répliques des clients de passage 2-6, 12, 13, 17, 20 inventées. Temps cible de Turbo 15 : 90 s (GDD : 3 min).
+- Élytres à clips (7), coutures (17), 2e piste (16, 21) toujours absents ; 2 patients à la commande 22. Ressort, broches et piles seulement dans l'atelier d'essai (commandes 25, 34, 41 pas encore créées).
+- Pas de panne secondaire cachée à la loupe pour l'instant. Répliques des passages 2-6, 12, 13, 17, 20 inventées. Temps cible de Turbo 15 : 90 s.
 
 ## Valeurs à valider au doigt
-- Seuil de la plaque (160 px vers le haut) ; vitesse de la main fantôme ; taille des bulles de Gribouille ; `data/gestures.json`.
+- Vitesse max de la batterie (340), vitesse du ressort (0,35 à 1,6 tour/s), tolérance des broches (6°), seuil de la plaque, main fantôme, `data/gestures.json`.
 
 ## Bugs connus
-- Vibrations absentes sur iPhone. En diagnostic, la fiche peut attraper le doigt avant la loupe. Panneau d'aide (hors tutoriel) : les indices longs (rouille) débordent un peu en haut.
+- Vibrations absentes sur iPhone. En diagnostic, la fiche peut attraper le doigt avant la loupe. Indices longs (rouille) un peu serrés dans le panneau d'aide.
 
 ## Prochaine étape
-- C8 V3a : gestes secondaires (batterie, engrenage, capteur, broches, ressort, piles, circuit oxydé), puis remettre les vraies pannes des commandes ci-dessus.
+- C9 V3b contenu : les 60 réparations en JSON, prototypes et pièces rares exigées, décorations, Atelier libre, équilibrage.
 
 ## Plus tard
-- Images Gemini (clients, Gribouille, carnet, pièces rares) ; son du clic de vis. Commandes 23 à 60, chapitres 3 à 5, patients multiples, prototypes à pièces rares, Atelier libre, défi quotidien, succès.
-- Indice 20 s ; bouton pause à l'écran (le retour du téléphone fait déjà pause) ; gaucher ; sauver une réparation en cours ; revoir le tutoriel depuis les réglages.
+- Images Gemini (clients, Gribouille, carnet, pièces rares, pièces des gestes secondaires) ; son du clic de vis. Chapitres 3 à 5, patients multiples, défi quotidien, succès.
+- Indice 20 s ; bouton pause à l'écran ; gaucher ; sauver une réparation en cours ; revoir le tutoriel depuis les réglages ; pannes secondaires cachées visibles dans la loupe ; bouton retour qui ferme d'abord la vue rapprochée.

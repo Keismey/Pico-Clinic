@@ -5,10 +5,16 @@ import { t } from './i18n.js';
 import { Buttons, C, drawText, roundRect } from './ui.js';
 import { go, scene, sceneName } from './scenes.js';
 import { drawGribouille } from './portraits.js';
+import { game } from './state.js';
 
 // Écran → écran précédent (les écrans absents d'ici gèrent eux-mêmes le retour, avec back()).
-const PARENT = { orders: 'title', shop: 'orders', notebook: 'orders', rank: 'orders', done: 'orders' };
+const PARENT = { orders: 'title', shop: 'orders', notebook: 'orders', rank: 'orders', done: 'orders', bench: 'title' };
 const REPAIR = ['operation', 'reactivation'];
+
+// Réparation de l'atelier d'essai (lien ?essai) : on y revient au lieu de la liste des commandes.
+function testing() {
+  return !!(game.repair && game.repair.patient.order.test);
+}
 
 let ask = null; // fenêtre « Quitter la réparation ? »
 let time = 0;
@@ -16,7 +22,7 @@ let time = 0;
 function openAsk() {
   time = 0;
   const b = new Buttons();
-  b.add({ x: 130, y: 1090, w: 380, h: 150, size: 50, style: 'secondary', label: () => t('back.leave'), onTap: () => { ask = null; go('orders'); } });
+  b.add({ x: 130, y: 1090, w: 380, h: 150, size: 50, style: 'secondary', label: () => t('back.leave'), onTap: () => { ask = null; go(testing() ? 'bench' : 'orders'); } });
   b.add({ x: 570, y: 1090, w: 380, h: 150, size: 50, label: () => t('back.stay'), onTap: () => { ask = null; } });
   ask = { buttons: b };
 }

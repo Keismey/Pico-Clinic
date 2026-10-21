@@ -4,15 +4,15 @@ import { save, persist } from './save.js';
 import { rustCleaned } from './gestures/vacuum.js';
 import { partEarned } from './progress.js';
 
-// Propreté (%) : rouille aspirée, moins les vis abîmées.
+// Propreté (%) : rouille aspirée, moins les vis abîmées et les maladresses des gestes secondaires.
 export function cleanliness(rep) {
   const slip = game.data.gestures.unscrew.slip_cleanliness;
-  return Math.max(0, Math.min(100, Math.round(100 * rustCleaned(rep) - rep.slips * slip)));
+  return Math.max(0, Math.min(100, Math.round(100 * rustCleaned(rep) - rep.slips * slip - (rep.care || 0))));
 }
 
-// Précision (%) : moyenne des soudures et des alignements de puce (100 s'il n'y en a pas).
+// Précision (%) : moyenne des soudures, des alignements (puce, piles, broches, engrenage) et des réglages (100 s'il n'y en a pas).
 export function precision(rep) {
-  const s = [rep.weld.score, rep.chip.score].filter((v) => v !== null && v !== undefined);
+  const s = [rep.weld.score, rep.chip.score, ...(rep.scores || [])].filter((v) => v !== null && v !== undefined);
   if (!s.length) return 100;
   return Math.round((100 * s.reduce((a, b) => a + b, 0)) / s.length);
 }

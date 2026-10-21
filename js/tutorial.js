@@ -263,8 +263,10 @@ export function drawGribBox(ctx, r, text, shown, time, { sub = null, more = fals
 // ---------- Suite de leçons pendant un geste ----------
 // lessons : [{ id, key: string | () => string, start(), done(), demo?() → démonstration, ring?() → {x, y, r}, praise?,
 //   offset?() → [dx, dy] (où se trouve l'outil par rapport au doigt), carry?(ctx, x, y) (outil fantôme dessiné là) }]
-export function createCoach(lessons, { enabled = true } = {}) {
-  const list = enabled ? lessons.filter((l) => !seen(l.id)) : [];
+// remember = false (atelier d'essai) : les leçons sont toujours montrées et jamais notées comme vues.
+export function createCoach(lessons, { enabled = true, remember = true } = {}) {
+  const list = enabled ? lessons.filter((l) => !remember || !seen(l.id)) : [];
+  const mark = (id) => { if (remember) markSeen(id); };
   let i = 0;
   let cur = null;       // leçon affichée
   let praise = null;    // { key, t } : bravo de Gribouille après la leçon
@@ -283,7 +285,7 @@ export function createCoach(lessons, { enabled = true } = {}) {
   return {
     get active() { return !!(cur || praise); },
     get lesson() { return cur ? cur.id : null; },
-    has(id) { return list.some((l) => l.id === id) && !seen(id); },
+    has(id) { return list.some((l) => l.id === id) && (!remember || !seen(id)); },
 
     touch(type) {
       if (type === 'down') touching = true;
@@ -299,7 +301,7 @@ export function createCoach(lessons, { enabled = true } = {}) {
       }
       // leçon en cours terminée ?
       if (cur && cur.done()) {
-        markSeen(cur.id);
+        mark(cur.id);
         if (cur.praise) praise = { key: cur.praise, t: 1.8 };
         cur = null;
         i++;
@@ -307,7 +309,7 @@ export function createCoach(lessons, { enabled = true } = {}) {
       // leçon suivante (on saute celles que le joueur a déjà faites tout seul)
       while (!cur && !praise && i < list.length) {
         const l = list[i];
-        if (l.done()) { markSeen(l.id); i++; continue; }
+        if (l.done()) { mark(l.id); i++; continue; }
         if (l.start()) { cur = l; idle = 99; }
         break;
       }

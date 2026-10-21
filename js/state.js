@@ -1,5 +1,5 @@
 // État partagé : données JSON chargées et réparation en cours.
-import { D, faultSpot, spots, setLook, setTrace } from './drone.js';
+import { D, faultSpot, spots, setLook, setTrace, assignBays } from './drone.js';
 import { save } from './save.js';
 
 export const game = { data: {}, repair: null, lastOrder: 'o01' };
@@ -12,6 +12,7 @@ export async function loadData() {
   game.data.gestures = gestures;
   game.data.patients = patients;
   game.data.orders = orders.list;
+  game.data.tests = orders.tests || [];
   game.data.tools = tools;
   game.data.clients = clients;
   game.data.ranks = ranks.list;
@@ -20,7 +21,7 @@ export async function loadData() {
 }
 
 export function getOrder(id) {
-  return game.data.orders.find((o) => o.id === id) || game.data.orders[0];
+  return game.data.orders.find((o) => o.id === id) || game.data.tests.find((o) => o.id === id) || game.data.orders[0];
 }
 
 // Niveau d'un outil (1 à 3) dans la sauvegarde.
@@ -40,6 +41,9 @@ export function toolGestures() {
   g.magnifier.scan = e('lens', 'scan');
   g.chip.snap_radius = Math.round(g.chip.snap_radius * e('tweezers', 'snap_factor'));
   g.capacitor.snap_radius = Math.round(g.capacitor.snap_radius * e('tweezers', 'snap_factor'));
+  // V3a : la pince aide aussi pour les piles (même aimantation que les puces) et les broches
+  g.batteries.snap_radius = g.chip.snap_radius;
+  g.pins.tolerance *= e('tweezers', 'snap_factor');
   return g;
 }
 
@@ -103,6 +107,8 @@ export function newRepair(orderId) {
   const u = g.unscrew;
   // scanner : les pannes cachées sont affichées dès l'ouverture
   const scanned = g.magnifier.scan && p.hidden_faults.length > 0;
+  // pièces des gestes secondaires (avant les cibles de la loupe, qui s'en servent)
+  spots.bay = assignBays(p.faults);
   game.repair = {
     patient: p,
     g,
@@ -148,6 +154,10 @@ export function newRepair(orderId) {
     // fragile : wear = temps frotté, broken = à remplacer, removed = sorti, breaks = nombre de casses
     fragile: p.fragile.map(([x, y, w, h], i) => ({ i, x, y, w, h, wear: 0, broken: false, removed: false, breaks: 0 })),
     slips: 0,
+    // V3a : gestes secondaires (bay = où est chaque pièce, care = points de soin perdus, scores = précisions)
+    bay: spots.bay,
+    care: 0,
+    scores: [],
     elapsed: 0,
     attempts: 0,
   };

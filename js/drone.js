@@ -75,9 +75,29 @@ export function pathAt(s) {
 
 // Endroit à faire clignoter pour une panne restante.
 // Composants fragiles de la réparation en cours (remplis par newRepair).
-export const spots = { fragile: [] };
+export const spots = { fragile: [], bay: {} };
+
+// V3a : pannes à geste secondaire (vue rapprochée) → type de geste (js/closeup.js).
+export const SEC = {
+  battery_swollen: 'battery', heart_battery: 'heart', gear_stuck: 'gear', sensor: 'sensor',
+  pin_bent: 'pins', spring_loose: 'spring', batteries_low: 'batteries', oxidized: 'oxide',
+};
+// Où se trouvent ces pièces sur la carte : la batterie à sa place, les autres dans des « baies » libres.
+const BATTERY_SPOT = { x: 370, y: 967, r: 85 };
+const BAYS = [[740, 1000], [548, 578], [375, 825]];
+export function assignBays(faults) {
+  const bay = {};
+  let k = 0;
+  for (const f of faults) {
+    if (!SEC[f] || bay[f]) continue;
+    if (SEC[f] === 'battery' || SEC[f] === 'heart') bay[f] = { ...BATTERY_SPOT };
+    else { const [x, y] = BAYS[k++ % BAYS.length]; bay[f] = { x, y, r: 70 }; }
+  }
+  return bay;
+}
 
 export function faultSpot(fault) {
+  if (spots.bay && spots.bay[fault]) return spots.bay[fault];
   if (fault.startsWith('capacitor_')) { const c = spots.fragile[+fault.split('_')[1]]; if (c) return { x: c.x, y: c.y, r: 70 }; }
   if (fault === 'chip_burnt') return { x: D.slot.x, y: D.slot.y, r: 120 };
   if (fault === 'trace_cut') { const p = pathAt(SOLDER.len / 2); return { x: p.x, y: p.y, r: 140 }; }

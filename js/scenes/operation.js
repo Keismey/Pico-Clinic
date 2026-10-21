@@ -1,10 +1,10 @@
 // Écran opération : dévisser le capot, diagnostic à la loupe, puis réparer
-// (connecteur, puce, soudure, rouille à l'aspirateur) et démarrer.
+// (connecteur, puce, soudure, rouille à l'aspirateur, gestes secondaires en vue rapprochée) et démarrer.
 // Première fois : Gribouille montre chaque nouveau geste (js/tutorial.js).
 import { W, H } from '../canvas.js';
 import { t } from '../i18n.js';
 import { Buttons, C, drawMatBackground, drawPanel, drawText, drawToast, fitText, easeInOut, roundRect } from '../ui.js';
-import { D, SOLDER, drawFrame, drawInterior, drawCover, drawScrew, drawTray, trayPos, drawChip, drawPartBox, drawIron, faultSpot, drawVacuum, drawLens, isHidden, drawCapacitor } from '../drone.js';
+import { SEC, D, SOLDER, drawFrame, drawInterior, drawCover, drawScrew, drawTray, trayPos, drawChip, drawPartBox, drawIron, faultSpot, drawVacuum, drawLens, isHidden, drawCapacitor } from '../drone.js';
 import { createCapacitor, SPARE } from '../gestures/capacitor.js';
 import { createVacuum } from '../gestures/vacuum.js';
 import { createMagnifier } from '../gestures/magnifier.js';
@@ -19,10 +19,11 @@ import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 import { save } from '../save.js';
 import { createCoach, demo, drawGribBox } from '../tutorial.js';
+import { createCloseup } from '../closeup.js';
 
 const TAU = Math.PI * 2;
 
-let rep, unscrew, connector, chip, solder, vacuum, lens, cap, buttons, startBtn;
+let rep, unscrew, connector, chip, solder, vacuum, lens, cap, sec, buttons, startBtn;
 let finger = { x: 0, y: 0 };
 let closing = false;
 let toast = null;
@@ -54,6 +55,9 @@ function showToast(key, color = C.ink, vars) {
 function pct(v) {
   return Math.round(v * 100);
 }
+
+// Accès pour les tests automatiques (navigateur piloté) : réparation et vue rapprochée en cours.
+export const debug = { get rep() { return rep; }, get sec() { return sec; } };
 
 export default {
   init(params = {}) {
@@ -202,13 +206,27 @@ export default {
       },
     });
 
+    // V3a : gestes secondaires (batterie, engrenage, capteur, broches, ressort, piles, oxydation)
+    sec = createCloseup(rep, {
+      toast: (key, color, vars) => showToast(key, color, vars),
+      vibrate,
+      spawn: (x, y, o) => fx.spawn(x, y, o),
+      fixed: (f) => {
+        rep.faults.delete(f);
+        const sp = rep.bay[f];
+        fx.spawn(sp.x, sp.y, { count: 18, color: '#5fe08b', speed: 380, size: 7 });
+      },
+    });
+
     if (rep.scanned && !params.resume) showToast('op.scanned', C.turquoiseDark);
 
     swipe = null;
     swipeDy = 0;
     zooming = false;
     const firstTime = !(save.orders[rep.patient.id] && save.orders[rep.patient.id].paid);
-    coach = createCoach(this.lessons(rep.patient.order.n), { enabled: firstTime });
+    // atelier d'essai : Gribouille montre toujours le geste, sans le noter comme vu
+    const test = !!rep.patient.order.test;
+    coach = createCoach(this.lessons(rep.patient.order.n).concat(sec.lessons()), { enabled: firstTime || test, remember: !test });
     intro = coach.has('open') && !params.resume ? 0 : 1;
 
     buttons = new Buttons();
@@ -306,7 +324,7 @@ export default {
   },
 
   release() {
-    unscrew.up(); connector.up(); chip.up(); solder.up(); vacuum.up(); lens.up(); cap.up();
+    unscrew.up(); connector.up(); chip.up(); solder.up(); vacuum.up(); lens.up(); cap.up(); sec.up();
   },
 
   update(dt) {
@@ -338,6 +356,7 @@ export default {
     vacuum.update(dt);
     lens.update(dt);
     cap.update(dt);
+    sec.update(dt);
     if (vacuum.active) rep.vacuumUsed = true;
     if (rep.phase === 'diag' && rep.coverAnim >= 1) rep.diag.time += dt;
     if (vacuum.active && vacuum.sucking) vibrate(3);
@@ -374,7 +393,7 @@ export default {
     if (white > 0) white = Math.max(0, white - dt * 2.5);
 
     const ready = rep.faults.size === 0;
-    startBtn.visible = rep.coverOpen && rep.coverAnim >= 1 && !closing && rep.phase === 'repair' && !vacuum.active;
+    startBtn.visible = rep.coverOpen && rep.coverAnim >= 1 && !closing && rep.phase === 'repair' && !vacuum.active && !sec.active;
     startBtn.style = ready ? 'primary' : 'secondary';
     startBtn.pulse = ready;
   },
@@ -407,7 +426,10 @@ export default {
       return;
     }
     drawFrame(ctx);
-    if (rep.coverAnim > 0 || swipeDy > 0) drawInterior(ctx, rep, { glow: connector.glow, slotGlow: chip.slotGlow, time, warn: vacuum.active });
+    if (rep.coverAnim > 0 || swipeDy > 0) {
+      drawInterior(ctx, rep, { glow: connector.glow, slotGlow: chip.slotGlow, time, warn: vacuum.active });
+      sec.drawBoard(ctx, time);
+    }
 
     const k = Math.max(easeInOut(rep.coverAnim), closing ? 0 : swipeDy / 1150);
     drawCover(ctx, {
@@ -466,6 +488,7 @@ export default {
     }
     ctx.restore();
 
+    sec.drawPanel(ctx, time);
     this.drawHint(ctx);
 
     if (toast) drawToast(ctx, t(toast.key, toast.vars), W / 2, 1260, toast.t / toast.max, toast.color);
@@ -574,6 +597,7 @@ export default {
       if (lens.active) return lens.target ? 'op.hint.diag_hold' : 'op.hint.diag_move';
       return 'op.hint.diag';
     }
+    if (sec.current) return sec.hint();
     if (vacuum.active) return 'op.hint.vacuum';
     if (cap.held) return cap.held.what === 'old' ? 'op.hint.cap_drag_old' : 'op.hint.cap_drag_new';
     const clean = cleanliness(rep) >= rep.g.scoring.clean_min;
@@ -587,6 +611,7 @@ export default {
       if (f === 'connector_unplugged') return 'op.hint.connector';
       if (f === 'chip_burnt') return rep.chip.old.state === 'slot' ? 'op.hint.chip_remove' : 'op.hint.chip_place';
       if (f === 'trace_cut') return 'op.hint.solder';
+      if (SEC[f]) return 'sec.tap.' + SEC[f];
       if (f.startsWith('capacitor_')) {
         const c = rep.fragile[+f.split('_')[1]];
         return c && c.removed ? 'op.hint.cap_place' : 'op.hint.cap_remove';
@@ -599,7 +624,8 @@ export default {
   drawHint(ctx) {
     const key = this.hintKey();
     let sub = null;
-    if (!rep.coverOpen) sub = t('op.screws', { n: rep.screws.filter((s) => s.out).length, total: rep.screws.length });
+    if (sec.current) sub = sec.sub();
+    else if (!rep.coverOpen) sub = t('op.screws', { n: rep.screws.filter((s) => s.out).length, total: rep.screws.length });
     else if (rep.phase === 'diag') sub = t('op.found', { n: rep.diag.revealed.size, total: rep.diag.hidden.size });
     else if (rep.coverAnim >= 1) {
       const total = rep.patient.faults.length + rep.fragile.filter((c) => c.breaks > 0).length;
@@ -657,6 +683,8 @@ export default {
       lens.down(x, y);
       return;
     }
+    if (sec.active) { sec.down(x, y); return; }
+    if (sec.tapAt(x, y)) return;
     if (cap.down(x, y)) return;
     if (chip.down(x, y)) return;
     if (onPlug && connector.down(x, y)) return;
@@ -690,6 +718,7 @@ export default {
       vacuum.move(x, y);
       lens.move(x, y);
       cap.move(x, y);
+      sec.move(x, y);
     } else {
       if (swipe) {
         swipe = null;

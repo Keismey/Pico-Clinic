@@ -30,7 +30,10 @@
     "off_path_time": 0.15,
     "burn_time": 0.6,
     "grab_radius": 110,
-    "grip": [65, 130],
+    "grip": [
+      65,
+      130
+    ],
     "cell": 8
   },
   "chip": {
@@ -68,5 +71,64 @@
     "grab_radius": 80,
     "lift_offset": 110,
     "snap_radius": 40
+  },
+  "battery": {
+    "speed_max": 340,
+    "heart_factor": 0.8,
+    "risk_rise": 1.8,
+    "risk_fall": 0.7,
+    "edge_tol": 30,
+    "max_dev": 55,
+    "edge_cost": 4,
+    "edge_cooldown": 0.8,
+    "risk_cost": 10,
+    "grab_pad": 40
+  },
+  "gear": {
+    "tolerance": 20,
+    "attempts_hint": 3,
+    "snap_radius": 60,
+    "grab_pad": 40,
+    "zone": 330,
+    "lift_offset": 100
+  },
+  "sensor": {
+    "zone": 0.12,
+    "hold": 0.8,
+    "knob_grab": 85
+  },
+  "pins": {
+    "tolerance": 6,
+    "grab": 70,
+    "count": 3
+  },
+  "spring": {
+    "turns": 3,
+    "speed_min": 0.35,
+    "speed_max": 1.6,
+    "risk_rise": 1.5,
+    "risk_fall": 0.8,
+    "risk_cost": 6
+  },
+  "batteries": {
+    "snap_radius": 36,
+    "grab_pad": 30,
+    "lift_offset": 110,
+    "rub_radius": 60,
+    "rate": 0.035,
+    "min_speed": 90,
+    "cell": 44,
+    "clean_min": 0.9
+  },
+  "oxide": {
+    "radius": 26,
+    "offset_y": 130,
+    "rate": 0.03,
+    "min_speed": 60,
+    "cell": 22,
+    "clean_min": 0.9,
+    "grace": 0.35,
+    "cooldown": 1.0,
+    "cost": 3
   }
 }

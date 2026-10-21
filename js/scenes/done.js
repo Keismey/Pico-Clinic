@@ -63,10 +63,12 @@ export default {
     shown = 0;
     res = scoreRepair(rep);
     const before = save.credits;
-    pay = recordRepair(rep, res);
+    // atelier d'essai : rien n'est payé ni enregistré
+    const test = !!rep.patient.order.test;
+    pay = test ? { firstPay: false, paid: 0, record: false, rankUp: 0, part: null } : recordRepair(rep, res);
     creditsShown = before;
     // commande suivante si elle est jouable, sinon retour à la liste
-    const next = nextOrder(rep.patient.order);
+    const next = test ? null : nextOrder(rep.patient.order);
     const nextOk = next && orderState(next) === 'open';
     needStars = next && orderState(next) === 'stars' ? examStars(next) : 0;
     tuto = rep.patient.order.n === 1 && pay.firstPay && !seen('results') ? { i: 0, shown: 0 } : null;
@@ -77,9 +79,10 @@ export default {
     buttons.add({
       x: 190, y: 1500, w: 700, h: 170, size: 68,
       pulse: !!pay.rankUp,
-      label: () => t(pay.rankUp ? 'done.continue' : nextOk ? 'done.next' : 'done.orders'),
+      label: () => t(test ? 'bench.back' : pay.rankUp ? 'done.continue' : nextOk ? 'done.next' : 'done.orders'),
       onTap: () => {
-        if (pay.rankUp) go('rank', { rank: pay.rankUp });
+        if (test) go('bench');
+        else if (pay.rankUp) go('rank', { rank: pay.rankUp });
         else if (story) go('story', { id: story, then: nextOk ? { scene: 'counter', params: { order: next.id, mode: 'intro' } } : { scene: 'orders' } });
         else if (nextOk) go('counter', { order: next.id, mode: 'intro' });
         else go('orders');
@@ -136,7 +139,7 @@ export default {
     if (pay.firstPay) {
       lines.push([t('done.pay', { b: res.base }) + (res.tip ? '  ·  ' + t('done.tip', { n: res.tip }) : '  ·  ' + t('done.no_tip')), C.copperDark]);
     } else {
-      lines.push([t('done.already_paid'), C.inkSoft]);
+      lines.push([t(rep.patient.order.test ? 'bench.not_saved' : 'done.already_paid'), C.inkSoft]);
     }
     if (res.parts) lines.push([t('done.parts', { n: res.parts }), C.red]);
     if (needStars) lines.push([t('done.need_stars', { n: needStars, s: totalStars() }), C.orangeDark]);

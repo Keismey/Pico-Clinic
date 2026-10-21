@@ -61,7 +61,7 @@ export default {
     coach = createCoach([{
       id: 'lever', key: 'tuto.lever', start: () => true, done: () => state !== 'idle',
       demo: () => demo.drag(DX, TRACK_TOP, DX, TRACK_TOP + params.travel * 0.85, 0.15, 0.7),
-    }], { enabled: firstTime });
+    }], { enabled: firstTime, remember: !rep.patient.order.test });
   },
 
   update(dt) {
@@ -94,7 +94,7 @@ export default {
       }
       // commande rejouée : pas de comptoir (ni avant ni après), on va droit aux étoiles
       if (st > 3.8) {
-        if (orderState(rep.patient.order) === 'done') go('done');
+        if (rep.patient.order.test || orderState(rep.patient.order) === 'done') go('done');
         else go('counter', { order: rep.patient.id, mode: 'thanks' });
       }
     }

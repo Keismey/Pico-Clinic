@@ -16,6 +16,7 @@ import counter from './scenes/counter.js';
 import notebook from './scenes/notebook.js';
 import rank from './scenes/rank.js';
 import story from './scenes/story.js';
+import bench from './scenes/bench.js';
 import { initBack, asking, tickAsk, askPointer, drawAsk } from './back.js';
 
 // La langue se choisit uniquement sur l'écran titre.
@@ -72,6 +73,7 @@ async function boot() {
   register('notebook', notebook);
   register('rank', rank);
   register('story', story);
+  register('bench', bench);
 
   canvas.addEventListener('pointerdown', (e) => onPointer('down', e));
   canvas.addEventListener('pointermove', (e) => onPointer('move', e));
@@ -91,7 +93,8 @@ async function boot() {
 
   const loading = document.getElementById('loading');
   if (loading) loading.remove();
-  go('title');
+  // lien de test « ?essai » : l'atelier d'essai des gestes secondaires
+  go(new URLSearchParams(location.search).has('essai') ? 'bench' : 'title');
   // bouton retour du téléphone : on remonte d'un écran au lieu de quitter le jeu
   initBack(() => {
     if (activeId !== null && owner === 'scene') scene().pointer('cancel', 0, 0);
