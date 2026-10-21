@@ -20,14 +20,15 @@ function hash(a, b) {
 }
 
 // Plaques de rouille [x, y, rayon] → cellules dont l'opacité baisse quand on aspire.
-function buildRust(patches, cell) {
+function buildRust(patches, cell, fragile = []) {
+  const near = (x, y) => (fragile || []).some(([fx, fy, w, h]) => Math.abs(x - fx) < w / 2 + 14 && Math.abs(y - fy) < h / 2 + 14);
   const cells = [];
   for (const [cx, cy, r] of patches || []) {
     for (let y = cy - r; y <= cy + r; y += cell) {
       for (let x = cx - r; x <= cx + r; x += cell) {
         const d = Math.hypot(x - cx, y - cy);
         const edge = r * (0.72 + 0.28 * hash(Math.round(x), Math.round(y)));
-        if (d > edge) continue;
+        if (d > edge || near(x, y)) continue;
         if (cells.some((c) => c.x === x && c.y === y)) continue;
         const a = 0.55 + 0.45 * hash(y, x) * (1 - (0.5 * d) / edge);
         cells.push({ x, y, a, a0: a, dark: hash(x + 7, y + 3) > 0.7 });
@@ -76,7 +77,8 @@ export function newRepair(patientId) {
       time: 0,
       penalty: 0,
     },
-    rust: buildRust(p.rust, game.data.gestures.vacuum.cell),
+    // pas de rouille sur les condensateurs (ni juste autour) : on peut tout nettoyer sans les toucher
+    rust: buildRust(p.rust, game.data.gestures.vacuum.cell, p.fragile),
     // fragile : wear = temps frotté, broken = à remplacer, removed = sorti, breaks = nombre de casses
     fragile: (p.fragile || []).map(([x, y, w, h], i) => ({ i, x, y, w, h, wear: 0, broken: false, removed: false, breaks: 0 })),
     slips: 0,

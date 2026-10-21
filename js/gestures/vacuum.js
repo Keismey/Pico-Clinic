@@ -32,7 +32,7 @@ export function createVacuum(rep, params, hooks = {}) {
     }
     if (cleaned > 0) suckT = 0.15;
     for (const comp of rep.fragile) {
-      if (comp.broken || comp.removed || !overlapsRect(x, y, r * 0.8, comp)) continue;
+      if (comp.broken || comp.removed || !overlapsRect(x, y, r * params.fragile_hit, comp)) continue;
       if (comp.wear === 0 || warnT <= 0) {
         warnT = params.fragile_warn_cooldown;
         if (hooks.onFragileTouch) hooks.onFragileTouch(comp);

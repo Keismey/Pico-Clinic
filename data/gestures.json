@@ -38,13 +38,14 @@
     "lift_offset": 120
   },
   "vacuum": {
-    "radius": 46,
+    "radius": 28,
     "min_speed": 110,
-    "rate": 0.011,
+    "rate": 0.02,
     "cell": 20,
-    "fragile_grace": 0.3,
+    "fragile_grace": 0.45,
     "fragile_warn_cooldown": 1.2,
-    "offset_y": 150
+    "offset_y": 150,
+    "fragile_hit": 0.7
   },
   "magnifier": {
     "radius": 125,
