@@ -9,7 +9,9 @@ import { C, roundRect, fitText, easeInOut } from './ui.js';
 import { SEC, isHidden } from './drone.js';
 import { demo } from './tutorial.js';
 import { toneStop } from './feedback.js';
+import { cleanliness } from './score.js';
 import { createBattery } from './gestures/battery.js';
+import { createHeart } from './gestures/heart.js';
 import { createGear, drawGear } from './gestures/gear.js';
 import { createSensor } from './gestures/sensor.js';
 import { createPins } from './gestures/pins.js';
@@ -23,7 +25,7 @@ const CLOSE = { x: 966, y: 354, r: 44 };
 
 const MAKE = {
   battery: (g, fx) => createBattery(g.battery, fx),
-  heart: (g, fx) => createBattery(g.battery, fx, { heart: true }),
+  heart: (g, fx) => createHeart(g.heart, fx),
   gear: (g, fx) => createGear(g.gear, fx),
   sensor: (g, fx) => createSensor(g.sensor, fx),
   pins: (g, fx, p) => createPins(g.pins, fx, { count: p.pins }),
@@ -134,6 +136,8 @@ export function createCloseup(rep, hooks) {
     spawn: (x, y, o) => hooks.spawn(x, y, o),
     care: (n) => { rep.care = (rep.care || 0) + n; },
     score: (v) => { (rep.scores = rep.scores || []).push(Math.max(0, Math.min(1, v))); },
+    // composant fragile abîmé : l'étoile Propre est perdue (GDD : aucun composant fragile abîmé)
+    damage: () => { rep.secDamage = true; },
   };
 
   function broken(it) {
@@ -170,7 +174,11 @@ export function createCloseup(rep, hooks) {
         const mod = () => (mine() && open.k >= 1 ? open.item.mod : null);
         out.push({
           id: 'sec_' + it.type,
-          key: () => (mine() ? 'tuto.sec.' + it.type + '2' : 'tuto.sec.' + it.type),
+          key: () => {
+            const m = mod();
+            if (m && m.tutoKey) return m.tutoKey();
+            return mine() ? 'tuto.sec.' + it.type + '2' : 'tuto.sec.' + it.type;
+          },
           praise: 'tuto.bravo',
           start: () => rep.coverAnim >= 1 && rep.phase === 'repair' && (!open || mine()),
           done: () => !items.some((x) => x.type === it.type && broken(x)),
@@ -225,9 +233,15 @@ export function createCloseup(rep, hooks) {
       return open ? open.item.mod.hint() : null;
     },
 
+    // Sous le texte d'aide : l'avancement du geste et la propreté actuelle (les maladresses se voient).
     sub() {
       const m = open && open.item.mod;
-      return m && m.sub ? m.sub(t) : null;
+      if (!m) return null;
+      const parts = [];
+      const own = m.sub ? m.sub(t) : null;
+      if (own) parts.push(own);
+      if (rep.care > 0) parts.push(t('op.clean', { p: cleanliness(rep) }));
+      return parts.length ? parts.join('   ·   ') : null;
     },
 
     // Icônes sur la carte (à dessiner avec l'intérieur du patient).

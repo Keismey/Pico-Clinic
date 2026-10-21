@@ -24,7 +24,8 @@ export function scoreRepair(rep) {
   const prec = precision(rep);
   // un condensateur cassé ne retire pas d'étoile : la pièce de rechange se paie en crédits
   const parts = (rep.partsUsed || 0) * g.capacitor_cost;
-  const stars = [rep.faults.size === 0, clean >= g.clean_min, prec >= g.precise_min];
+  // un composant fêlé pendant un geste secondaire (circuit oxydé) retire l'étoile Propre
+  const stars = [rep.faults.size === 0, clean >= g.clean_min && !rep.secDamage, prec >= g.precise_min];
   const onTime = rep.elapsed <= p.target_time;
   return { stars, clean, prec, parts, onTime, base: p.reward, tip: onTime ? Math.round(p.reward * g.tip_ratio) : 0 };
 }

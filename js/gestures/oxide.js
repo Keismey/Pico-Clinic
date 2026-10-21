@@ -1,6 +1,8 @@
 // Circuit oxydé — vue rapprochée.
 // Nettoyage fin au pinceau d'une zone dense en petits composants fragiles : le pinceau flotte
-// au-dessus du doigt ; frotter un composant plus de grace s coûte du soin. Fini à clean_min.
+// au-dessus du doigt. Chaque contact avec un composant coûte cost points de propreté (et encore
+// toutes les repeat s si on reste dessus) ; au break_hits-ième, il se fêle : adieu l'étoile Propre.
+// Fini à clean_min.
 import { C, roundRect } from '../ui.js';
 import { demo } from '../tutorial.js';
 
@@ -20,7 +22,7 @@ function hash(a, b) {
 }
 
 export function createOxide(params, fx) {
-  const comps = COMPS.filter((c) => c.x < 900).map((c) => ({ ...c, wear: 0, hurt: 0 }));
+  const comps = COMPS.filter((c) => c.x < 900).map((c) => ({ ...c, inside: false, t: 0, hits: 0, cracked: false, hurt: 0 }));
   const near = (x, y) => comps.some((c) => Math.abs(x - c.x) < c.w / 2 + 12 && Math.abs(y - c.y) < c.h / 2 + 12);
   const cells = [];
   const cs = params.cell;
@@ -38,7 +40,6 @@ export function createOxide(params, fx) {
   const total = cells.reduce((s, c) => s + c.a0, 0);
   let drag = null;   // { fx, fy, last }
   let speed = 0;
-  let warnT = 0;
   let done = false;
   const pos = { x: 0, y: 0 };
 
@@ -69,7 +70,6 @@ export function createOxide(params, fx) {
     },
 
     update(dt) {
-      warnT -= dt;
       for (const c of comps) c.hurt = Math.max(0, c.hurt - dt * 2);
       if (!drag || done || dt <= 0) return;
       pos.x = drag.fx;
@@ -78,20 +78,23 @@ export function createOxide(params, fx) {
       speed += (dd / dt - speed) * Math.min(1, dt * 10);
       drag.last = { x: pos.x, y: pos.y };
       const r = params.radius;
-      // composants frôlés
+      // composants touchés : chaque contact coûte de la propreté, le 3e fêle le composant
       for (const c of comps) {
-        if (!overlaps(pos.x, pos.y, r * 0.8, c)) { c.wear = Math.max(0, c.wear - dt); continue; }
-        if (c.wear === 0 && warnT <= 0) { warnT = params.cooldown; fx.info('op.fragile'); fx.vibrate([20, 20, 20]); }
-        c.wear += dt;
-        if (c.wear >= params.grace) {
-          c.wear = 0;
-          c.hurt = 1;
-          warnT = params.cooldown;
-          fx.care(params.cost);
-          fx.bad('sec.oxide.hit');
-          fx.vibrate([50, 30, 50]);
-          fx.spawn(c.x, c.y, { count: 8, color: '#fff3a6', speed: 260, life: 0.35, size: 5 });
-        }
+        if (c.cracked || !overlaps(pos.x, pos.y, r * 0.8, c)) { c.inside = false; continue; }
+        if (c.inside) { c.t += dt; if (c.t < params.repeat) continue; }
+        c.inside = true;
+        c.t = 0;
+        c.hits++;
+        c.hurt = 1;
+        fx.care(params.cost);
+        fx.vibrate([50, 30, 50]);
+        fx.spawn(c.x, c.y, { count: 8, color: '#fff3a6', speed: 260, life: 0.35, size: 5 });
+        if (c.hits >= params.break_hits) {
+          c.cracked = true;
+          fx.damage();
+          fx.bad('sec.oxide.broken');
+          fx.spawn(c.x, c.y - 10, { count: 4, color: '#6b6f75', speed: 70, life: 1.0, size: 12, gravity: -120, kind: 'smoke', dir: -Math.PI / 2, spread: 1 });
+        } else fx.bad('sec.oxide.hit', { n: params.cost, left: params.break_hits - c.hits });
       }
       if (speed < params.min_speed) return;
       for (const c of cells) {
@@ -144,9 +147,9 @@ export function createOxide(params, fx) {
         ctx.fillStyle = `rgba(110, 196, 170, ${c.a * 0.9})`;
         ctx.beginPath(); ctx.arc(c.x, c.y, cs * 0.7, 0, TAU); ctx.fill();
       }
-      // petits composants fragiles
+      // petits composants fragiles (rouges quand on les touche, gris et fêlés au 3e contact)
       for (const c of comps) {
-        ctx.fillStyle = c.hurt > 0 ? `rgb(${230}, ${120 + 80 * (1 - c.hurt)}, ${100})` : '#e8d6b0';
+        ctx.fillStyle = c.cracked ? '#8d8a84' : c.hurt > 0 ? `rgb(230, ${Math.round(120 + 80 * (1 - c.hurt))}, 100)` : '#e8d6b0';
         roundRect(ctx, c.x - c.w / 2, c.y - c.h / 2, c.w, c.h, 10); ctx.fill();
         ctx.strokeStyle = '#8f6a1e';
         ctx.lineWidth = 3;
@@ -156,7 +159,20 @@ export function createOxide(params, fx) {
           if (c.w > c.h) ctx.fillRect(c.x - 20 + k * 16, c.y - c.h / 2 + 3, 7, c.h - 6);
           else ctx.fillRect(c.x - c.w / 2 + 3, c.y - 20 + k * 16, c.w - 6, 7);
         }
-        if (drag && c.wear > 0) {
+        if (c.cracked) {
+          ctx.strokeStyle = '#2b2f33';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(c.x - c.w / 2 + 4, c.y - c.h / 2 + 4); ctx.lineTo(c.x - 4, c.y + 3); ctx.lineTo(c.x + 6, c.y - 4); ctx.lineTo(c.x + c.w / 2 - 4, c.y + c.h / 2 - 4);
+          ctx.stroke();
+        } else if (c.hits > 0) {
+          // points rouges : contacts déjà subis
+          for (let k = 0; k < c.hits; k++) {
+            ctx.fillStyle = C.red;
+            ctx.beginPath(); ctx.arc(c.x - 10 + k * 20, c.y - c.h / 2 - 14, 7, 0, TAU); ctx.fill();
+          }
+        }
+        if (c.inside && !c.cracked) {
           const a = 0.5 + 0.5 * Math.sin(time * 14);
           ctx.strokeStyle = `rgba(214, 69, 69, ${0.5 + 0.5 * a})`;
           ctx.lineWidth = 5;

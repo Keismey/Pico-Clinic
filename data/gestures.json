@@ -74,10 +74,9 @@
   },
   "battery": {
     "speed_max": 340,
-    "heart_factor": 0.8,
     "risk_rise": 1.8,
     "risk_fall": 0.7,
-    "edge_tol": 30,
+    "edge_tol": 26,
     "max_dev": 55,
     "edge_cost": 4,
     "edge_cooldown": 0.8,
@@ -127,8 +126,17 @@
     "min_speed": 60,
     "cell": 22,
     "clean_min": 0.9,
-    "grace": 0.35,
-    "cooldown": 1.0,
-    "cost": 3
+    "cost": 3,
+    "repeat": 0.6,
+    "break_hits": 3
+  },
+  "heart": {
+    "zip_grab": 90,
+    "zip_tol": 120,
+    "period": 1.0,
+    "window": 0.16,
+    "beats": 6,
+    "spam": 0.35,
+    "spam_cost": 3
   }
 }
