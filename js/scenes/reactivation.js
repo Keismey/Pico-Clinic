@@ -3,7 +3,7 @@
 import { W } from '../canvas.js';
 import { t } from '../i18n.js';
 import { C, drawCreamBackground, drawPanel, drawText, drawToast, roundRect, clamp, easeInOut } from '../ui.js';
-import { D, withDrone, drawShadow, drawFrame, drawCover } from '../drone.js';
+import { D, withDrone, drawShadow, drawFrame, drawCover, faultSpot } from '../drone.js';
 import { game } from '../state.js';
 import { vibrate } from '../feedback.js';
 import * as fx from '../particles.js';
@@ -102,7 +102,8 @@ export default {
         const a = 0.5 + 0.5 * Math.sin(st * 12);
         ctx.strokeStyle = `rgba(214, 69, 69, ${0.4 + a * 0.6})`;
         ctx.lineWidth = 16;
-        ctx.beginPath(); ctx.arc(D.socket.x, D.socket.y, 110 + a * 15, 0, TAU); ctx.stroke();
+        const spot = faultSpot(rep.faults.values().next().value);
+        ctx.beginPath(); ctx.arc(spot.x, spot.y, spot.r + a * 15, 0, TAU); ctx.stroke();
       }
     });
 

@@ -3,9 +3,20 @@
     "id": "drone_jouet_v0",
     "family": "drone",
     "rank": 1,
-    "parts": ["screw x4", "connector x1"],
-    "rusty_screws": [2],
-    "faults": ["connector_unplugged"],
+    "parts": [
+      "screw x4",
+      "connector x1",
+      "chip_slot x1",
+      "trace x1"
+    ],
+    "rusty_screws": [
+      2
+    ],
+    "faults": [
+      "connector_unplugged",
+      "chip_burnt",
+      "trace_cut"
+    ],
     "target_time": 120,
     "reward": 40
   }

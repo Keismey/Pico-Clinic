@@ -37,9 +37,16 @@ export default {
       drawCover(ctx, { screws: rep.screws });
     });
 
-    fitText(ctx, t('done.time', { t: fmt(rep.elapsed) }), W / 2, 1185, 860, 50, C.ink, 700);
-    fitText(ctx, t('done.slips', { n: rep.slips }), W / 2, 1260, 860, 50, C.ink, 700);
-    fitText(ctx, t('done.attempts', { n: rep.attempts }), W / 2, 1335, 860, 50, C.ink, 700);
+    const lines = [
+      t('done.time', { t: fmt(rep.elapsed) }),
+      t('done.slips', { n: rep.slips }),
+      t('done.attempts', { n: rep.attempts }),
+    ];
+    // précision moyenne des soudures et des alignements de puce
+    const scores = [rep.weld.score, rep.chip.score].filter((v) => v !== null && v !== undefined);
+    if (scores.length) lines.push(t('done.precision', { p: Math.round(100 * scores.reduce((a, b) => a + b, 0) / scores.length) }));
+    if (rep.weld.burns || rep.weld.shorts) lines.push(t('done.solder', { b: rep.weld.burns, s: rep.weld.shorts }));
+    lines.forEach((l, i) => fitText(ctx, l, W / 2, 1170 + i * 56, 860, 42, C.ink, 700));
     buttons.draw(ctx);
   },
 

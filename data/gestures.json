@@ -15,5 +15,26 @@
   "lever": {
     "travel": 380,
     "validate": 0.7
+  },
+  "solder": {
+    "tolerance_by_rank": [
+      36,
+      32,
+      28,
+      25,
+      21
+    ],
+    "heat_time": 1.2,
+    "speed_min": 80,
+    "speed_max": 240,
+    "off_path_time": 0.15,
+    "burn_time": 0.6,
+    "grab_radius": 120,
+    "cell": 8
+  },
+  "chip": {
+    "snap_radius": 36,
+    "grab_pad": 30,
+    "lift_offset": 120
   }
 }

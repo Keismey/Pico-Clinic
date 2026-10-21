@@ -31,6 +31,15 @@ export function newRepair(patientId) {
     coverAnim: 0,
     faults: new Set(p.faults),
     plug: { x: D.plugStart.x, y: D.plugStart.y, connected: false, lift: false },
+    // soudure de la piste coupée (déjà faite si le patient n'a pas cette panne)
+    weld: {
+      cells: [], progress: 0, done: !p.faults.includes('trace_cut'), active: false,
+      devSum: 0, devN: 0, burns: 0, shorts: 0, score: null,
+    },
+    // puce : l'ancienne (grillée) et la neuve
+    chip: p.faults.includes('chip_burnt')
+      ? { old: { x: D.slot.x, y: D.slot.y, state: 'slot', fly: null }, neu: { x: D.box.x, y: D.box.y, state: 'box', fly: null }, score: null }
+      : { old: { x: 0, y: 0, state: 'gone', fly: null }, neu: { x: D.slot.x, y: D.slot.y, state: 'placed', fly: null }, score: null },
     cleanliness: 100,
     slips: 0,
     elapsed: 0,
