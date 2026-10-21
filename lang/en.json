@@ -434,5 +434,7 @@
   "tuto.sec.heart3": "Tap it in time with its beats, when the circle reaches it. Not too fast: it's fragile!",
   "sec.oxide.broken": "Part cracked! Bye-bye Clean star.",
   "done.cracked": "A fragile part was cracked: no Clean star.",
-  "tuto.sec.heart4": "Perfect! Close the zipper to keep it nice and warm."
+  "tuto.sec.heart4": "Perfect! Close the zipper to keep it nice and warm.",
+  "sec.battery.speed": "Speed: stay in the green",
+  "sec.battery.heat": "Heat"
 }

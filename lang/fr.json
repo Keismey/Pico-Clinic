@@ -434,5 +434,7 @@
   "tuto.sec.heart3": "Touche-le au rythme de ses battements, quand le cercle arrive sur lui. Pas trop vite : il est fragile !",
   "sec.oxide.broken": "Composant fêlé ! Adieu l'étoile Propre.",
   "done.cracked": "Un composant fragile a été fêlé : pas d'étoile Propre.",
-  "tuto.sec.heart4": "Parfait ! Referme la fermeture éclair, qu'il reste bien au chaud."
+  "tuto.sec.heart4": "Parfait ! Referme la fermeture éclair, qu'il reste bien au chaud.",
+  "sec.battery.speed": "Vitesse : reste dans le vert",
+  "sec.battery.heat": "Chaleur"
 }
