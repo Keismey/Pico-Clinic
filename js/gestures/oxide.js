@@ -1,8 +1,9 @@
 // Circuit oxydé — vue rapprochée.
 // Nettoyage fin au pinceau d'une zone dense en petits composants fragiles : le pinceau flotte
 // au-dessus du doigt. Chaque contact avec un composant coûte cost points de propreté (et encore
-// toutes les repeat s si on reste dessus) ; au break_hits-ième, il se fêle : adieu l'étoile Propre.
-// Fini à clean_min.
+// toutes les repeat s si on reste dessus) ; au break_hits-ième, il se fêle et doit être changé
+// (comme les condensateurs) : le glisser dans le bac, puis poser un neuf (payé en crédits).
+// Fini à clean_min, sans composant fêlé.
 import { C, roundRect } from '../ui.js';
 import { demo } from '../tutorial.js';
 
@@ -15,14 +16,16 @@ for (let r = 0; r < 4; r++) {
 }
 const BLOBS = [[330, 600, 95], [620, 760, 115], [460, 930, 95], [770, 590, 85], [740, 1010, 85]];
 const BANDS = ['#d64545', '#3a2a1e', '#ff8a3d', '#3f7fd6'];
+const BIN = { x: 240, y: 1182 };     // bac à composants fêlés
+const SPARE = { x: 840, y: 1182 };   // composants neufs
 
 function hash(a, b) {
   const v = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
   return v - Math.floor(v);
 }
 
-export function createOxide(params, fx) {
-  const comps = COMPS.filter((c) => c.x < 900).map((c) => ({ ...c, inside: false, t: 0, hits: 0, cracked: false, hurt: 0 }));
+export function createOxide(params, fx, { cost = 5 } = {}) {
+  const comps = COMPS.filter((c) => c.x < 900).map((c) => ({ ...c, inside: false, t: 0, hits: 0, cracked: false, removed: false, held: false, hurt: 0 }));
   const near = (x, y) => comps.some((c) => Math.abs(x - c.x) < c.w / 2 + 12 && Math.abs(y - c.y) < c.h / 2 + 12);
   const cells = [];
   const cs = params.cell;
@@ -38,12 +41,25 @@ export function createOxide(params, fx) {
     }
   }
   const total = cells.reduce((s, c) => s + c.a0, 0);
-  let drag = null;   // { fx, fy, last }
+  let drag = null;   // pinceau : { fx, fy, last }
+  let part = null;   // composant tenu : { comp, what: 'old' | 'new', x, y, fx, fy, offY }
   let speed = 0;
   let done = false;
   const pos = { x: 0, y: 0 };
 
   const cleaned = () => 1 - cells.reduce((s, c) => s + c.a, 0) / total;
+  const toFix = () => comps.filter((c) => c.cracked);
+  const waiting = () => comps.find((c) => c.removed);
+
+  function finish() {
+    if (done || cleaned() < params.clean_min || toFix().length) return;
+    for (const c of cells) c.a = 0;
+    done = true;
+    drag = null;
+    fx.vibrate([10, 20, 40]);
+    fx.spawn(540, 780, { count: 24, color: '#5fe08b', speed: 460, size: 8 });
+    fx.ok('sec.oxide.ok');
+  }
 
   function overlaps(x, y, r, c) {
     const nx = Math.max(c.x - c.w / 2, Math.min(x, c.x + c.w / 2));
@@ -56,6 +72,22 @@ export function createOxide(params, fx) {
 
     down(x, y) {
       if (done) return false;
+      // composant fêlé (on le touche directement) ou composant neuf dans la boîte
+      for (const c of comps) {
+        if (!c.cracked || c.removed) continue;
+        if (Math.abs(x - c.x) < c.w / 2 + 34 && Math.abs(y - c.y) < c.h / 2 + 34) {
+          part = { comp: c, what: 'old', x: c.x, y: c.y, fx: x, fy: y, offY: c.y - y };
+          c.held = true;
+          fx.vibrate(8);
+          return true;
+        }
+      }
+      const w = waiting();
+      if (w && Math.hypot(x - SPARE.x, y - SPARE.y) < 90) {
+        part = { comp: w, what: 'new', x: SPARE.x, y: SPARE.y, fx: x, fy: y, offY: SPARE.y - y };
+        fx.vibrate(8);
+        return true;
+      }
       drag = { fx: x, fy: y, last: { x, y: y - params.offset_y } };
       pos.x = x; pos.y = y - params.offset_y;
       return true;
@@ -63,14 +95,48 @@ export function createOxide(params, fx) {
 
     move(x, y) {
       if (drag) { drag.fx = x; drag.fy = y; }
+      if (part) { part.fx = x; part.fy = y; }
     },
 
     up() {
       drag = null;
+      if (!part) return;
+      const { comp, what, x, y } = part;
+      part = null;
+      comp.held = false;
+      if (what === 'old') {
+        if (Math.hypot(x - BIN.x, y - BIN.y) < 120) {
+          comp.removed = true;
+          fx.vibrate([15, 30, 15]);
+          fx.info('sec.oxide.binned');
+        } else fx.info('sec.oxide.to_bin');
+        return;
+      }
+      let spot = null, best = 60;
+      for (const c of comps) {
+        if (!c.removed) continue;
+        const d = Math.hypot(x - c.x, y - c.y);
+        if (d <= best) { best = d; spot = c; }
+      }
+      if (spot) {
+        spot.removed = false;
+        spot.cracked = false;
+        spot.hits = 0;
+        fx.part();
+        fx.vibrate([10, 20, 35]);
+        fx.spawn(spot.x, spot.y, { count: 16, color: C.turquoise, speed: 360, size: 7 });
+        fx.ok('sec.oxide.new', { n: cost });
+        finish();
+      } else fx.info('sec.oxide.miss');
     },
 
     update(dt) {
       for (const c of comps) c.hurt = Math.max(0, c.hurt - dt * 2);
+      if (part) {
+        part.offY += (-90 - part.offY) * Math.min(1, dt * 14);
+        part.x = part.fx;
+        part.y = part.fy + part.offY;
+      }
       if (!drag || done || dt <= 0) return;
       pos.x = drag.fx;
       pos.y = drag.fy - params.offset_y;
@@ -80,7 +146,7 @@ export function createOxide(params, fx) {
       const r = params.radius;
       // composants touchés : chaque contact coûte de la propreté, le 3e fêle le composant
       for (const c of comps) {
-        if (c.cracked || !overlaps(pos.x, pos.y, r * 0.8, c)) { c.inside = false; continue; }
+        if (c.cracked || c.removed || !overlaps(pos.x, pos.y, r * 0.8, c)) { c.inside = false; continue; }
         if (c.inside) { c.t += dt; if (c.t < params.repeat) continue; }
         c.inside = true;
         c.t = 0;
@@ -91,8 +157,7 @@ export function createOxide(params, fx) {
         fx.spawn(c.x, c.y, { count: 8, color: '#fff3a6', speed: 260, life: 0.35, size: 5 });
         if (c.hits >= params.break_hits) {
           c.cracked = true;
-          fx.damage();
-          fx.bad('sec.oxide.broken');
+          fx.bad('sec.oxide.broken', { n: cost });
           fx.spawn(c.x, c.y - 10, { count: 4, color: '#6b6f75', speed: 70, life: 1.0, size: 12, gravity: -120, kind: 'smoke', dir: -Math.PI / 2, spread: 1 });
         } else fx.bad('sec.oxide.hit', { n: params.cost, left: params.break_hits - c.hits });
       }
@@ -106,15 +171,14 @@ export function createOxide(params, fx) {
       }
       if (cleaned() >= params.clean_min) {
         for (const c of cells) c.a = 0;
-        done = true;
-        drag = null;
-        fx.vibrate([10, 20, 40]);
-        fx.spawn(540, 780, { count: 24, color: '#5fe08b', speed: 460, size: 8 });
-        fx.ok('sec.oxide.ok');
+        finish();
       }
     },
 
     hint() {
+      if (part) return part.what === 'old' ? 'sec.oxide.to_bin' : 'sec.oxide.place';
+      if (comps.some((c) => c.cracked && !c.removed)) return 'sec.oxide.replace';
+      if (waiting()) return 'sec.oxide.place';
       return 'sec.oxide';
     },
 
@@ -124,6 +188,7 @@ export function createOxide(params, fx) {
 
     offset() { return [0, -params.offset_y]; },
     carry(ctx, x, y) { drawBrush(ctx, x, y, params.radius, params.offset_y); },
+    tutoKey() { return toFix().length ? 'tuto.sec.oxide3' : 'tuto.sec.oxide2'; },
     demo() {
       if (done) return null;
       const c = cells.find((q) => q.a > 0) || cells[0];
@@ -133,7 +198,7 @@ export function createOxide(params, fx) {
     draw(ctx, time) {
       // carte
       ctx.fillStyle = '#2f8a5b';
-      roundRect(ctx, 150, 420, 780, 760, 30); ctx.fill();
+      roundRect(ctx, 150, 420, 780, 690, 30); ctx.fill();
       ctx.strokeStyle = '#d9a441';
       ctx.lineWidth = 7;
       for (const c of comps) {
@@ -149,22 +214,24 @@ export function createOxide(params, fx) {
       }
       // petits composants fragiles (rouges quand on les touche, gris et fêlés au 3e contact)
       for (const c of comps) {
-        ctx.fillStyle = c.cracked ? '#8d8a84' : c.hurt > 0 ? `rgb(230, ${Math.round(120 + 80 * (1 - c.hurt))}, 100)` : '#e8d6b0';
-        roundRect(ctx, c.x - c.w / 2, c.y - c.h / 2, c.w, c.h, 10); ctx.fill();
-        ctx.strokeStyle = '#8f6a1e';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        for (let k = 0; k < 3; k++) {
-          ctx.fillStyle = BANDS[(k + Math.round(c.x / 140)) % BANDS.length];
-          if (c.w > c.h) ctx.fillRect(c.x - 20 + k * 16, c.y - c.h / 2 + 3, 7, c.h - 6);
-          else ctx.fillRect(c.x - c.w / 2 + 3, c.y - 20 + k * 16, c.w - 6, 7);
-        }
-        if (c.cracked) {
-          ctx.strokeStyle = '#2b2f33';
+        if (c.removed) {
+          // emplacement vide : pastilles et cadre qui clignote
+          const a = 0.5 + 0.5 * Math.sin(time * 6);
+          ctx.save();
+          ctx.setLineDash([8, 7]);
+          ctx.strokeStyle = `rgba(255, 255, 255, ${0.4 + 0.5 * a})`;
           ctx.lineWidth = 4;
-          ctx.beginPath();
-          ctx.moveTo(c.x - c.w / 2 + 4, c.y - c.h / 2 + 4); ctx.lineTo(c.x - 4, c.y + 3); ctx.lineTo(c.x + 6, c.y - 4); ctx.lineTo(c.x + c.w / 2 - 4, c.y + c.h / 2 - 4);
-          ctx.stroke();
+          roundRect(ctx, c.x - c.w / 2 - 6, c.y - c.h / 2 - 6, c.w + 12, c.h + 12, 10); ctx.stroke();
+          ctx.restore();
+          continue;
+        }
+        if (c.held) continue;
+        drawResistor(ctx, c.x, c.y, c.w, c.h, c.cracked, c.hurt);
+        if (c.cracked) {
+          const a = 0.5 + 0.5 * Math.sin(time * 6);
+          ctx.strokeStyle = `rgba(255, 138, 61, ${0.4 + 0.5 * a})`;
+          ctx.lineWidth = 5;
+          roundRect(ctx, c.x - c.w / 2 - 10, c.y - c.h / 2 - 10, c.w + 20, c.h + 20, 12); ctx.stroke();
         } else if (c.hits > 0) {
           // points rouges : contacts déjà subis
           for (let k = 0; k < c.hits; k++) {
@@ -179,9 +246,58 @@ export function createOxide(params, fx) {
           roundRect(ctx, c.x - c.w / 2 - 8, c.y - c.h / 2 - 8, c.w + 16, c.h + 16, 12); ctx.stroke();
         }
       }
+      // bac (fêlés) et boîte de composants neufs
+      const anyCracked = comps.some((c) => c.cracked && !c.removed) || (part && part.what === 'old');
+      const a = 0.5 + 0.5 * Math.sin(time * 6);
+      ctx.fillStyle = '#6b7684';
+      roundRect(ctx, BIN.x - 80, BIN.y - 44, 160, 88, 16); ctx.fill();
+      ctx.fillStyle = '#4a525c';
+      roundRect(ctx, BIN.x - 66, BIN.y - 30, 132, 60, 10); ctx.fill();
+      ctx.strokeStyle = '#d64545'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(BIN.x - 16, BIN.y - 14); ctx.lineTo(BIN.x + 16, BIN.y + 14); ctx.moveTo(BIN.x + 16, BIN.y - 14); ctx.lineTo(BIN.x - 16, BIN.y + 14); ctx.stroke();
+      if (anyCracked) {
+        ctx.strokeStyle = `rgba(255, 138, 61, ${0.4 + 0.5 * a})`; ctx.lineWidth = 6;
+        roundRect(ctx, BIN.x - 90, BIN.y - 54, 180, 108, 20); ctx.stroke();
+      }
+      ctx.fillStyle = '#d9c3a3';
+      roundRect(ctx, SPARE.x - 80, SPARE.y - 44, 160, 88, 16); ctx.fill();
+      if (waiting() && !(part && part.what === 'new')) {
+        ctx.fillStyle = `rgba(63, 208, 187, ${0.25 + 0.3 * a})`;
+        ctx.beginPath(); ctx.arc(SPARE.x, SPARE.y, 62, 0, TAU); ctx.fill();
+        drawResistor(ctx, SPARE.x, SPARE.y, 74, 30, false, 0);
+      }
+      // pièce tenue
+      if (part) {
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 8;
+        const c = part.comp;
+        drawResistor(ctx, part.x, part.y, c.w * 1.1, c.h * 1.1, part.what === 'old', 0);
+        ctx.restore();
+      }
       if (drag) drawBrush(ctx, pos.x, pos.y, params.radius, params.offset_y, true);
     },
   };
+}
+
+// Petite résistance (beige à bandes), grise et fêlée si abîmée, rougie quand on vient de la toucher.
+function drawResistor(ctx, x, y, w, h, cracked, hurt) {
+  ctx.fillStyle = cracked ? '#8d8a84' : hurt > 0 ? `rgb(230, ${Math.round(120 + 80 * (1 - hurt))}, 100)` : '#e8d6b0';
+  roundRect(ctx, x - w / 2, y - h / 2, w, h, 10); ctx.fill();
+  ctx.strokeStyle = '#8f6a1e';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  for (let k = 0; k < 3; k++) {
+    ctx.fillStyle = BANDS[(k + Math.round(x / 140)) % BANDS.length];
+    if (w > h) ctx.fillRect(x - 20 + k * 16, y - h / 2 + 3, 7, h - 6);
+    else ctx.fillRect(x - w / 2 + 3, y - 20 + k * 16, w - 6, 7);
+  }
+  if (cracked) {
+    ctx.strokeStyle = '#2b2f33';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(x - w / 2 + 4, y - h / 2 + 4); ctx.lineTo(x - 4, y + 3); ctx.lineTo(x + 6, y - 4); ctx.lineTo(x + w / 2 - 4, y + h / 2 - 4);
+    ctx.stroke();
+  }
 }
 
 // Pinceau fin : la pointe en (x, y), le manche descend jusqu'au doigt.

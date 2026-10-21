@@ -432,9 +432,13 @@
   "sec.heart.close": "Close the zipper: bring the pull back to the left.",
   "sec.heart.charge": "Beats: {n}/{total}",
   "tuto.sec.heart3": "Tap it in time with its beats, when the circle reaches it. Not too fast: it's fragile!",
-  "sec.oxide.broken": "Part cracked! Bye-bye Clean star.",
-  "done.cracked": "A fragile part was cracked: no Clean star.",
+  "sec.oxide.broken": "Part cracked! It will have to be replaced (−{n} credits).",
   "tuto.sec.heart4": "Perfect! Close the zipper to keep it nice and warm.",
-  "sec.battery.speed": "Speed: stay in the green",
-  "sec.battery.heat": "Heat"
+  "sec.oxide.replace": "A part is cracked: touch it and drag it into the grey bin, bottom left.",
+  "sec.oxide.to_bin": "Drag it into the grey bin, bottom left.",
+  "sec.oxide.binned": "Binned! Take a new part, bottom right.",
+  "sec.oxide.place": "Put the new part on the blinking spot.",
+  "sec.oxide.new": "New part in place! (−{n} credits)",
+  "sec.oxide.miss": "Not quite… aim for the spot.",
+  "tuto.sec.oxide3": "Oops, a cracked part! Bin it and put in a new one. It costs a few credits."
 }

@@ -31,7 +31,7 @@ const MAKE = {
   pins: (g, fx, p) => createPins(g.pins, fx, { count: p.pins }),
   spring: (g, fx) => createSpring(g.spring, fx),
   batteries: (g, fx) => createBatteries(g.batteries, fx),
-  oxide: (g, fx) => createOxide(g.oxide, fx),
+  oxide: (g, fx) => createOxide(g.oxide, fx, { cost: g.scoring.capacitor_cost }),
 };
 
 // ---------- Icônes sur la carte ----------
@@ -58,15 +58,27 @@ function drawIcon(ctx, type, x, y, broken, time) {
       ctx.fillStyle = '#fff'; ctx.font = '900 36px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('!', x, y + 2);
       break;
-    case 'heart':
-      ctx.fillStyle = '#2f8a5b';
-      roundRect(ctx, x - 70, y - 66, 140, 134, 18); ctx.fill();
-      heartPath(ctx, x, y + 4, 54);
-      ctx.fillStyle = broken ? '#c98aa0' : '#ff5c8a'; ctx.fill();
-      ctx.strokeStyle = broken ? '#8a5466' : '#b8264f'; ctx.lineWidth = 6; ctx.stroke();
-      ctx.fillStyle = broken ? `rgba(214, 69, 69, ${0.5 + 0.5 * blink})` : C.green;
-      roundRect(ctx, x - 22, y - 6, broken ? 12 : 44, 18, 5); ctx.fill();
+    case 'heart': {
+      // la pochette de tissu cousue sur la carte : fermeture éclair en haut, cœur brodé
+      ctx.fillStyle = '#f4c9a2';
+      roundRect(ctx, x - 74, y - 70, 148, 140, 30); ctx.fill();
+      ctx.fillStyle = '#ef8fa6';
+      roundRect(ctx, x - 62, y - 58, 124, 116, 24); ctx.fill();
+      ctx.save();
+      ctx.setLineDash([7, 6]);
+      ctx.strokeStyle = '#fff3f5';
+      ctx.lineWidth = 3;
+      roundRect(ctx, x - 54, y - 50, 108, 100, 18); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = '#d7dde3';
+      for (let k = 0; k < 9; k++) ctx.fillRect(x - 44 + k * 11, y - 46 + (k % 2 ? 3 : -3), 6, 7);
+      ctx.fillStyle = '#8b939d';
+      roundRect(ctx, x + 40, y - 44, 12, 24, 4); ctx.fill();
+      heartPath(ctx, x, y + 10, 26);
+      ctx.fillStyle = broken ? `rgba(214, 69, 69, ${0.45 + 0.55 * blink})` : '#ff5c8a';
+      ctx.fill();
       break;
+    }
     case 'gear':
       drawGear(ctx, x - 14, y + 4, 30, 9, broken ? 0.2 : time * 2);
       drawGear(ctx, x + 32, y - 18, 18, 7, broken ? 0 : -time * 3.4, { color: '#c9a24a', dark: '#7a5a1a' });
@@ -136,8 +148,8 @@ export function createCloseup(rep, hooks) {
     spawn: (x, y, o) => hooks.spawn(x, y, o),
     care: (n) => { rep.care = (rep.care || 0) + n; },
     score: (v) => { (rep.scores = rep.scores || []).push(Math.max(0, Math.min(1, v))); },
-    // composant fragile abîmé : l'étoile Propre est perdue (GDD : aucun composant fragile abîmé)
-    damage: () => { rep.secDamage = true; },
+    // pièce de rechange posée : payée en crédits à la fin (comme les condensateurs)
+    part: () => { rep.partsUsed = (rep.partsUsed || 0) + 1; },
   };
 
   function broken(it) {

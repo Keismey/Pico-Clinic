@@ -35,6 +35,11 @@ function zipProject(x, y) {
   return { f: best, d: bd };
 }
 
+function hash(a, b) {
+  const v = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+  return v - Math.floor(v);
+}
+
 function heartPath(ctx, x, y, s) {
   ctx.beginPath();
   ctx.moveTo(x, y + s * 0.9);
@@ -52,7 +57,6 @@ export function createHeart(params, fx) {
   let good = 0, miss = 0;
   let lastTap = -9;
   let pop = 0;
-  let flap = 0;           // ouverture du ventre (animation)
   let time = 0;
 
   const period = params.period;
@@ -117,7 +121,6 @@ export function createHeart(params, fx) {
     update(dt) {
       time += dt;
       pop = Math.max(0, pop - dt * 3);
-      flap += ((step === 'beat' || (step === 'close' && zip > 0.05) ? 1 : zip) - flap) * Math.min(1, dt * 8);
       if (step === 'open' && zip >= 0.97) {
         zip = 1;
         zipDrag = false;
@@ -165,80 +168,160 @@ export function createHeart(params, fx) {
     },
 
     draw(ctx) {
-      // ventre de la peluche (tissu)
-      ctx.fillStyle = '#f2c7a5';
-      roundRect(ctx, 130, 430, 820, 780, 120); ctx.fill();
-      ctx.strokeStyle = '#d49a72';
-      ctx.lineWidth = 6;
-      ctx.stroke();
-      // ouverture : poche sombre où se trouve le cœur
-      if (flap > 0.02) {
-        ctx.save();
-        ctx.globalAlpha = Math.min(1, flap * 1.4);
-        ctx.fillStyle = '#7a4a3a';
-        ctx.beginPath();
-        ctx.ellipse(HX, HY - 20, 330 * flap, 290 * flap, 0, 0, TAU);
-        ctx.fill();
-        ctx.restore();
+      // ventre de la peluche : tissu doux avec des petits poils, couture tout autour
+      ctx.fillStyle = '#f4c9a2';
+      roundRect(ctx, 100, 410, 880, 830, 150); ctx.fill();
+      ctx.save();
+      ctx.beginPath(); roundRect(ctx, 100, 410, 880, 830, 150); ctx.clip();
+      for (let k = 0; k < 260; k++) {
+        const fx0 = 100 + hash(k, 1) * 880, fy0 = 410 + hash(k, 2) * 830;
+        ctx.strokeStyle = hash(k, 3) > 0.5 ? 'rgba(255, 238, 220, 0.55)' : 'rgba(196, 140, 100, 0.35)';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(fx0, fy0); ctx.quadraticCurveTo(fx0 + 5, fy0 - 7, fx0 + 3, fy0 - 14); ctx.stroke();
       }
-      // le cœur
-      if (flap > 0.3) {
-        const ph = step === 'beat' ? phase() : 0.5;
-        const beatPop = step === 'beat' ? Math.max(0, 1 - Math.min(ph, 1 - ph) * 8) * 0.06 : 0;
-        const sc = 1 + beatPop + pop * 0.12;
-        const lv = charge / params.beats;
-        heartPath(ctx, HX, HY, HR * sc);
-        ctx.fillStyle = step === 'done' || step === 'close' ? '#ff5c8a' : `rgb(${200 + 55 * lv}, ${138 - 46 * lv}, ${160 - 22 * lv})`;
-        ctx.fill();
-        ctx.lineWidth = 8;
-        ctx.strokeStyle = '#b8264f';
-        ctx.stroke();
-        // cercle qui se resserre : toucher quand il arrive sur le cœur
-        if (step === 'beat') {
-          const r = HR * 1.05 + (1 - ph) * 190;
-          const near = Math.min(ph, 1 - ph) * period <= params.window;
-          ctx.strokeStyle = near ? 'rgba(60, 191, 106, 0.95)' : 'rgba(255, 255, 255, 0.85)';
-          ctx.lineWidth = near ? 12 : 8;
-          ctx.beginPath(); ctx.arc(HX, HY - 6, r, 0, TAU); ctx.stroke();
-        }
-        // jauge de charge
-        const w = 360, h = 30, x = HX - w / 2, y = HY + HR + 110;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        roundRect(ctx, x, y, w, h, h / 2); ctx.fill();
-        ctx.fillStyle = C.green;
-        if (lv > 0) { roundRect(ctx, x, y, Math.max(h, w * lv), h, h / 2); ctx.fill(); }
-      }
-      // fermeture éclair : dents, puis tirette
-      ctx.strokeStyle = '#8a6a50';
+      ctx.restore();
+      ctx.save();
+      ctx.setLineDash([16, 12]);
+      ctx.strokeStyle = '#c98c62';
       ctx.lineWidth = 5;
+      roundRect(ctx, 122, 432, 836, 786, 132); ctx.stroke();
+      ctx.restore();
+
+      // la pochette (feutrine rose cousue sur le ventre)
+      const PX = 200, PY = 470, PW = 680, PH = 700;
+      ctx.fillStyle = 'rgba(120, 60, 40, 0.18)';
+      roundRect(ctx, PX + 6, PY + 12, PW, PH, 70); ctx.fill();
+      ctx.fillStyle = '#ef8fa6';
+      roundRect(ctx, PX, PY, PW, PH, 70); ctx.fill();
       ctx.save();
       ctx.setLineDash([14, 10]);
-      ctx.beginPath();
-      ZIP.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-      ctx.stroke();
+      ctx.strokeStyle = '#fff3f5';
+      ctx.lineWidth = 5;
+      roundRect(ctx, PX + 18, PY + 18, PW - 36, PH - 36, 56); ctx.stroke();
       ctx.restore();
-      ctx.strokeStyle = '#c9ced4';
-      ctx.lineWidth = 14;
-      ctx.beginPath();
-      let first = true;
-      for (let f = zip; f <= 1.0001; f += 0.025) {
-        const p = zipAt(f);
-        if (first) { ctx.moveTo(p.x, p.y); first = false; } else ctx.lineTo(p.x, p.y);
+      // petit cœur brodé sur la pochette (fermée)
+      if (zip < 0.3) {
+        ctx.save();
+        ctx.globalAlpha = 1 - zip / 0.3;
+        heartPath(ctx, HX, HY + 120, 60);
+        ctx.strokeStyle = '#fff3f5'; ctx.lineWidth = 6; ctx.setLineDash([10, 8]); ctx.stroke();
+        ctx.restore();
       }
-      ctx.stroke();
+
+      // l'intérieur, découvert de la gauche jusqu'à la tirette
       const tp = zipAt(zip);
-      ctx.fillStyle = '#9aa3ad';
-      roundRect(ctx, tp.x - 22, tp.y - 10, 44, 70, 12); ctx.fill();
-      ctx.strokeStyle = C.ink;
+      const openR = step === 'beat' || step === 'done' ? PX + PW - 30 : tp.x;
+      if (openR > PX + 40) {
+        ctx.save();
+        ctx.beginPath(); ctx.rect(PX, PY, openR - PX, PH); ctx.clip();
+        const g = ctx.createRadialGradient(HX, HY, 40, HX, HY, 420);
+        g.addColorStop(0, '#8e2f45');
+        g.addColorStop(1, '#4a1424');
+        ctx.fillStyle = g;
+        roundRect(ctx, PX + 30, PY + 40, PW - 60, PH - 70, 50); ctx.fill();
+        // bord du tissu replié
+        ctx.strokeStyle = '#f7b3c2';
+        ctx.lineWidth = 10;
+        roundRect(ctx, PX + 30, PY + 40, PW - 60, PH - 70, 50); ctx.stroke();
+        this.drawHeartPiece(ctx);
+        ctx.restore();
+      }
+
+      // fermeture éclair : dents serrées (partie fermée), dents écartées (partie ouverte)
+      for (let k = 0; k <= 60; k++) {
+        const f = k / 60;
+        const p = zipAt(f);
+        const open = f < zip;
+        const spread = open ? 22 : 0;
+        ctx.fillStyle = '#d7dde3';
+        const side = k % 2 ? 1 : -1;
+        ctx.fillRect(p.x - 5, p.y + side * (6 + spread) - 6, 10, 12);
+      }
+      // tirette
+      ctx.fillStyle = '#aeb6c0';
+      roundRect(ctx, tp.x - 18, tp.y - 16, 36, 32, 8); ctx.fill();
+      ctx.fillStyle = '#8b939d';
+      roundRect(ctx, tp.x - 16, tp.y + 10, 32, 62, 12); ctx.fill();
+      ctx.strokeStyle = '#4a525c';
       ctx.lineWidth = 4;
       ctx.stroke();
+      ctx.fillStyle = '#4a525c';
+      ctx.beginPath(); ctx.arc(tp.x, tp.y + 52, 8, 0, TAU); ctx.fill();
       if ((step === 'open' || step === 'close') && !zipDrag) {
         const a = 0.5 + 0.5 * Math.sin(time * 6);
         ctx.strokeStyle = `rgba(255, 138, 61, ${0.35 + 0.5 * a})`;
         ctx.lineWidth = 7;
-        ctx.beginPath(); ctx.arc(tp.x, tp.y + 24, 58 + 6 * a, 0, TAU); ctx.stroke();
+        ctx.beginPath(); ctx.arc(tp.x, tp.y + 26, 62 + 6 * a, 0, TAU); ctx.stroke();
       }
-      if (step === 'beat' && good + miss === 0) fitText(ctx, t('sec.heart.listen'), HX, HY + HR + 70, 600, 34, C.paper, 800);
+    },
+
+    // Le cœur-batterie dans la pochette : bornes, fils, reflet, pastilles de charge.
+    drawHeartPiece(ctx) {
+      const lv = charge / params.beats;
+      const ph = step === 'beat' ? phase() : 0.5;
+      const near = Math.min(ph, 1 - ph);
+      const beatPop = step === 'beat' ? Math.max(0, 1 - near * 8) * 0.07 : 0;
+      const sc = 1 + beatPop + pop * 0.12;
+      const full = step === 'close' || step === 'done';
+      // halo qui bat
+      const glow = full ? 0.55 : 0.15 + 0.4 * lv;
+      const hg = ctx.createRadialGradient(HX, HY, HR * 0.6, HX, HY, HR * 2.2);
+      hg.addColorStop(0, `rgba(255, 120, 160, ${glow * (0.6 + beatPop * 5)})`);
+      hg.addColorStop(1, 'rgba(255, 120, 160, 0)');
+      ctx.fillStyle = hg;
+      ctx.beginPath(); ctx.arc(HX, HY, HR * 2.2, 0, TAU); ctx.fill();
+      // fils vers les bords de la pochette
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = '#d64545';
+      ctx.beginPath(); ctx.moveTo(HX - 46, HY - HR * 0.75); ctx.quadraticCurveTo(HX - 160, HY - 200, HX - 280, HY - 150); ctx.stroke();
+      ctx.strokeStyle = '#2b2f33';
+      ctx.beginPath(); ctx.moveTo(HX + 46, HY - HR * 0.75); ctx.quadraticCurveTo(HX + 160, HY - 200, HX + 280, HY - 150); ctx.stroke();
+      // bornes
+      ctx.fillStyle = '#c9ced4';
+      ctx.fillRect(HX - 60, HY - HR * 0.85, 28, 22);
+      ctx.fillRect(HX + 32, HY - HR * 0.85, 28, 22);
+      // le cœur (dégradé + reflet)
+      ctx.save();
+      ctx.translate(HX, HY);
+      ctx.scale(sc, sc);
+      const weak = [196, 120, 140], strong = [255, 76, 122];
+      const mix = full ? 1 : lv;
+      const col = weak.map((w, i) => Math.round(w + (strong[i] - w) * mix));
+      const g = ctx.createLinearGradient(0, -HR, 0, HR);
+      g.addColorStop(0, `rgb(${Math.min(255, col[0] + 30)}, ${col[1] + 40}, ${col[2] + 40})`);
+      g.addColorStop(1, `rgb(${col[0] - 40}, ${Math.max(0, col[1] - 40)}, ${Math.max(0, col[2] - 30)})`);
+      heartPath(ctx, 0, 0, HR);
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = '#8a1d3d';
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.beginPath(); ctx.ellipse(-48, -44, 26, 15, -0.6, 0, TAU); ctx.fill();
+      ctx.restore();
+      // cercle qui se resserre : toucher quand il arrive sur le cœur (cible en pointillés)
+      if (step === 'beat') {
+        ctx.save();
+        ctx.setLineDash([12, 10]);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.arc(HX, HY - 6, HR * 1.12, 0, TAU); ctx.stroke();
+        ctx.restore();
+        const r = HR * 1.12 + (1 - ph) * 200;
+        const ok = near * period <= params.window;
+        ctx.strokeStyle = ok ? 'rgba(95, 224, 139, 0.95)' : 'rgba(255, 220, 230, 0.9)';
+        ctx.lineWidth = ok ? 14 : 8;
+        ctx.beginPath(); ctx.arc(HX, HY - 6, r, 0, TAU); ctx.stroke();
+      }
+      // pastilles de charge (petits cœurs)
+      for (let k = 0; k < params.beats; k++) {
+        const x = HX + (k - (params.beats - 1) / 2) * 62, y = HY + HR + 95;
+        heartPath(ctx, x, y, 20);
+        ctx.fillStyle = k < charge || full ? '#ff5c8a' : 'rgba(255, 255, 255, 0.18)';
+        ctx.fill();
+      }
+      if (step === 'beat' && good + miss === 0) fitText(ctx, t('sec.heart.listen'), HX, HY + HR + 160, 560, 32, '#ffe4ea', 800);
     },
   };
 }

@@ -22,10 +22,9 @@ export function scoreRepair(rep) {
   const p = rep.patient;
   const clean = cleanliness(rep);
   const prec = precision(rep);
-  // un condensateur cassé ne retire pas d'étoile : la pièce de rechange se paie en crédits
+  // un condensateur cassé (ou une résistance fêlée) ne retire pas d'étoile : la pièce de rechange se paie en crédits
   const parts = (rep.partsUsed || 0) * g.capacitor_cost;
-  // un composant fêlé pendant un geste secondaire (circuit oxydé) retire l'étoile Propre
-  const stars = [rep.faults.size === 0, clean >= g.clean_min && !rep.secDamage, prec >= g.precise_min];
+  const stars = [rep.faults.size === 0, clean >= g.clean_min, prec >= g.precise_min];
   const onTime = rep.elapsed <= p.target_time;
   return { stars, clean, prec, parts, onTime, base: p.reward, tip: onTime ? Math.round(p.reward * g.tip_ratio) : 0 };
 }

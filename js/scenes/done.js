@@ -142,7 +142,6 @@ export default {
       lines.push([t(rep.patient.order.test ? 'bench.not_saved' : 'done.already_paid'), C.inkSoft]);
     }
     if (res.parts) lines.push([t('done.parts', { n: res.parts }), C.red]);
-    if (rep.secDamage) lines.push([t('done.cracked'), C.red]);
     if (needStars) lines.push([t('done.need_stars', { n: needStars, s: totalStars() }), C.orangeDark]);
     const y0 = 1140 - Math.max(0, lines.length - 5) * 30;
     lines.forEach(([l, col], i) => fitText(ctx, l, W / 2, y0 + i * 52, 900, 38, col, 700));

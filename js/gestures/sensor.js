@@ -1,7 +1,7 @@
 // Capteur décalibré — vue rapprochée.
 // Deux curseurs à régler : le signal se calme et un son monte quand on approche du réglage.
 // Chaque curseur a une zone verte (zone = 12 % de la piste) ; les deux dedans pendant hold s = réglé.
-import { C, roundRect } from '../ui.js';
+import { C, roundRect, fitText } from '../ui.js';
 import { demo } from '../tutorial.js';
 import { tone, toneStop } from '../feedback.js';
 
@@ -118,6 +118,25 @@ export function createSensor(params, fx) {
       }
       ctx.stroke();
       ctx.restore();
+      // voyants de réglage, en haut de l'écran (jamais sous le doigt) : plus c'est rempli, plus on est près ;
+      // tout vert = ce curseur est bien réglé
+      for (let i = 0; i < 2; i++) {
+        const ok = inside[i] || done;
+        const n = ok ? 8 : Math.round(close(i) * close(i) * 7);
+        const x0 = SCR.x + 30 + i * (SCR.w / 2), y0 = SCR.y + 20;
+        ctx.fillStyle = 'rgba(11, 15, 20, 0.85)';
+        roundRect(ctx, x0 - 10, y0 - 8, SCR.w / 2 - 40, 58, 14); ctx.fill();
+        ctx.fillStyle = ok ? '#5fe08b' : '#c9ced4';
+        ctx.beginPath(); ctx.arc(x0 + 20, y0 + 21, 20, 0, TAU); ctx.fill();
+        fitText(ctx, String(i + 1), x0 + 20, y0 + 22, 30, 28, '#16212b', 900);
+        for (let k = 0; k < 8; k++) {
+          const on = k < n;
+          const col = ok ? '#5fe08b' : k < 3 ? '#ff6b5a' : k < 6 ? '#ffb347' : '#ffe066';
+          ctx.fillStyle = on ? col : 'rgba(255, 255, 255, 0.12)';
+          const bh = 14 + k * 3.5;
+          roundRect(ctx, x0 + 54 + k * 34, y0 + 42 - bh, 26, bh, 5); ctx.fill();
+        }
+      }
       // barre de maintien
       if (!done && hold > 0) {
         const k = Math.min(1, hold / params.hold);
@@ -127,6 +146,9 @@ export function createSensor(params, fx) {
       // curseurs
       for (let i = 0; i < 2; i++) {
         const y = TY[i];
+        ctx.fillStyle = (inside[i] || done) ? C.green : '#c9ced4';
+        ctx.beginPath(); ctx.arc(TX0 - 75, y, 26, 0, TAU); ctx.fill();
+        fitText(ctx, String(i + 1), TX0 - 75, y + 1, 36, 34, C.ink, 900);
         ctx.fillStyle = 'rgba(58, 42, 30, 0.2)';
         roundRect(ctx, TX0 - 30, y - 18, TX1 - TX0 + 60, 36, 18); ctx.fill();
         if (inside[i] || done) {

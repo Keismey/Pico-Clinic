@@ -432,9 +432,13 @@
   "sec.heart.close": "Referme la fermeture éclair : ramène la tirette vers la gauche.",
   "sec.heart.charge": "Battements : {n}/{total}",
   "tuto.sec.heart3": "Touche-le au rythme de ses battements, quand le cercle arrive sur lui. Pas trop vite : il est fragile !",
-  "sec.oxide.broken": "Composant fêlé ! Adieu l'étoile Propre.",
-  "done.cracked": "Un composant fragile a été fêlé : pas d'étoile Propre.",
+  "sec.oxide.broken": "Composant fêlé ! Il faudra le changer (−{n} crédits).",
   "tuto.sec.heart4": "Parfait ! Referme la fermeture éclair, qu'il reste bien au chaud.",
-  "sec.battery.speed": "Vitesse : reste dans le vert",
-  "sec.battery.heat": "Chaleur"
+  "sec.oxide.replace": "Un composant est fêlé : touche-le et glisse-le dans le bac gris, en bas à gauche.",
+  "sec.oxide.to_bin": "Glisse-le dans le bac gris, en bas à gauche.",
+  "sec.oxide.binned": "Au bac ! Prends un composant neuf, en bas à droite.",
+  "sec.oxide.place": "Pose le composant neuf sur l'emplacement qui clignote.",
+  "sec.oxide.new": "Composant neuf posé ! (−{n} crédits)",
+  "sec.oxide.miss": "Pas tout à fait… vise l'emplacement.",
+  "tuto.sec.oxide3": "Oups, un composant fêlé ! Mets-le au bac et pose un neuf. Ça coûte quelques crédits."
 }

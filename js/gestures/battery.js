@@ -4,9 +4,8 @@
 // 2) La poser sur le support à droite (case du haut).
 // 3) Prendre la neuve sur le support (case du bas), l'amener à l'entrée du rail et la pousser
 //    jusqu'au fond : mêmes règles de vitesse et de bords.
-import { C, roundRect, easeInOut, fitText } from '../ui.js';
+import { C, roundRect, easeInOut } from '../ui.js';
 import { demo } from '../tutorial.js';
-import { t } from '../i18n.js';
 
 const RAIL_Y = 800;
 const X0 = 260;            // centre de la batterie au fond du logement
@@ -269,40 +268,19 @@ export function createBattery(params, fx) {
       drawBatteryPiece(ctx, s.x + (heldOld ? shakeK : 0), s.y, { old: true, scale: scaleOf(s, heldOld), shadow: s.phase === 'drop' && heldOld ? 1 : 0 });
       drawBatteryPiece(ctx, neu.x + (heldNew ? shakeK : 0), neu.y, { old: false, scale: scaleOf(neu, heldNew), shadow: s.phase === 'take' && heldNew ? 1 : 0 });
 
-      // jauge de vitesse (sous le rail, bien visible) : vert = bonne vitesse, rouge = trop vite.
-      // En dessous, la chaleur : pleine, la batterie est repoussée.
-      if (inRail()) {
-        const v = drag ? drag.v : 0;
-        const x = 150, y = 1065, w = 580, h = 44;
-        const maxV = params.speed_max * 1.6;
-        const zx = (val) => x + w * Math.min(1, val / maxV);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        roundRect(ctx, x - 20, y - 58, w + 40, 196, 24); ctx.fill();
-        ctx.strokeStyle = 'rgba(58, 42, 30, 0.25)';
-        ctx.lineWidth = 4;
-        ctx.stroke();
-        fitText(ctx, t('sec.battery.speed'), x + w / 2, y - 30, w, 30, C.ink, 800);
-        ctx.fillStyle = '#7fd69c';
-        roundRect(ctx, x, y, zx(params.speed_max) - x, h, h / 2); ctx.fill();
-        ctx.fillStyle = '#ee8d8d';
-        roundRect(ctx, zx(params.speed_max), y, x + w - zx(params.speed_max), h, h / 2); ctx.fill();
-        ctx.fillStyle = 'rgba(58, 42, 30, 0.35)';
-        ctx.fillRect(zx(params.speed_max) - 2, y - 6, 4, h + 12);
-        // aiguille
-        const nx = zx(v);
-        ctx.fillStyle = C.ink;
-        ctx.beginPath(); ctx.moveTo(nx, y - 4); ctx.lineTo(nx - 16, y - 26); ctx.lineTo(nx + 16, y - 26); ctx.closePath(); ctx.fill();
-        ctx.fillRect(nx - 4, y - 4, 8, h + 8);
-        // chaleur
-        const hy = y + h + 26, hh = 26;
-        fitText(ctx, t('sec.battery.heat'), x + 70, hy + hh / 2, 140, 28, C.inkSoft, 800);
-        ctx.fillStyle = 'rgba(58, 42, 30, 0.15)';
-        roundRect(ctx, x + 150, hy, w - 150, hh, hh / 2); ctx.fill();
+      // jauge de chaleur au-dessus de la batterie (se remplit quand on va trop vite), avec un bord net
+      if (inRail() && (drag || s.risk > 0)) {
+        const o = piece();
+        const w = 260, h = 30, x = Math.max(110, Math.min(640, o.x) - w / 2), y = top - 46 - h;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        roundRect(ctx, x, y, w, h, h / 2); ctx.fill();
         if (s.risk > 0) {
-          const a = s.risk > 0.6 ? 0.6 + 0.4 * Math.sin(time * 20) : 1;
-          ctx.fillStyle = s.risk > 0.6 ? `rgba(214, 69, 69, ${a})` : C.orange;
-          roundRect(ctx, x + 150, hy, Math.max(hh, (w - 150) * Math.min(1, s.risk)), hh, hh / 2); ctx.fill();
+          ctx.fillStyle = s.risk > 0.6 ? C.red : C.orange;
+          roundRect(ctx, x, y, Math.max(h, w * Math.min(1, s.risk)), h, h / 2); ctx.fill();
         }
+        ctx.strokeStyle = C.ink;
+        ctx.lineWidth = 5;
+        roundRect(ctx, x, y, w, h, h / 2); ctx.stroke();
       }
     },
   };
