@@ -147,7 +147,13 @@ export function drawFrame(ctx, { rotorAngle = 0, rotorSpeed = 0, lights = null }
 }
 
 // Intérieur : carte, pistes, soudure, emplacement de puce, batterie, câble, prise et voyant.
-export function drawInterior(ctx, rep, { glow = 0, slotGlow = 0, time = 0 } = {}) {
+// Panne encore cachée (pas encore trouvée à la loupe) ?
+export function isHidden(rep, fault) {
+  return !!rep.diag && rep.diag.hidden.has(fault) && !rep.diag.revealed.has(fault);
+}
+
+// xray = vue dans la loupe : les pannes cachées sont visibles.
+export function drawInterior(ctx, rep, { glow = 0, slotGlow = 0, time = 0, xray = false } = {}) {
   const b = D.board;
   ctx.fillStyle = '#2f8a5b';
   roundRect(ctx, D.cx - b, D.cy - b, b * 2, b * 2, 40);
@@ -174,8 +180,11 @@ export function drawInterior(ctx, rep, { glow = 0, slotGlow = 0, time = 0 } = {}
     ctx.stroke();
   }
 
-  drawSolder(ctx, rep.weld, rep.faults.has('trace_cut') || rep.weld.done, time);
-  drawSlot(ctx, rep.chip, slotGlow);
+  drawRust(ctx, rep);
+  const traceHidden = !xray && isHidden(rep, 'trace_cut');
+  drawSolder(ctx, rep.weld, (rep.faults.has('trace_cut') && !traceHidden) || rep.weld.done, time, xray);
+  drawSlot(ctx, rep.chip, slotGlow, !xray && isHidden(rep, 'chip_burnt'));
+  drawFragile(ctx, rep, time);
 
   // batterie
   ctx.fillStyle = '#f2c14e';
@@ -216,7 +225,7 @@ export function drawInterior(ctx, rep, { glow = 0, slotGlow = 0, time = 0 } = {}
 const CELL_COLORS = { good: ['#eef2f6', '#b9c2cc'], cold: ['#9aa0a6', '#6f757b'], burnt: ['#5a3a22', '#2e1d10'] };
 
 // Piste à souder : pastilles, chemin en pointillés, étain déposé.
-function drawSolder(ctx, weld, broken, time) {
+function drawSolder(ctx, weld, broken, time, xray = false) {
   const P = SOLDER.pts;
   if (!broken) {
     ctx.strokeStyle = '#d9a441';
@@ -259,7 +268,7 @@ function drawSolder(ctx, weld, broken, time) {
     ctx.beginPath(); ctx.arc(p.x, p.y, 17, 0, TAU); ctx.fill();
     ctx.fillStyle = '#f4d58d';
     ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, TAU); ctx.fill();
-    if (broken && !weld.done && isA && !weld.active) {
+    if (broken && !weld.done && isA && !weld.active && !xray) {
       const a = 0.5 + 0.5 * Math.sin(time * 6);
       ctx.strokeStyle = `rgba(63, 208, 187, ${0.4 + 0.6 * a})`;
       ctx.lineWidth = 7;
@@ -269,7 +278,7 @@ function drawSolder(ctx, weld, broken, time) {
 }
 
 // Emplacement de la puce : pastilles des broches, cadre, et puce si elle est en place.
-function drawSlot(ctx, chip, slotGlow) {
+function drawSlot(ctx, chip, slotGlow, disguised = false) {
   const ch = D.chip;
   ctx.fillStyle = '#d9a441';
   for (let k = 0; k < 4; k++) {
@@ -289,7 +298,7 @@ function drawSlot(ctx, chip, slotGlow) {
   roundRect(ctx, ch.x, ch.y, ch.s, ch.s, 12);
   ctx.stroke();
   ctx.restore();
-  if (chip.old.state === 'slot') drawChip(ctx, D.slot.x, D.slot.y, 1, true);
+  if (chip.old.state === 'slot') drawChip(ctx, D.slot.x, D.slot.y, 1, !disguised);
   if (chip.neu.state === 'placed') drawChip(ctx, D.slot.x, D.slot.y, 1, false);
 }
 
@@ -505,4 +514,107 @@ export function drawTray(ctx) {
   ctx.beginPath(); ctx.ellipse(TRAY.x, TRAY.y, 112, 68, 0, 0, TAU); ctx.fill();
   ctx.fillStyle = '#d2bc98';
   ctx.beginPath(); ctx.ellipse(TRAY.x, TRAY.y + 4, 84, 46, 0, 0, TAU); ctx.fill();
+}
+
+// Rouille : taches brun-orangé, plus ou moins opaques selon ce qui reste à aspirer.
+function drawRust(ctx, rep) {
+  if (!rep.rust) return;
+  for (const c of rep.rust.cells) {
+    if (c.a <= 0) continue;
+    ctx.fillStyle = c.dark ? `rgba(110, 52, 22, ${c.a})` : `rgba(168, 86, 38, ${c.a * 0.92})`;
+    ctx.beginPath(); ctx.arc(c.x, c.y, c.dark ? 13 : 15, 0, TAU); ctx.fill();
+  }
+}
+
+// Petits condensateurs fragiles (bleus) ; fendus et gris s'ils sont abîmés.
+function drawFragile(ctx, rep, time) {
+  for (const c of rep.fragile || []) {
+    const x = c.x - c.w / 2, y = c.y - c.h / 2;
+    ctx.fillStyle = '#c9ced4';
+    ctx.fillRect(c.x - 9, c.y + c.h / 2 - 4, 4, 14);
+    ctx.fillRect(c.x + 5, c.y + c.h / 2 - 4, 4, 14);
+    ctx.fillStyle = c.broken ? '#7c848c' : '#3f7fd6';
+    roundRect(ctx, x, y, c.w, c.h, 10); ctx.fill();
+    ctx.fillStyle = c.broken ? '#9aa1a8' : '#8fb9f0';
+    roundRect(ctx, x + 4, y + 4, c.w - 8, 10, 5); ctx.fill();
+    if (c.broken) {
+      ctx.strokeStyle = '#2b2f33';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x + 8, y + 12); ctx.lineTo(x + 16, y + 24); ctx.lineTo(x + 10, y + 32); ctx.lineTo(x + 20, y + c.h - 6);
+      ctx.stroke();
+    } else if (c.wear > 0) {
+      const a = 0.5 + 0.5 * Math.sin(time * 14);
+      ctx.strokeStyle = `rgba(214, 69, 69, ${0.5 + 0.5 * a})`;
+      ctx.lineWidth = 4;
+      roundRect(ctx, x - 6, y - 6, c.w + 12, c.h + 12, 12); ctx.stroke();
+    }
+  }
+}
+
+// Embout de l'aspirateur sous le doigt, avec son tuyau.
+export function drawVacuum(ctx, x, y, r, sucking, time) {
+  ctx.save();
+  ctx.strokeStyle = '#8a929c';
+  ctx.lineWidth = 26;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x + r * 0.5, y + r * 0.5);
+  ctx.quadraticCurveTo(x + 160, y + 120, x + 220, y + 420);
+  ctx.stroke();
+  ctx.strokeStyle = '#b8c0c9';
+  ctx.lineWidth = 12;
+  ctx.stroke();
+  const wob = sucking ? Math.sin(time * 60) * 2 : 0;
+  ctx.fillStyle = 'rgba(200, 210, 220, 0.35)';
+  ctx.beginPath(); ctx.arc(x, y, r + wob, 0, TAU); ctx.fill();
+  ctx.strokeStyle = sucking ? '#3fd0bb' : '#6f7882';
+  ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.arc(x, y, r + wob, 0, TAU); ctx.stroke();
+  ctx.restore();
+}
+
+// Loupe : vue agrandie de la carte (pannes cachées visibles), cercle de maintien et manche.
+export function drawLens(ctx, rep, lens, p, { time = 0, progress = 0, finger = null } = {}) {
+  const R = p.radius;
+  ctx.save();
+  if (finger) {
+    ctx.strokeStyle = '#6b4a2a';
+    ctx.lineWidth = 26;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(lens.x + R * 0.55, lens.y + R * 0.8); ctx.lineTo(finger.x + 40, finger.y + 30); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.arc(lens.x, lens.y, R, 0, TAU); ctx.clip();
+  ctx.fillStyle = '#e8dcc7';
+  ctx.fillRect(lens.x - R, lens.y - R, R * 2, R * 2);
+  ctx.translate(lens.x, lens.y);
+  ctx.scale(p.zoom, p.zoom);
+  ctx.translate(-lens.x, -lens.y);
+  drawInterior(ctx, rep, { time, xray: true });
+  // points chauds (puce grillée) et points morts (piste coupée)
+  for (const tg of rep.diag.targets) {
+    if (tg.kind !== 'fault' || !rep.faults.has(tg.id)) continue;
+    const a = 0.5 + 0.5 * Math.sin(time * 8);
+    const hot = tg.id === 'chip_burnt';
+    const g = ctx.createRadialGradient(tg.x, tg.y, 5, tg.x, tg.y, 80);
+    g.addColorStop(0, hot ? `rgba(255, 120, 40, ${0.55 + 0.3 * a})` : `rgba(120, 60, 200, ${0.45 + 0.3 * a})`);
+    g.addColorStop(1, 'rgba(255, 120, 40, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(tg.x, tg.y, 80, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+  // reflet, cerclage et maintien
+  ctx.save();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+  ctx.beginPath(); ctx.ellipse(lens.x - R * 0.35, lens.y - R * 0.4, R * 0.35, R * 0.18, -0.6, 0, TAU); ctx.fill();
+  ctx.strokeStyle = '#8f5426';
+  ctx.lineWidth = 16;
+  ctx.beginPath(); ctx.arc(lens.x, lens.y, R, 0, TAU); ctx.stroke();
+  if (progress > 0) {
+    ctx.strokeStyle = '#3fd0bb';
+    ctx.lineWidth = 12;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(lens.x, lens.y, R + 16, -Math.PI / 2, -Math.PI / 2 + progress * TAU); ctx.stroke();
+  }
+  ctx.restore();
 }

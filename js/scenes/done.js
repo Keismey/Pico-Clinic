@@ -1,52 +1,114 @@
-// Fin de réparation (provisoire : les étoiles et les crédits arrivent en V1).
+// Fin de réparation : 3 étoiles qui apparaissent une à une, paie, pourboire, crédits.
 import { W } from '../canvas.js';
 import { t } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawText, fitText } from '../ui.js';
 import { withDrone, drawShadow, drawFrame, drawCover } from '../drone.js';
 import { game } from '../state.js';
+import { save } from '../save.js';
+import { scoreRepair, recordRepair } from '../score.js';
+import { vibrate } from '../feedback.js';
+import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 
-let rep, buttons, time;
+const TAU = Math.PI * 2;
+const STAR_Y = 930;
+const STAR_X = [W / 2 - 290, W / 2, W / 2 + 290];
+const STAR_KEYS = ['done.star.works', 'done.star.clean', 'done.star.precise'];
+const STAR_DELAY = 0.55;
+
+let rep, buttons, time, res, pay, shown, creditsShown;
 
 function fmt(sec) {
   const s = Math.round(sec);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
+function starPath(ctx, x, y, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const rr = i % 2 ? r * 0.45 : r;
+    ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  ctx.closePath();
+}
+
+function drawStar(ctx, x, y, r, on, k) {
+  ctx.save();
+  ctx.translate(x, y);
+  const pop = on ? 1 + 0.35 * Math.max(0, 1 - k * 3) * Math.sin(Math.min(1, k * 3) * Math.PI) : 1;
+  ctx.scale(pop, pop);
+  starPath(ctx, 0, 0, r);
+  ctx.fillStyle = on && k > 0 ? '#ffc93c' : 'rgba(58, 42, 30, 0.12)';
+  ctx.fill();
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = on && k > 0 ? '#c4862a' : 'rgba(58, 42, 30, 0.25)';
+  ctx.stroke();
+  ctx.restore();
+}
+
 export default {
   init() {
     rep = game.repair;
     time = 0;
+    shown = 0;
+    res = scoreRepair(rep);
+    const before = save.credits;
+    pay = recordRepair(rep, res);
+    creditsShown = before;
     buttons = new Buttons();
-    buttons.add({ x: 190, y: 1440, w: 700, h: 170, size: 68, label: () => t('done.replay'), onTap: () => go('operation', {}) });
-    buttons.add({ x: 290, y: 1660, w: 500, h: 150, style: 'secondary', label: () => t('done.menu'), onTap: () => go('title') });
+    buttons.add({ x: 190, y: 1500, w: 700, h: 170, size: 68, label: () => t('done.replay'), onTap: () => go('operation', {}) });
+    buttons.add({ x: 290, y: 1700, w: 500, h: 150, style: 'secondary', label: () => t('done.menu'), onTap: () => go('title') });
   },
 
   update(dt) {
     time += dt;
+    // une étoile toutes les 0,55 s, avec vibration et étincelles si elle est gagnée
+    while (shown < 3 && time > 0.6 + shown * STAR_DELAY) {
+      if (res.stars[shown]) {
+        vibrate(25 + shown * 10);
+        fx.spawn(STAR_X[shown], STAR_Y, { count: 18, color: '#ffd36b', speed: 420, size: 8 });
+      }
+      shown++;
+    }
+    // le compteur de crédits monte après les étoiles
+    const target = save.credits;
+    if (time > 0.6 + 3 * STAR_DELAY && creditsShown < target) {
+      creditsShown = Math.min(target, creditsShown + Math.max(1, (target - creditsShown) * dt * 4));
+    }
   },
 
   draw(ctx) {
     drawCreamBackground(ctx);
-    drawText(ctx, t('done.title'), W / 2, 235, 900, 120, { color: C.turquoise, weight: 900, stroke: C.copperDark });
+    drawText(ctx, t('done.title'), W / 2, 190, 900, 110, { color: C.turquoise, weight: 900, stroke: C.copperDark });
 
-    const bob = Math.sin(time * 2.4) * 22;
-    withDrone(ctx, W / 2, 880, 0.66, () => drawShadow(ctx, 0.8));
-    withDrone(ctx, W / 2, 760 + bob, 0.72, () => {
+    const bob = Math.sin(time * 2.4) * 16;
+    withDrone(ctx, W / 2, 640, 0.42, () => drawShadow(ctx, 0.8));
+    withDrone(ctx, W / 2, 540 + bob, 0.46, () => {
       drawFrame(ctx, { rotorAngle: time * 45, rotorSpeed: 48, lights: [0, 1, 2, 3].map((i) => (Math.floor(time * 4) + i) % 2 === 0) });
       drawCover(ctx, { screws: rep.screws });
     });
 
+    for (let i = 0; i < 3; i++) {
+      const k = time - (0.6 + i * STAR_DELAY);
+      drawStar(ctx, STAR_X[i], STAR_Y, 100, res.stars[i], k);
+      fitText(ctx, t(STAR_KEYS[i]), STAR_X[i], STAR_Y + 145, 270, 38, res.stars[i] ? C.ink : C.inkSoft, 800);
+    }
+
     const lines = [
-      t('done.time', { t: fmt(rep.elapsed) }),
-      t('done.slips', { n: rep.slips }),
-      t('done.attempts', { n: rep.attempts }),
+      [t('done.clean', { p: res.clean }) + (res.broken ? '  ·  ' + t('done.broken', { n: res.broken }) : ''), C.ink],
+      [t('done.precision', { p: res.prec }), C.ink],
+      [t('done.time_target', { t: fmt(rep.elapsed), c: fmt(rep.patient.target_time) }), res.onTime ? C.green : C.ink],
     ];
-    // précision moyenne des soudures et des alignements de puce
-    const scores = [rep.weld.score, rep.chip.score].filter((v) => v !== null && v !== undefined);
-    if (scores.length) lines.push(t('done.precision', { p: Math.round(100 * scores.reduce((a, b) => a + b, 0) / scores.length) }));
-    if (rep.weld.burns || rep.weld.shorts) lines.push(t('done.solder', { b: rep.weld.burns, s: rep.weld.shorts }));
-    lines.forEach((l, i) => fitText(ctx, l, W / 2, 1170 + i * 56, 860, 42, C.ink, 700));
+    if (pay.firstPay) {
+      lines.push([t('done.pay', { b: res.base }) + (res.tip ? '  ·  ' + t('done.tip', { n: res.tip }) : '  ·  ' + t('done.no_tip')), C.copperDark]);
+    } else {
+      lines.push([t('done.already_paid'), C.inkSoft]);
+    }
+    lines.forEach(([l, col], i) => fitText(ctx, l, W / 2, 1150 + i * 56, 900, 40, col, 700));
+    if (pay.record && time > 2.4) fitText(ctx, t('done.record'), W / 2, 1112, 600, 32, C.orangeDark, 900);
+    fitText(ctx, t('done.credits', { n: Math.round(creditsShown) }), W / 2, 1420, 900, 54, C.turquoiseDark, 900);
     buttons.draw(ctx);
   },
 

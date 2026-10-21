@@ -36,5 +36,27 @@
     "snap_radius": 36,
     "grab_pad": 30,
     "lift_offset": 120
+  },
+  "vacuum": {
+    "radius": 46,
+    "min_speed": 110,
+    "rate": 0.011,
+    "cell": 20,
+    "fragile_grace": 0.3,
+    "fragile_warn_cooldown": 1.2
+  },
+  "magnifier": {
+    "radius": 125,
+    "zoom": 1.7,
+    "offset_y": 190,
+    "catch_radius": 70,
+    "hold": 0.4,
+    "wrong_penalty": 3,
+    "hint_after": 20
+  },
+  "scoring": {
+    "clean_min": 80,
+    "precise_min": 85,
+    "tip_ratio": 0.25
   }
 }

@@ -1,30 +1,29 @@
 # Pico-Clinic — État du projet
 
-Mis à jour : 2026-10-21 (C3 V0b). Jeu : https://keismey.github.io/Pico-Clinic/
+Mis à jour : 2026-10-21 (C4 V1a). Jeu : https://keismey.github.io/Pico-Clinic/
 
 ## Fait
-- C1 : dépôt, GitHub Pages, GDD découpé dans `docs/gdd/`.
-- C2 V0a : canvas 1080×1920, langues FR/EN (`t()`), scènes titre → opération → réactivation → fin, dévissage, connecteur, manette.
-- C3 V0b : `js/gestures/solder.js` (soudure) et `js/gestures/chip.js` (puce). Le drone a 3 pannes : connecteur, puce grillée, piste coupée.
-- Soudure : pastille qui clignote → fer qui chauffe 1,2 s → suivre le chemin sans lever. Trop lent = brûlure, trop vite = soudure froide, hors chemin 0,15 s = court-circuit (éclair, secousse, à refaire). Jauge de vitesse dans le panneau.
-- Puce : sortir la grillée de la carte (part dans la coupelle), prendre la neuve dans la boîte en haut à droite, lâcher sur le cadre (aimant, score = 1 − distance/rayon, pince dessinée).
-- Retours : vibrations par événement, fumées, étincelles, voyant vert quand tout est réparé ; la zone de la 1re panne restante clignote après une toux. Écran de fin : précision, brûlures, courts-circuits.
-- Testé en navigateur automatique (parcours complet, court-circuit, toux, FR/EN) : aucune erreur.
+- C1 : dépôt, Pages, GDD découpé dans `docs/gdd/`. C2-C3 (V0) : canvas, FR/EN, scènes, dévissage, connecteur, soudure, puce, vibrations, réactivation.
+- C4 V1a : boucle complète dévissage → diagnostic → réparation → démarrage → étoiles et paie.
+- Diagnostic (`js/gestures/magnifier.js`) : la loupe flotte au-dessus du doigt ; 0,4 s sur une panne cachée (puce grillée, piste coupée) la révèle ; sur une pièce saine = « Rien ici » +3 s. Indice qui pulse après 20 s. Avant, la puce et la piste ont l'air normales.
+- Aspirateur (`js/gestures/vacuum.js`) : 2 plaques de rouille en cellules, il faut frotter vite ; 2 condensateurs bleus fragiles (avertissement, puis abîmés après 0,3 s de frottement).
+- Notation (`js/score.js`) : Fonctionnel ; Propre = propreté ≥ 80 % (rouille aspirée − 5 par vis abîmée) et aucun condensateur abîmé ; Précis = moyenne soudure + puce ≥ 85 %. Pourboire +25 % si temps ≤ objectif (2:00).
+- Sauvegarde `pico_save_v1` v2 (migration depuis v1) : crédits, rang, outils, étoiles par commande, meilleur temps, réglages. Une commande ne paie qu'une fois (règle du GDD) ; « Nouvelle partie » sur l'écran titre efface tout (2 touches).
+- Testé en navigateur automatique : parcours complet, paie 40 + 10, sauvegarde après rechargement, aucune erreur.
 
 ## Valeurs à valider au doigt (`data/gestures.json`)
-- Le GDD donne 14 px de tolérance de soudure et 14 px d'aimant de puce : ≈ 1 mm sur téléphone, injouable. Mis à 36 px (rang 1 → 21 au rang 5).
-- Vitesse idéale de soudure 80–240 px/s (GDD : 60–140) ; chemin de 485 px = 2 à 6 s.
+- GDD trop petit pour un doigt : aspirateur 46 px (GDD 18), loupe 125 px (GDD 60). Tolérances soudure/puce à 36 px (voir V0b).
 
 ## Reste à faire
-- V1 → V5 selon le plan des conversations.
+- V1b → V5 selon le plan des conversations.
 
 ## Bugs connus
-- Aucun connu. Vibrations absentes sur iPhone (Safari ne les gère pas).
+- Aucun connu. Vibrations absentes sur iPhone. La fiche du connecteur est près de la puce : en diagnostic, poser le doigt sur la fiche l'attrape au lieu de la loupe.
 
 ## Prochaine étape
-- C4 — V1a cœur de jeu (fichiers 01-gestes, 02-progression).
+- C5 — V1b économie et patients (02-progression, 03-patients).
 
 ## Plus tard
-- Broche tordue après une puce mal posée (geste secondaire, V3a) ; bonus fer de précision / laser et pinces (V1b).
-- Indice après 20 s de blocage ; bouton pause ; gaucher (fer dessiné à gauche).
-- Jauges propreté/soin visibles ; aimant du connecteur (24 px) à élargir si trop dur.
+- Broche tordue (V3a) ; bonus fer de précision/laser, pinces, loupe thermique, scanner, aspirateur renforcé (V1b).
+- Indice 20 s pour tous les gestes ; pause ; gaucher. Sauver une réparation en cours si le navigateur ferme l'onglet.
+- Rouille qui cache une vis ou une pastille ; son d'aspiration (V4a).

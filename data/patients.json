@@ -7,7 +7,8 @@
       "screw x4",
       "connector x1",
       "chip_slot x1",
-      "trace x1"
+      "trace x1",
+      "capacitor x2"
     ],
     "rusty_screws": [
       2
@@ -18,6 +19,46 @@
       "trace_cut"
     ],
     "target_time": 120,
-    "reward": 40
+    "reward": 40,
+    "hidden_faults": [
+      "chip_burnt",
+      "trace_cut"
+    ],
+    "rust": [
+      [
+        560,
+        850,
+        88
+      ],
+      [
+        445,
+        790,
+        68
+      ]
+    ],
+    "fragile": [
+      [
+        625,
+        852,
+        30,
+        48
+      ],
+      [
+        452,
+        800,
+        30,
+        48
+      ]
+    ],
+    "decoys": [
+      [
+        370,
+        967
+      ],
+      [
+        760,
+        860
+      ]
+    ]
   }
 }

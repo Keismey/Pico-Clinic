@@ -1,8 +1,12 @@
-// Écran opération : dévisser le capot, puis réparer (connecteur, puce, soudure) et démarrer.
+// Écran opération : dévisser le capot, diagnostic à la loupe, puis réparer
+// (connecteur, puce, soudure, rouille à l'aspirateur) et démarrer.
 import { W, H } from '../canvas.js';
 import { t } from '../i18n.js';
 import { Buttons, C, drawMatBackground, drawPanel, drawText, drawToast, fitText, easeInOut, roundRect } from '../ui.js';
-import { D, SOLDER, drawFrame, drawInterior, drawCover, drawScrew, drawTray, trayPos, drawChip, drawPartBox, drawIron, faultSpot } from '../drone.js';
+import { D, SOLDER, drawFrame, drawInterior, drawCover, drawScrew, drawTray, trayPos, drawChip, drawPartBox, drawIron, faultSpot, drawVacuum, drawLens, isHidden } from '../drone.js';
+import { createVacuum } from '../gestures/vacuum.js';
+import { createMagnifier } from '../gestures/magnifier.js';
+import { cleanliness } from '../score.js';
 import { createUnscrew } from '../gestures/unscrew.js';
 import { createConnector } from '../gestures/connector.js';
 import { createChip } from '../gestures/chip.js';
@@ -15,7 +19,8 @@ import { go } from '../scenes.js';
 const TAU = Math.PI * 2;
 const PATIENT = 'drone_jouet_v0';
 
-let rep, unscrew, connector, chip, solder, buttons, startBtn;
+let rep, unscrew, connector, chip, solder, vacuum, lens, buttons, startBtn;
+let finger = { x: 0, y: 0 };
 let closing = false;
 let toast = null;
 let flash = 0;
@@ -55,7 +60,6 @@ export default {
       onSlip: (s) => {
         s.damaged++;
         rep.slips++;
-        rep.cleanliness = Math.max(0, rep.cleanliness - g.unscrew.slip_cleanliness);
         vibrate([30, 40, 30]);
         fx.spawn(s.x, s.y, { count: 8, color: '#9aa3ad', speed: 260, size: 6 });
         showToast('op.slip', C.red);
@@ -132,6 +136,40 @@ export default {
       },
     });
 
+    vacuum = createVacuum(rep, g.vacuum, {
+      onStart: () => vibrate(6),
+      onCellClean: (c) => {
+        if (Math.random() < 0.35) fx.spawn(c.x, c.y, { count: 2, color: '#a8562a', speed: 120, life: 0.35, size: 5, gravity: 0 });
+      },
+      onFragileTouch: () => { vibrate([25, 25, 25]); showToast('op.fragile', C.orangeDark); },
+      onFragileBreak: (c) => {
+        vibrate([70, 40, 70]);
+        fx.spawn(c.x, c.y, { count: 14, color: '#fff3a6', speed: 380, life: 0.4, size: 6 });
+        fx.spawn(c.x, c.y - 20, { count: 4, color: '#6b6f75', speed: 70, life: 1.1, size: 14, gravity: -120, kind: 'smoke', dir: -Math.PI / 2, spread: 1 });
+        showToast('op.fragile_broken', C.red);
+      },
+    });
+
+    lens = createMagnifier(rep, rep.diag.targets, g.magnifier, {
+      onStart: () => vibrate(6),
+      onReveal: (tg) => {
+        vibrate([20, 30, 40]);
+        fx.spawn(tg.x, tg.y, { count: 18, color: '#ff8a3d', speed: 340, size: 7 });
+        showToast('op.found.' + tg.id, C.red);
+        if (rep.diag.targets.every((x) => x.kind !== 'fault' || x.done)) {
+          rep.phase = 'repair';
+          lens.up();
+          showToast('op.diag_done', C.turquoiseDark);
+        }
+      },
+      onNothing: (tg) => {
+        vibrate(12);
+        rep.elapsed += g.magnifier.wrong_penalty;
+        rep.diag.penalty += g.magnifier.wrong_penalty;
+        showToast('op.nothing', C.inkSoft, { s: g.magnifier.wrong_penalty });
+      },
+    });
+
     buttons = new Buttons();
     startBtn = buttons.add({
       x: 190, y: 1660, w: 700, h: 170, size: 68,
@@ -141,7 +179,7 @@ export default {
   },
 
   release() {
-    unscrew.up(); connector.up(); chip.up(); solder.up();
+    unscrew.up(); connector.up(); chip.up(); solder.up(); vacuum.up(); lens.up();
   },
 
   update(dt) {
@@ -163,13 +201,17 @@ export default {
     connector.update(dt);
     chip.update(dt);
     solder.update(dt);
+    vacuum.update(dt);
+    lens.update(dt);
+    if (rep.phase === 'diag' && rep.coverAnim >= 1) rep.diag.time += dt;
+    if (vacuum.active && vacuum.sucking) vibrate(3);
 
     // fumée de la puce grillée
     smokeT -= dt;
     if (smokeT <= 0 && rep.coverAnim >= 1) {
       smokeT = 0.45;
       const o = rep.chip.old;
-      if (o.state === 'slot' || o.state === 'drag') {
+      if ((o.state === 'slot' && !isHidden(rep, 'chip_burnt')) || o.state === 'drag') {
         fx.spawn(o.x + (Math.random() - 0.5) * 60, o.y - 20, { count: 1, color: '#7d8188', speed: 50, life: 1.4, size: 14, gravity: -90, kind: 'smoke', dir: -Math.PI / 2, spread: 0.8 });
       }
     }
@@ -196,7 +238,7 @@ export default {
     if (white > 0) white = Math.max(0, white - dt * 2.5);
 
     const ready = rep.faults.size === 0;
-    startBtn.visible = rep.coverOpen && rep.coverAnim >= 1 && !closing;
+    startBtn.visible = rep.coverOpen && rep.coverAnim >= 1 && !closing && rep.phase === 'repair' && !vacuum.active;
     startBtn.style = ready ? 'primary' : 'secondary';
     startBtn.pulse = ready;
   },
@@ -246,9 +288,12 @@ export default {
     });
 
     this.drawLoosePieces(ctx);
+    if (rep.coverAnim >= 1) this.drawDiag(ctx);
+    if (vacuum.active) drawVacuum(ctx, vacuum.pos.x, vacuum.pos.y, game.data.gestures.vacuum.radius, vacuum.sucking, time);
 
     // fer à souder
     if (solder.active) drawIron(ctx, solder.tip.x, solder.tip.y, solder.heat);
+    if (lens.active) drawLens(ctx, rep, lens.lens, game.data.gestures.magnifier, { time, progress: lens.progress, finger });
 
     // zone fautive qui clignote après un démarrage raté
     if (flash > 0 && rep.coverAnim >= 1 && rep.faults.size > 0) {
@@ -299,9 +344,38 @@ export default {
     }
   },
 
+  // Pièces déjà vérifiées (coche verte) et, après 20 s de recherche, un indice qui pulse.
+  drawDiag(ctx) {
+    const m = game.data.gestures.magnifier;
+    for (const tg of rep.diag.targets) {
+      if (tg.kind === 'decoy' && tg.done && rep.phase === 'diag') {
+        ctx.fillStyle = 'rgba(60, 191, 106, 0.9)';
+        ctx.beginPath(); ctx.arc(tg.x + 34, tg.y - 34, 24, 0, TAU); ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 7;
+        ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(tg.x + 23, tg.y - 34); ctx.lineTo(tg.x + 32, tg.y - 25); ctx.lineTo(tg.x + 46, tg.y - 44); ctx.stroke();
+      }
+    }
+    if (rep.phase === 'diag' && rep.diag.time > m.hint_after && !lens.active) {
+      const tg = rep.diag.targets.find((x) => x.kind === 'fault' && !x.done);
+      if (tg) {
+        const a = 0.5 + 0.5 * Math.sin(time * 4);
+        ctx.strokeStyle = `rgba(63, 208, 187, ${0.25 + 0.45 * a})`;
+        ctx.lineWidth = 10;
+        ctx.beginPath(); ctx.arc(tg.x, tg.y, 90 + a * 20, 0, TAU); ctx.stroke();
+      }
+    }
+  },
+
   hintKey() {
     if (!rep.coverOpen) return unscrew.active && unscrew.active.rusty ? 'op.hint.rusty' : 'op.hint.unscrew';
     if (rep.coverAnim < 1) return 'op.hint.cover';
+    if (rep.phase === 'diag') {
+      if (lens.active) return lens.target ? 'op.hint.diag_hold' : 'op.hint.diag_move';
+      return 'op.hint.diag';
+    }
+    if (vacuum.active) return 'op.hint.vacuum';
     if (solder.active) return solder.hot ? 'op.hint.trace' : 'op.hint.heating';
     if (chip.dragOld) return 'op.hint.chip_drag_old';
     if (chip.dragNew) return rep.chip.old.state === 'tray' ? 'op.hint.chip_drag_new' : 'op.hint.chip_remove';
@@ -311,6 +385,7 @@ export default {
       if (f === 'chip_burnt') return rep.chip.old.state === 'slot' ? 'op.hint.chip_remove' : 'op.hint.chip_place';
       if (f === 'trace_cut') return 'op.hint.solder';
     }
+    if (cleanliness(rep) < game.data.gestures.scoring.clean_min) return 'op.hint.rust_left';
     return 'op.hint.ready';
   },
 
@@ -318,7 +393,11 @@ export default {
     const key = this.hintKey();
     let sub = null;
     if (!rep.coverOpen) sub = t('op.screws', { n: rep.screws.filter((s) => s.out).length, total: rep.screws.length });
-    else if (rep.coverAnim >= 1) sub = t('op.repairs', { n: rep.patient.faults.length - rep.faults.size, total: rep.patient.faults.length });
+    else if (rep.phase === 'diag') sub = t('op.found', { n: rep.diag.revealed.size, total: rep.diag.hidden.size });
+    else if (rep.coverAnim >= 1) {
+      sub = t('op.repairs', { n: rep.patient.faults.length - rep.faults.size, total: rep.patient.faults.length })
+        + '   ·   ' + t('op.clean', { p: cleanliness(rep) });
+    }
 
     drawPanel(ctx, 70, 1370, W - 140, 262);
     const gauge = solder.active;
@@ -354,19 +433,37 @@ export default {
     fitText(ctx, t('op.speed.fast'), x + w - 60, y + h + 34, 200, 30, C.inkSoft, 700);
   },
 
+  // Quel outil prend le doigt ? Diagnostic : la loupe (le connecteur visible reste branchable).
+  // Ensuite : puce, fiche (si on la touche vraiment), rouille, fer, et l'aspirateur partout sur la carte.
+  routeDown(x, y) {
+    const onPlug = !rep.plug.connected && Math.abs(x - rep.plug.x) < 70 && Math.abs(y - rep.plug.y) < 55;
+    if (rep.phase === 'diag') {
+      if (onPlug && connector.down(x, y)) return;
+      lens.down(x, y);
+      return;
+    }
+    if (chip.down(x, y)) return;
+    if (onPlug && connector.down(x, y)) return;
+    if (vacuum.covers(x, y)) { vacuum.down(x, y); return; }
+    if (connector.down(x, y) || solder.down(x, y)) return;
+    const b = D.board + 40;
+    if (Math.abs(x - D.cx) < b && Math.abs(y - D.cy) < b) vacuum.down(x, y);
+  },
+
   pointer(type, x, y) {
     if (closing) return;
     if (buttons.pointer(type, x, y)) return;
+    finger.x = x; finger.y = y;
     if (type === 'down') {
       if (!rep.coverOpen) unscrew.down(x, y);
-      else if (rep.coverAnim >= 1) {
-        if (!chip.down(x, y) && !connector.down(x, y)) solder.down(x, y);
-      }
+      else if (rep.coverAnim >= 1) this.routeDown(x, y);
     } else if (type === 'move') {
       unscrew.move(x, y);
       connector.move(x, y);
       chip.move(x, y);
       solder.move(x, y);
+      vacuum.move(x, y);
+      lens.move(x, y);
     } else {
       this.release();
     }

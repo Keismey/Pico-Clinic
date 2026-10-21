@@ -5,21 +5,33 @@ import { Buttons, C, drawCreamBackground, drawText, fitText } from '../ui.js';
 import { withDrone, drawShadow, drawFrame, drawCover } from '../drone.js';
 import { go } from '../scenes.js';
 import { changeLang, VERSION } from '../settings.js';
+import { save, resetSave, totalStars } from '../save.js';
 
 let buttons;
 let time = 0;
+let confirmReset = 0; // > 0 : en attente de la 2e touche pour effacer
 
 export default {
   init() {
     time = 0;
+    confirmReset = 0;
     buttons = new Buttons();
     buttons.add({ x: 200, y: 1360, w: 680, h: 170, size: 72, label: () => t('title.play'), onTap: () => go('operation', {}) });
-    buttons.add({ x: 200, y: 1640, w: 320, h: 140, style: 'secondary', label: () => 'Français', selected: () => getLang() === 'fr', onTap: () => changeLang('fr') });
-    buttons.add({ x: 560, y: 1640, w: 320, h: 140, style: 'secondary', label: () => 'English', selected: () => getLang() === 'en', onTap: () => changeLang('en') });
+    buttons.add({ x: 200, y: 1590, w: 320, h: 130, style: 'secondary', label: () => 'Français', selected: () => getLang() === 'fr', onTap: () => changeLang('fr') });
+    buttons.add({ x: 560, y: 1590, w: 320, h: 130, style: 'secondary', label: () => 'English', selected: () => getLang() === 'en', onTap: () => changeLang('en') });
+    // Nouvelle partie : deux touches pour ne pas effacer par erreur
+    buttons.add({
+      x: 290, y: 1745, w: 500, h: 96, size: 32, style: 'secondary',
+      label: () => t(confirmReset > 0 ? 'title.reset_confirm' : 'title.reset'),
+      onTap: () => {
+        if (confirmReset > 0) { resetSave(); confirmReset = 0; } else confirmReset = 3;
+      },
+    });
   },
 
   update(dt) {
     time += dt;
+    if (confirmReset > 0) confirmReset -= dt;
   },
 
   draw(ctx) {
@@ -50,9 +62,10 @@ export default {
       drawCover(ctx);
     });
 
-    fitText(ctx, t('title.language'), W / 2, 1600, 600, 40, C.inkSoft, 700);
+    fitText(ctx, t('title.wallet', { n: save.credits, s: totalStars() }), W / 2, 1318, 860, 40, C.copperDark, 800);
+    fitText(ctx, t('title.language'), W / 2, 1562, 600, 36, C.inkSoft, 700);
     buttons.draw(ctx);
-    fitText(ctx, t('title.version', { v: VERSION }), W / 2, 1870, 800, 34, C.inkSoft, 500);
+    fitText(ctx, t('title.version', { v: VERSION }), W / 2, 1885, 800, 30, C.inkSoft, 500);
   },
 
   pointer(type, x, y) {
