@@ -8,6 +8,7 @@ import { game } from '../state.js';
 import { vibrate } from '../feedback.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
+import { orderState } from '../progress.js';
 
 const TAU = Math.PI * 2;
 const TRACK_TOP = 1300;
@@ -82,7 +83,11 @@ export default {
         fx.spawn(DX, DY, { count: 40, color: C.turquoise, speed: 700, life: 0.9, size: 10, gravity: 500 });
         fx.spawn(DX, DY, { count: 30, color: C.orange, speed: 600, life: 0.9, size: 9, gravity: 500 });
       }
-      if (st > 3.8) go('counter', { order: rep.patient.id, mode: 'thanks' });
+      // commande rejouée : pas de comptoir (ni avant ni après), on va droit aux étoiles
+      if (st > 3.8) {
+        if (orderState(rep.patient.order) === 'done') go('done');
+        else go('counter', { order: rep.patient.id, mode: 'thanks' });
+      }
     }
     rotorAngle += rotorSpeed * dt;
   },

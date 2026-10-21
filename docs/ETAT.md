@@ -5,7 +5,7 @@ Mis à jour : 2026-10-21 (C6 V2a). Jeu : https://keismey.github.io/Pico-Clinic/
 ## Fait
 - C1-C5 (V0, V1) : 7 gestes, loupe, aspirateur, 3 étoiles, paie, sauvegarde v3, 15 modèles, 10 commandes du rang 1, boutique 3 niveaux.
 - C6 V2a : `data/clients.json` (6 clients + passage + Gribouille), portraits provisoires en formes (`js/portraits.js`).
-- Comptoir (`js/scenes/counter.js`) : accueil avant, merci après, bulles lettre à lettre, Passer. Commande déjà réussie = rejouée sans comptoir.
+- Comptoir (`js/scenes/counter.js`) : accueil avant, merci après, bulles lettre à lettre, Passer. Commande rejouée : ni comptoir avant, ni merci après.
 - Dialogues des commandes 1 à 10 (`intro`/`thanks` dans `orders.json`, clés `arc.client.n.*`), Gribouille annonce les examens.
 - Rangs (`data/ranks.json` : 18/45/70/96 étoiles, examens 10/22/34/46), écran « Nouveau rang ! » (`rank.js`), panneau de Gribouille si l'examen manque d'étoiles.
 - Carnet de Maître Ohm (`notebook.js`) : clients (fiche, bio, dernier mot), 12 pièces rares, 5 rangs avec barre d'étoiles.
