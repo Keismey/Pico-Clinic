@@ -2,7 +2,7 @@
 import { game, toolLevel } from './state.js';
 import { save, persist, totalStars } from './save.js';
 
-export const TOOL_KEYS = ['iron', 'vacuum', 'lens', 'tweezers'];
+export const TOOL_KEYS = ['driver', 'iron', 'vacuum', 'lens', 'tweezers'];
 
 function paid(o) {
   return !!(o && save.orders[o.id] && save.orders[o.id].paid);

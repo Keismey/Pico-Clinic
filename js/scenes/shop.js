@@ -4,7 +4,7 @@ import { t } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawToast, roundRect, fitText } from '../ui.js';
 import { decoList, decoState, buyDeco, hasDeco, drawDeco, ICON_SCALE } from '../deco.js';
 import { save } from '../save.js';
-import { toolLevel } from '../state.js';
+import { game, toolLevel } from '../state.js';
 import { TOOL_KEYS, currentTool, nextTool, buyState, buyTool } from '../progress.js';
 import { vibrate } from '../feedback.js';
 import * as fx from '../particles.js';
@@ -16,7 +16,8 @@ import { seen, markSeen, drawGribBox } from '../tutorial.js';
 const TUTO = ['tuto.shop_here', 'tuto.shop_here2'];
 
 const TAU = Math.PI * 2;
-const CARD = { x: 40, y: 360, w: W - 80, h: 262, step: 290 };
+// 5 outils : cartes un peu plus serrées (la dévisseuse en premier)
+const CARD = { x: 40, y: 360, w: W - 80, h: 220, step: 238 };
 // V3b : onglet des décorations (2 colonnes × 4 lignes)
 const TABS = { x: 40, y: 250, w: W - 80, h: 86 };
 const DCARD = { x: 40, y: 360, w: (W - 100) / 2, h: 270, stepX: (W - 100) / 2 + 20, stepY: 290 };
@@ -32,7 +33,23 @@ function drawIcon(ctx, k, x, y) {
   ctx.save();
   ctx.translate(x, y);
   ctx.lineCap = 'round';
-  if (k === 'iron') {
+  if (k === 'driver') {
+    // tournevis, ou dévisseuse électrique une fois achetée
+    ctx.rotate(-0.7);
+    ctx.strokeStyle = '#9aa3ad'; ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.moveTo(0, -75); ctx.lineTo(0, -15); ctx.stroke();
+    if (toolLevel('driver') > 1) {
+      ctx.fillStyle = C.turquoise; roundRect(ctx, -30, -20, 60, 50, 14); ctx.fill();
+      ctx.fillStyle = '#374151'; roundRect(ctx, -16, 24, 32, 50, 10); ctx.fill();
+      ctx.fillStyle = '#ffd166'; ctx.fillRect(-20, -6, 10, 20);
+    } else {
+      // manche jaune strié et bout plat (différent du fer à souder)
+      ctx.fillStyle = '#ffd166'; roundRect(ctx, -17, -15, 34, 80, 14); ctx.fill();
+      ctx.strokeStyle = '#c4862a'; ctx.lineWidth = 4;
+      for (const dx of [-7, 0, 7]) { ctx.beginPath(); ctx.moveTo(dx, -5); ctx.lineTo(dx, 55); ctx.stroke(); }
+      ctx.fillStyle = '#9aa3ad'; ctx.fillRect(-9, -84, 18, 10);
+    }
+  } else if (k === 'iron') {
     ctx.rotate(-0.8);
     ctx.strokeStyle = '#9aa3ad'; ctx.lineWidth = 10;
     ctx.beginPath(); ctx.moveTo(0, -70); ctx.lineTo(0, -10); ctx.stroke();
@@ -107,7 +124,7 @@ export default {
     if (page === 'tools') {
       TOOL_KEYS.forEach((k, i) => {
         buttons.add({
-          x: CARD.x + CARD.w - 262, y: CARD.y + i * CARD.step + 56, w: 236, h: 150, size: 40,
+          x: CARD.x + CARD.w - 262, y: CARD.y + i * CARD.step + 44, w: 236, h: 130, size: 38,
           style: 'secondary', tool: k,
           label: () => {
             const n = nextTool(k);
@@ -174,28 +191,29 @@ export default {
     TOOL_KEYS.forEach((k, i) => {
       const x = CARD.x, y = CARD.y + i * CARD.step, w = CARD.w, h = CARD.h;
       const lv = toolLevel(k);
+      const n = game.data.tools[k].levels.length;
       ctx.fillStyle = '#d9c3a3';
       roundRect(ctx, x, y + 10, w, h - 4, 34); ctx.fill();
       ctx.fillStyle = C.paper;
       roundRect(ctx, x, y, w, h - 8, 34); ctx.fill();
       // icône et niveau
       ctx.fillStyle = 'rgba(63, 208, 187, 0.15)';
-      ctx.beginPath(); ctx.arc(x + 110, y + 108, 84, 0, TAU); ctx.fill();
-      drawIcon(ctx, k, x + 110, y + 108);
-      for (let d = 0; d < 3; d++) {
+      ctx.beginPath(); ctx.arc(x + 110, y + 88, 72, 0, TAU); ctx.fill();
+      ctx.save(); ctx.translate(x + 110, y + 88); ctx.scale(0.85, 0.85); drawIcon(ctx, k, 0, 0); ctx.restore();
+      for (let d = 0; d < n; d++) {
         ctx.fillStyle = d < lv ? C.turquoise : 'rgba(58, 42, 30, 0.15)';
-        ctx.beginPath(); ctx.arc(x + 70 + d * 40, y + 220, 13, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(x + 110 + (d - (n - 1) / 2) * 40, y + 184, 12, 0, TAU); ctx.fill();
       }
       // textes
       const tw = w - 520;
-      leftText(ctx, t('tool.' + currentTool(k).id), x + 220, y + 50, tw, 44, C.ink, 900);
-      leftText(ctx, t('shop.level', { l: lv }), x + 220, y + 98, tw, 30, C.inkSoft, 700);
-      const n = nextTool(k);
-      if (n) {
-        leftText(ctx, t('shop.next', { name: t('tool.' + n.id) }), x + 220, y + 154, tw, 32, C.copperDark, 800);
-        leftText(ctx, t('tool.' + n.id + '.desc'), x + 220, y + 200, tw, 28, C.inkSoft, 700);
+      leftText(ctx, t('tool.' + currentTool(k).id), x + 220, y + 42, tw, 42, C.ink, 900);
+      leftText(ctx, t('shop.level', { l: lv, n }), x + 220, y + 84, tw, 28, C.inkSoft, 700);
+      const nx = nextTool(k);
+      if (nx) {
+        leftText(ctx, t('shop.next', { name: t('tool.' + nx.id) }), x + 220, y + 130, tw, 30, C.copperDark, 800);
+        leftText(ctx, t('tool.' + nx.id + '.desc'), x + 220, y + 170, tw, 26, C.inkSoft, 700);
       } else {
-        leftText(ctx, t('shop.max'), x + 220, y + 164, tw, 32, C.green, 800);
+        leftText(ctx, t('shop.max'), x + 220, y + 140, tw, 30, C.green, 800);
       }
     });
   },

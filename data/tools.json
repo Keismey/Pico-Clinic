@@ -1,5 +1,5 @@
 {
-  "_doc": "Boutique (GDD 02-progression). levels[0] = outil de départ ; price = crédits ; rank = rang minimum. effect[k][niveau-1] modifie data/gestures.json pendant une réparation.",
+  "_doc": "Boutique (GDD 02-progression). levels[0] = outil de départ ; price = crédits ; rank = rang minimum. effect[k][niveau-1] modifie data/gestures.json pendant une réparation. driver : la dévisseuse dévisse en maintenant le doigt sur la vis (hold_turns = tours par seconde).",
   "iron": {
     "levels": [{ "id": "iron" }, { "id": "iron_precision", "price": 150, "rank": 2 }, { "id": "laser", "price": 900, "rank": 4 }],
     "effect": { "tolerance_bonus": [0, 8, 16], "burn_factor": [1, 1.4, 1.8] }
@@ -11,6 +11,10 @@
   "lens": {
     "levels": [{ "id": "lens" }, { "id": "lens_thermal", "price": 200, "rank": 3 }, { "id": "scanner", "price": 1200, "rank": 5 }],
     "effect": { "hold_factor": [1, 0.5, 0.5], "scan": [false, false, true] }
+  },
+  "driver": {
+    "levels": [{ "id": "screwdriver" }, { "id": "electric_driver", "price": 180, "rank": 2 }],
+    "effect": { "hold_turns": [0, 1.2] }
   },
   "tweezers": {
     "levels": [{ "id": "tweezers" }, { "id": "tweezers_fine", "price": 120, "rank": 3 }, { "id": "tweezers_antistatic", "price": 700, "rank": 4 }],

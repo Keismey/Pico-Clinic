@@ -120,7 +120,7 @@
   "orders.menu": "Menu",
   "shop.title": "Shop",
   "shop.status": "{n} credits  ·  Rank {r}: {name}",
-  "shop.level": "Level {l}/3",
+  "shop.level": "Level {l}/{n}",
   "shop.next": "Next: {name}",
   "shop.max": "Best tool owned!",
   "shop.max_short": "Max",
@@ -217,7 +217,7 @@
   "rank.4.exam": "Turbo's race drone",
   "rank.5.exam": "Dr Quartz's partnership",
   "rank.1.unlocks": "Simple toy drones, screwdriver and basic iron",
-  "rank.2.unlocks": "Cyber insects, strong vacuum, precision iron, Pantoufle",
+  "rank.2.unlocks": "Cyber insects, strong vacuum, precision iron, power screwdriver, Pantoufle",
   "rank.3.unlocks": "Mechanical mascots, thermal magnifier, fine tweezers",
   "rank.4.unlocks": "Pro and race drones, laser, magnetic pump, antistatic tweezers",
   "rank.5.unlocks": "Unique prototypes, scanner, Free workshop",
@@ -263,7 +263,7 @@
   "tuto.stars": "Three stars to earn: it works, it's clean, and your repair is precise.",
   "tuto.credits": "The client pays you in credits. If you're quick, they add a tip!",
   "tuto.shop": "Credits buy better tools. Let's go see the shop!",
-  "tuto.shop_here": "This is Master Ohm's shop. Every tool has three levels.",
+  "tuto.shop_here": "This is Master Ohm's shop. Every tool can be upgraded, up to three levels.",
   "tuto.shop_here2": "A better iron, a stronger lens... Come back when you have credits. Back to work!",
   "tuto.rusty": "This screw is rusty: you'll have to turn longer. Keep going!",
   "tuto.vacuum": "Rust! Rub over it quickly: the vacuum follows your finger, just above it.",
@@ -585,5 +585,10 @@
   "deco.hanging_drone": "Hanging drone",
   "deco.aquarium": "Mechanical aquarium",
   "deco.neon_sign": "Light-up sign",
-  "deco.gear_clock": "Gear clock"
+  "deco.gear_clock": "Gear clock",
+  "tool.screwdriver": "Screwdriver",
+  "tool.electric_driver": "Power screwdriver",
+  "tool.electric_driver.desc": "Unscrews while you hold your finger on the screw",
+  "op.hint.unscrew_hold": "Power screwdriver: keep your finger on a screw, it unscrews by itself.",
+  "op.hint.rusty_hold": "Rusty screw: hold your finger on it a little longer!"
 }

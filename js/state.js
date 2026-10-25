@@ -41,7 +41,8 @@ function layoutOf(o, part) {
 
 // Niveau d'un outil (1 à 3) dans la sauvegarde.
 export function toolLevel(k) {
-  return Math.max(1, Math.min(3, (save.tools && save.tools[k]) || 1));
+  const n = game.data.tools[k] ? game.data.tools[k].levels.length : 3;
+  return Math.max(1, Math.min(n, (save.tools && save.tools[k]) || 1));
 }
 
 // Réglages des gestes pour cette réparation, modifiés par les outils achetés.
@@ -49,6 +50,8 @@ export function toolGestures() {
   const g = JSON.parse(JSON.stringify(game.data.gestures));
   const T = game.data.tools;
   const e = (k, name) => T[k].effect[name][toolLevel(k) - 1];
+  // dévisseuse : maintenir le doigt sur la vis suffit
+  g.unscrew.hold_turns = T.driver ? e('driver', 'hold_turns') : 0;
   g.solder.tolerance_bonus = e('iron', 'tolerance_bonus');
   g.solder.burn_time *= e('iron', 'burn_factor');
   g.vacuum.radius = Math.round(g.vacuum.radius * e('vacuum', 'radius_factor'));
@@ -207,6 +210,11 @@ export function newRepair(orderId, part = 0) {
     elapsed: 0,
     attempts: 0,
   };
+  // atelier d'essai : pas de vis à retirer, le capot est déjà ouvert
+  if (p.order.test) {
+    for (const s of game.repair.screws) { s.out = true; s.inTray = true; s.slot = s.i; }
+    Object.assign(game.repair, { coverLoose: true, coverOpen: true, coverAnim: 1 });
+  }
   spots.fragile = game.repair.fragile;
   return game.repair;
 }

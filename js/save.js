@@ -9,7 +9,7 @@ function defaults() {
     credits: 0,
     rank: 1,
     // niveau de chaque outil (1 à 3), acheté à la boutique
-    tools: { iron: 1, vacuum: 1, lens: 1, tweezers: 1 },
+    tools: { iron: 1, vacuum: 1, lens: 1, tweezers: 1, driver: 1 },
     // par commande : meilleures étoiles [fonctionnel, propre, précis], meilleur temps, payée, parties
     orders: {},
     clients: {},

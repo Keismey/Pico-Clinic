@@ -120,7 +120,7 @@
   "orders.menu": "Menu",
   "shop.title": "Boutique",
   "shop.status": "{n} crédits  ·  Rang {r} : {name}",
-  "shop.level": "Niveau {l}/3",
+  "shop.level": "Niveau {l}/{n}",
   "shop.next": "Ensuite : {name}",
   "shop.max": "Meilleur outil possédé !",
   "shop.max_short": "Max",
@@ -217,7 +217,7 @@
   "rank.4.exam": "drone de course de Turbo",
   "rank.5.exam": "partenariat de Dr Quartz",
   "rank.1.unlocks": "Drones jouets simples, tournevis et fer de base",
-  "rank.2.unlocks": "Insectes cybernétiques, aspirateur renforcé, fer de précision, Pantoufle",
+  "rank.2.unlocks": "Insectes cybernétiques, aspirateur renforcé, fer de précision, dévisseuse, Pantoufle",
   "rank.3.unlocks": "Mascottes mécaniques, loupe thermique, pince fine",
   "rank.4.unlocks": "Drones pro et de course, laser, pompe magnétique, pince antistatique",
   "rank.5.unlocks": "Prototypes uniques, scanner, Atelier libre",
@@ -263,7 +263,7 @@
   "tuto.stars": "Trois étoiles possibles : il marche, il est propre, et ta réparation est précise.",
   "tuto.credits": "Le client te paie en crédits. Si tu es rapide, il ajoute un pourboire !",
   "tuto.shop": "Avec les crédits, on achète de meilleurs outils. Allons voir la boutique !",
-  "tuto.shop_here": "Voici la boutique de Maître Ohm. Chaque outil a trois niveaux.",
+  "tuto.shop_here": "Voici la boutique de Maître Ohm. Chaque outil s'améliore, jusqu'à trois niveaux.",
   "tuto.shop_here2": "Un meilleur fer, une loupe plus forte... Reviens quand tu auras des crédits. Au travail !",
   "tuto.rusty": "Cette vis est rouillée : il faut tourner plus longtemps. Courage !",
   "tuto.vacuum": "De la rouille ! Frotte vite dessus : l'aspirateur suit ton doigt, juste au-dessus.",
@@ -585,5 +585,10 @@
   "deco.hanging_drone": "Drone suspendu",
   "deco.aquarium": "Aquarium mécanique",
   "deco.neon_sign": "Enseigne lumineuse",
-  "deco.gear_clock": "Horloge à engrenages"
+  "deco.gear_clock": "Horloge à engrenages",
+  "tool.screwdriver": "Tournevis",
+  "tool.electric_driver": "Dévisseuse",
+  "tool.electric_driver.desc": "Dévisse en maintenant le doigt sur la vis",
+  "op.hint.unscrew_hold": "Dévisseuse : garde le doigt posé sur une vis, elle se dévisse toute seule.",
+  "op.hint.rusty_hold": "Vis rouillée : garde le doigt dessus un peu plus longtemps !"
 }

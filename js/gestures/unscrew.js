@@ -1,10 +1,13 @@
 // Geste de dévissage : maintenir sur la vis puis tourner en cercle autour.
 // Progression = angle cumulé du doigt autour du centre de la vis.
 // Dérapage si le doigt s'éloigne de plus de slip_factor × le rayon de la vis.
+// Dévisseuse (params.hold_turns > 0, outil acheté à la boutique) : il suffit de maintenir
+// le doigt sur la vis, elle tourne toute seule (hold_turns tours par seconde).
 const TAU = Math.PI * 2;
 
 export function createUnscrew(screws, params, hooks = {}) {
   let active = null;
+  const hold = params.hold_turns > 0;
 
   function find(x, y) {
     let best = null;
@@ -17,8 +20,27 @@ export function createUnscrew(screws, params, hooks = {}) {
     return best;
   }
 
+  // La vis tourne de da (radians) : avancement, petit clic à chaque quart de tour, sortie.
+  function turn(s, da) {
+    s.turned += da;
+    s.angle += da;
+    const need = (s.rusty ? params.turns_rusty : params.turns) * TAU;
+    s.progress = Math.min(1, Math.abs(s.turned) / need);
+    const q = Math.floor(Math.abs(s.turned) / (TAU / 4));
+    if (q !== active.quarter) {
+      active.quarter = q;
+      if (hooks.onTick) hooks.onTick(s);
+    }
+    if (s.progress >= 1) {
+      s.out = true;
+      active = null;
+      if (hooks.onOut) hooks.onOut(s);
+    }
+  }
+
   return {
     get active() { return active && active.s; },
+    get hold() { return hold; },
 
     down(x, y) {
       const s = find(x, y);
@@ -36,6 +58,7 @@ export function createUnscrew(screws, params, hooks = {}) {
         if (hooks.onSlip) hooks.onSlip(s);
         return;
       }
+      if (hold) return; // la dévisseuse tourne seule (update)
       const a = Math.atan2(y - s.y, x - s.x);
       // trop près du centre : l'angle n'est pas fiable, on attend
       if (d < s.r * 0.3) { active.last = a; return; }
@@ -43,20 +66,12 @@ export function createUnscrew(screws, params, hooks = {}) {
       if (da > Math.PI) da -= TAU;
       else if (da < -Math.PI) da += TAU;
       active.last = a;
-      s.turned += da;
-      s.angle += da;
-      const need = (s.rusty ? params.turns_rusty : params.turns) * TAU;
-      s.progress = Math.min(1, Math.abs(s.turned) / need);
-      const q = Math.floor(Math.abs(s.turned) / (TAU / 4));
-      if (q !== active.quarter) {
-        active.quarter = q;
-        if (hooks.onTick) hooks.onTick(s);
-      }
-      if (s.progress >= 1) {
-        s.out = true;
-        active = null;
-        if (hooks.onOut) hooks.onOut(s);
-      }
+      turn(s, da);
+    },
+
+    // Dévisseuse : la vis tourne tant que le doigt reste dessus.
+    update(dt) {
+      if (active && hold) turn(active.s, -params.hold_turns * TAU * dt);
     },
 
     up() {
@@ -75,9 +90,11 @@ export function createUnscrew(screws, params, hooks = {}) {
           ctx.strokeStyle = 'rgba(214, 69, 69, 0.28)';
           ctx.lineWidth = 4;
           ctx.beginPath(); ctx.arc(s.x, s.y, s.r * params.slip_factor, 0, TAU); ctx.stroke();
-          ctx.strokeStyle = 'rgba(37, 160, 141, 0.9)';
-          ctx.lineWidth = 6;
-          ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 1.5, 0, TAU); ctx.stroke();
+          if (!hold) {
+            ctx.strokeStyle = 'rgba(37, 160, 141, 0.9)';
+            ctx.lineWidth = 6;
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 1.5, 0, TAU); ctx.stroke();
+          }
           ctx.restore();
         }
         if (s.progress > 0 || isActive) {

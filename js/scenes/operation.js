@@ -244,7 +244,8 @@ export default {
     // atelier d'essai : Gribouille montre toujours le geste, sans le noter comme vu
     const test = !!rep.patient.order.test;
     coach = createCoach(this.lessons(rep.patient.order.n).concat(sec.lessons()), { enabled: firstTime || test, remember: !test });
-    intro = coach.has('open') && !params.resume ? 0 : 1;
+    // (atelier d'essai : le capot est déjà ouvert, pas de zoom d'arrivée)
+    intro = coach.has('open') && !params.resume && !rep.coverOpen ? 0 : 1;
 
     buttons = new Buttons();
     startBtn = buttons.add({
@@ -367,6 +368,8 @@ export default {
       if (s.fly.t >= 1) { s.fly = null; s.inTray = true; vibrate(6); }
     }
 
+    unscrew.update(dt);
+    if (unscrew.hold && unscrew.active) vibrate(3);
     connector.update(dt);
     chip.update(dt);
     solder.update(dt);
@@ -610,7 +613,10 @@ export default {
 
   hintKey() {
     if (!rep.coverOpen && rep.coverLoose) return 'op.hint.lift';
-    if (!rep.coverOpen) return unscrew.active && unscrew.active.rusty ? 'op.hint.rusty' : 'op.hint.unscrew';
+    if (!rep.coverOpen) {
+      if (unscrew.hold) return unscrew.active && unscrew.active.rusty ? 'op.hint.rusty_hold' : 'op.hint.unscrew_hold';
+      return unscrew.active && unscrew.active.rusty ? 'op.hint.rusty' : 'op.hint.unscrew';
+    }
     if (rep.coverAnim < 1) return 'op.hint.cover';
     if (rep.phase === 'diag') {
       if (lens.active) return lens.target ? 'op.hint.diag_hold' : 'op.hint.diag_move';
