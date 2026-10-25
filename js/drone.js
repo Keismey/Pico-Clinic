@@ -446,8 +446,12 @@ function drawInsectFrame(ctx, { rotorAngle = 0, rotorSpeed = 0, lights = null } 
     ctx.fillStyle = sh === 'firefly' && lights && lights[0] ? '#fff2b0' : L.trim;
     ctx.beginPath(); ctx.ellipse(D.cx, bottom + 30, 170, 130, 0, 0, TAU); ctx.fill();
     if (sh === 'bee') {
+      // bandes découpées à la forme du ventre (sinon elles dépassent sur les côtés)
+      ctx.save();
+      ctx.clip();
       ctx.fillStyle = L.body;
-      for (const dy of [60, 120]) { ctx.fillRect(D.cx - 150, bottom + dy - 18, 300, 30); }
+      for (const dy of [60, 120]) { ctx.fillRect(D.cx - 180, bottom + dy - 18, 360, 30); }
+      ctx.restore();
     }
     if (sh === 'firefly') {
       ctx.fillStyle = 'rgba(255, 242, 176, 0.35)';
