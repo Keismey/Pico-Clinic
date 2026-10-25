@@ -61,13 +61,27 @@ export function partEarned(o, stars) {
   return p;
 }
 
-// 'done' (déjà réussie), 'open' (jouable), 'locked' (finir la précédente), 'stars' (examen : pas assez d'étoiles).
+// V3b : pièces rares exigées par un prototype (rare_parts.json → use = numéro de la commande).
+export function partsNeeded(o) {
+  return game.data.rareParts.filter((p) => p.use === o.n);
+}
+export function missingParts(o) {
+  return partsNeeded(o).filter((p) => !hasPart(p.id));
+}
+
+// 'done' (déjà réussie), 'open' (jouable), 'locked' (finir la précédente), 'stars' (examen : pas assez d'étoiles),
+// 'part' (prototype : il manque une pièce rare). Un prototype qui attend sa pièce ne bloque pas les suivantes.
 export function orderState(o) {
   if (paid(o)) return 'done';
   const list = game.data.orders;
-  const i = list.indexOf(o);
-  if (i > 0 && !paid(list[i - 1])) return 'locked';
+  for (let i = list.indexOf(o) - 1; i >= 0; i--) {
+    const prev = list[i];
+    if (paid(prev)) break;
+    if (missingParts(prev).length && orderState(prev) === 'part') continue;
+    return 'locked';
+  }
   if (examStars(o) && totalStars() < examStars(o)) return 'stars';
+  if (missingParts(o).length) return 'part';
   return 'open';
 }
 
@@ -76,9 +90,11 @@ export function orderStars(o) {
   return r ? r.stars.filter(Boolean).length : 0;
 }
 
+// Commande suivante (on saute les prototypes qui attendent encore une pièce rare).
 export function nextOrder(o) {
   const list = game.data.orders;
-  return list[list.indexOf(o) + 1] || null;
+  for (let i = list.indexOf(o) + 1; i < list.length; i++) if (orderState(list[i]) !== 'part') return list[i];
+  return null;
 }
 
 // Prochain niveau d'un outil : { id, price, rank } ou null s'il est au maximum.

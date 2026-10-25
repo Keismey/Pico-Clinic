@@ -5,9 +5,9 @@ import { t } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawToast, drawText, fitText, roundRect, font } from '../ui.js';
 import { game } from '../state.js';
 import { save, totalStars } from '../save.js';
-import { orderState, orderStars, examStars, orderByNumber } from '../progress.js';
+import { orderState, orderStars, examStars, orderByNumber, missingParts } from '../progress.js';
 import { seen } from '../tutorial.js';
-import { drawGribouille } from '../portraits.js';
+import { drawGribouille, drawRarePart } from '../portraits.js';
 import { vibrate } from '../feedback.js';
 import { go } from '../scenes.js';
 
@@ -105,7 +105,7 @@ function drawGribPanel(ctx) {
   ctx.fillStyle = C.paper;
   roundRect(ctx, 60, 700, W - 120, 560, 44); ctx.fill();
   drawGribouille(ctx, 200, 960, 0.75, { time: grib.t, talk: grib.t < 3 });
-  drawText(ctx, t('orders.gribouille_stars', { n: grib.n, s: grib.s }), 640, 950, 560, 40, { color: C.ink, weight: 700, lineH: 52 });
+  drawText(ctx, grib.text(), 640, 950, 560, 40, { color: C.ink, weight: 700, lineH: 52 });
   fitText(ctx, t('orders.tap_close'), W / 2, 1205, 800, 30, C.inkSoft, 700);
   ctx.restore();
 }
@@ -117,7 +117,15 @@ function showToast(key, vars, color = C.inkSoft) {
 function open(o) {
   const st = orderState(o);
   if (st === 'locked') { vibrate([15, 25, 15]); showToast('orders.locked'); return; }
-  if (st === 'stars') { vibrate([15, 25, 15]); grib = { n: examStars(o), s: totalStars(), t: 0 }; return; }
+  if (st === 'stars') { vibrate([15, 25, 15]); grib = { text: () => t('orders.gribouille_stars', { n: examStars(o), s: totalStars() }), t: 0 }; return; }
+  // prototype : il manque une pièce rare, Gribouille dit quelle commande refaire en 3 étoiles
+  if (st === 'part') {
+    vibrate([15, 25, 15]);
+    const p = missingParts(o)[0];
+    const key = p.how === 'stars3' ? 'orders.gribouille_part' : 'orders.gribouille_gift';
+    grib = { text: () => t(key, { part: t('rare.' + p.id), n: p.order }), t: 0 };
+    return;
+  }
   // déjà réussie : on rejoue directement ; sinon le client passe d'abord au comptoir
   if (st === 'done') go('operation', { order: o.id });
   else if (o.n === 1 && !seen('ch1')) go('story', { id: 'ch1', then: { scene: 'counter', params: { order: o.id, mode: 'intro' } } });
@@ -142,6 +150,8 @@ export default {
       onTap: () => (seen('notebook') ? go('notebook') : go('story', { id: 'notebook', then: { scene: 'notebook' } })),
     });
     buttons.add({ x: 720, y: 1570, w: 310, h: 160, size: 52, style: 'secondary', label: () => t('orders.menu'), onTap: () => go('title') });
+    // V3b : Atelier libre, ouvert au rang 5
+    buttons.add({ x: 760, y: 30, w: 280, h: 120, size: 40, label: () => t('orders.free'), visible: save.rank >= 5, onTap: () => go('free') });
   },
 
   update(dt) {
@@ -152,7 +162,7 @@ export default {
 
   draw(ctx) {
     drawCreamBackground(ctx);
-    leftText(ctx, t('orders.title'), 60, 85, 680, 76, C.copperDark, 900);
+    leftText(ctx, t('orders.title'), 60, 85, save.rank >= 5 ? 660 : 680, 76, C.copperDark, 900);
     leftText(ctx, t('orders.status', { r: save.rank, name: t('rank.' + save.rank), n: save.credits, s: totalStars() }), 60, 180, W - 120, 38, C.inkSoft, 800);
     this.drawTabs(ctx);
 
@@ -160,7 +170,7 @@ export default {
     rows().forEach((o, i) => {
       const st = orderState(o);
       const x = ROW.x, y = ROW.top + i * L.step, h = L.h, cy = y + h / 2, f = L.f;
-      const dim = st === 'locked' || st === 'stars';
+      const dim = st === 'locked' || st === 'stars' || st === 'part';
       ctx.save();
       ctx.globalAlpha = dim ? 0.55 : 1;
       ctx.fillStyle = '#d9c3a3';
@@ -190,6 +200,8 @@ export default {
         ctx.font = font(34, 900); ctx.textAlign = 'right';
         ctx.fillStyle = C.orange;
         ctx.fillText(t('orders.new'), rx + 20, cy - 3);
+      } else if (st === 'part') {
+        missingParts(o).slice(0, 2).forEach((p, k) => drawRarePart(ctx, p.id, rx - 10 - k * 90, cy - 3, 34 * f, true, time));
       } else if (st === 'stars') {
         miniStar(ctx, rx - 110, cy - 3, 26, true);
         ctx.font = font(36, 900); ctx.textAlign = 'right'; ctx.fillStyle = C.ink;

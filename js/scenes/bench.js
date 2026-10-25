@@ -1,35 +1,69 @@
-// Atelier d'essai (lien « ?essai ») : essayer chaque geste secondaire sans toucher à la partie.
-// Les réparations d'essai (data/orders.json → tests) ne paient rien et ne sont pas enregistrées.
+// Atelier d'essai (lien « ?essai ») : essayer chaque geste secondaire, n'importe laquelle des 60 commandes
+// ou l'Atelier libre, sans toucher à la partie. Rien n'est payé ni enregistré.
 import { W } from '../canvas.js';
 import { t } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawText, fitText } from '../ui.js';
 import { game } from '../state.js';
 import { go } from '../scenes.js';
 
-let buttons;
+let buttons, page;
+
+// Copie d'essai d'une commande (pièces rares et commandes précédentes non exigées).
+function testCopy(o) {
+  const id = 't_' + o.id;
+  let c = game.data.tests.find((x) => x.id === id);
+  if (!c) { c = { ...o, id, test: true, clone: true }; game.data.tests.push(c); }
+  return c;
+}
 
 export default {
-  init() {
+  init(params = {}) {
+    page = params.page || 'gestures';
+    this.build();
+  },
+
+  build() {
     buttons = new Buttons();
-    const list = game.data.tests || [];
-    list.forEach((o, i) => {
-      const col = i % 2, row = Math.floor(i / 2);
-      buttons.add({
-        x: 70 + col * 480, y: 400 + row * 230, w: 460, h: 190, size: 44, style: 'secondary',
-        label: () => t('sec.title.' + o.gesture),
-        onTap: () => go('operation', { order: o.id }),
+    if (page === 'gestures') {
+      const list = (game.data.tests || []).filter((o) => o.gesture);
+      list.forEach((o, i) => {
+        const col = i % 2, row = Math.floor(i / 2);
+        buttons.add({
+          x: 70 + col * 480, y: 400 + row * 230, w: 460, h: 190, size: 44, style: 'secondary',
+          label: () => t('sec.title.' + o.gesture),
+          onTap: () => go('operation', { order: o.id }),
+        });
       });
-    });
-    buttons.add({ x: 240, y: 1700, w: 600, h: 150, size: 54, label: () => t('bench.menu'), onTap: () => go('title') });
+      buttons.add({ x: 70, y: 1340, w: 460, h: 190, size: 44, label: () => t('bench.orders'), onTap: () => { page = 'orders'; this.build(); } });
+      buttons.add({ x: 550, y: 1340, w: 460, h: 190, size: 44, label: () => t('bench.free'), onTap: () => go('free', { test: true }) });
+      buttons.add({ x: 240, y: 1700, w: 600, h: 150, size: 54, style: 'secondary', label: () => t('bench.menu'), onTap: () => go('title') });
+    } else {
+      // les 60 commandes : 6 colonnes × 10 lignes
+      game.data.orders.forEach((o, i) => {
+        const col = i % 6, row = Math.floor(i / 6);
+        buttons.add({
+          x: 60 + col * 162, y: 330 + row * 128, w: 150, h: 116, size: 46,
+          style: o.exam ? 'primary' : 'secondary',
+          label: () => String(o.n),
+          onTap: () => go('operation', { order: testCopy(o).id }),
+        });
+      });
+      buttons.add({ x: 240, y: 1700, w: 600, h: 150, size: 54, style: 'secondary', label: () => t('bench.back_gestures'), onTap: () => { page = 'gestures'; this.build(); } });
+    }
   },
 
   update() {},
 
   draw(ctx) {
     drawCreamBackground(ctx);
-    fitText(ctx, t('bench.title'), W / 2, 170, 900, 80, C.copperDark, 900);
-    drawText(ctx, t('bench.sub'), W / 2, 290, 900, 38, { color: C.inkSoft, weight: 700 });
+    fitText(ctx, t('bench.title'), W / 2, 150, 900, 80, C.copperDark, 900);
+    drawText(ctx, t(page === 'gestures' ? 'bench.sub' : 'bench.sub_orders'), W / 2, page === 'gestures' ? 290 : 250, 900, 36, { color: C.inkSoft, weight: 700 });
     buttons.draw(ctx);
+  },
+
+  back() {
+    if (page === 'orders') { page = 'gestures'; this.build(); return true; }
+    return false;
   },
 
   pointer(type, x, y) {

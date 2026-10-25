@@ -14,6 +14,9 @@ function defaults() {
     orders: {},
     clients: {},
     rare_parts: [],
+    // V3b : décorations achetées, parties d'Atelier libre
+    deco: [],
+    free: { plays: 0 },
     // tutoriel et histoire : leçons de Gribouille et scènes déjà vues
     story: [],
     settings: { lang: null, sound: true, vibration: true, lefty: false },
@@ -31,6 +34,7 @@ function migrate(d) {
   for (const [k, v] of Object.entries(d.orders || {})) if (/^o\d+$/.test(k)) out.orders[k] = v;
   out.clients = { ...(d.clients || {}) };
   out.story = Array.isArray(d.story) ? d.story : [];
+  out.deco = Array.isArray(d.deco) ? d.deco : [];
   out.version = VERSION;
   return out;
 }

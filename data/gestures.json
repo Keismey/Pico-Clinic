@@ -64,7 +64,7 @@
     "clean_min": 80,
     "precise_min": 85,
     "tip_ratio": 0.25,
-    "capacitor_cost": 5
+    "capacitor_cost": 5, "capacitor_cost_by_rank": [5, 8, 12, 20, 30]
   },
   "capacitor": {
     "grab_pad": 30,

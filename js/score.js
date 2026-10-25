@@ -18,15 +18,20 @@ export function precision(rep) {
 }
 
 export function scoreRepair(rep) {
-  const g = game.data.gestures.scoring;
+  const g = (rep.g || game.data.gestures).scoring;
   const p = rep.patient;
-  const clean = cleanliness(rep);
-  const prec = precision(rep);
+  // commande à plusieurs patients : on note l'ensemble (moyennes, temps et pièces additionnés)
+  const all = [...(p.part > 0 ? game.multi || [] : []), rep];
+  const avg = (f) => Math.round(all.reduce((s, r) => s + f(r), 0) / all.length);
+  const clean = avg(cleanliness);
+  const prec = avg(precision);
+  const elapsed = all.reduce((s, r) => s + r.elapsed, 0);
   // un condensateur cassé (ou une résistance fêlée) ne retire pas d'étoile : la pièce de rechange se paie en crédits
-  const parts = (rep.partsUsed || 0) * g.capacitor_cost;
-  const stars = [rep.faults.size === 0, clean >= g.clean_min, prec >= g.precise_min];
-  const onTime = rep.elapsed <= p.target_time;
-  return { stars, clean, prec, parts, onTime, base: p.reward, tip: onTime ? Math.round(p.reward * g.tip_ratio) : 0 };
+  const parts = all.reduce((s, r) => s + (r.partsUsed || 0) * (r.g || game.data.gestures).scoring.capacitor_cost, 0);
+  const stars = [all.every((r) => r.faults.size === 0), clean >= g.clean_min, prec >= g.precise_min];
+  // pas de temps cible (dernier prototype) : toujours à l'heure
+  const onTime = !p.target_time || elapsed <= p.target_time;
+  return { stars, clean, prec, parts, onTime, elapsed, base: p.reward, tip: onTime ? Math.round(p.reward * g.tip_ratio) : 0 };
 }
 
 // À appeler une seule fois par réparation terminée. Une commande ne paie qu'une fois :
@@ -39,7 +44,7 @@ export function recordRepair(rep, r) {
   const count = (a) => a.filter(Boolean).length;
   const record = o.plays > 0 && count(r.stars) > count(o.stars);
   if (count(r.stars) >= count(o.stars)) o.stars = r.stars.slice();
-  const tm = Math.round(rep.elapsed);
+  const tm = Math.round(r.elapsed);
   o.best_time = o.best_time === null ? tm : Math.min(o.best_time, tm);
   o.paid = true;
   o.plays++;
@@ -54,4 +59,13 @@ export function recordRepair(rep, r) {
   if (part) save.rare_parts.push(part.id);
   persist();
   return { firstPay, paid, record, rankUp, part };
+}
+
+// Atelier libre : payé à chaque fois (gains déjà réduits de moitié), rien d'autre n'est enregistré.
+export function recordFree(rep, r) {
+  const paid = r.base + r.tip - r.parts;
+  save.credits = Math.max(0, save.credits + paid);
+  save.free = { plays: ((save.free && save.free.plays) || 0) + 1 };
+  persist();
+  return { firstPay: true, paid, record: false, rankUp: 0, part: null };
 }

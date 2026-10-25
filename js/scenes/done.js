@@ -5,7 +5,8 @@ import { Buttons, C, drawCreamBackground, drawText, fitText, roundRect } from '.
 import { withDrone, drawShadow, drawFrame, drawCover } from '../drone.js';
 import { game } from '../state.js';
 import { save, totalStars } from '../save.js';
-import { scoreRepair, recordRepair } from '../score.js';
+import { scoreRepair, recordRepair, recordFree } from '../score.js';
+import { makeFree } from '../free.js';
 import { vibrate } from '../feedback.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
@@ -63,25 +64,35 @@ export default {
     shown = 0;
     res = scoreRepair(rep);
     const before = save.credits;
-    // atelier d'essai : rien n'est payé ni enregistré
-    const test = !!rep.patient.order.test;
-    pay = test ? { firstPay: false, paid: 0, record: false, rankUp: 0, part: null } : recordRepair(rep, res);
+    // atelier d'essai : rien n'est payé ni enregistré ; Atelier libre : payé à chaque fois, sans étoiles enregistrées
+    const o = rep.patient.order;
+    const test = !!o.test;
+    const free = !!o.free;
+    pay = test ? { firstPay: false, paid: 0, record: false, rankUp: 0, part: null } : free ? recordFree(rep, res) : recordRepair(rep, res);
     creditsShown = before;
     // commande suivante si elle est jouable, sinon retour à la liste
-    const next = test ? null : nextOrder(rep.patient.order);
+    const next = test || free ? null : nextOrder(o);
     const nextOk = next && orderState(next) === 'open';
     needStars = next && orderState(next) === 'stars' ? examStars(next) : 0;
-    tuto = rep.patient.order.n === 1 && pay.firstPay && !seen('results') ? { i: 0, shown: 0 } : null;
+    tuto = o.n === 1 && pay.firstPay && !free && !seen('results') ? { i: 0, shown: 0 } : null;
     // scène d'histoire après cette commande (ex. : le carnet de Maître Ohm après la commande 3)
-    const story = pay.firstPay ? storyAfter(rep.patient.order) : null;
+    const story = pay.firstPay && !free ? storyAfter(o) : null;
+    const benchBack = () => go('bench', { page: o.clone ? 'orders' : 'gestures' });
     buttons = new Buttons();
+    if (free) {
+      // Atelier libre : un autre patient au hasard, du même rang
+      buttons.add({ x: 190, y: 1500, w: 700, h: 170, size: 64, label: () => t('free.again'), onTap: () => { makeFree(o.rank, test); go('operation', { order: 'free' }); } });
+      buttons.add({ x: 110, y: 1700, w: 410, h: 150, style: 'secondary', label: () => t('free.change'), onTap: () => go('free', { test }) });
+      buttons.add({ x: 560, y: 1700, w: 410, h: 150, style: 'secondary', label: () => t(test ? 'bench.back' : 'done.orders'), onTap: () => (test ? go('bench') : go('orders')) });
+      return;
+    }
     // nouveau rang : on passe d'abord par l'écran du rang
     buttons.add({
       x: 190, y: 1500, w: 700, h: 170, size: 68,
       pulse: !!pay.rankUp,
       label: () => t(test ? 'bench.back' : pay.rankUp ? 'done.continue' : nextOk ? 'done.next' : 'done.orders'),
       onTap: () => {
-        if (test) go('bench');
+        if (test) benchBack();
         else if (pay.rankUp) go('rank', { rank: pay.rankUp });
         else if (story) go('story', { id: story, then: nextOk ? { scene: 'counter', params: { order: next.id, mode: 'intro' } } : { scene: 'orders' } });
         else if (nextOk) go('counter', { order: next.id, mode: 'intro' });
@@ -134,12 +145,15 @@ export default {
     const lines = [
       [t('done.clean', { p: res.clean }), C.ink],
       [t('done.precision', { p: res.prec }), C.ink],
-      [t('done.time_target', { t: fmt(rep.elapsed), c: fmt(rep.patient.target_time) }), res.onTime ? C.green : C.ink],
+      [rep.patient.target_time ? t('done.time_target', { t: fmt(res.elapsed), c: fmt(rep.patient.target_time) }) : t('done.time_free', { t: fmt(res.elapsed) }), res.onTime ? C.green : C.ink],
     ];
     if (pay.firstPay) {
       lines.push([t('done.pay', { b: res.base }) + (res.tip ? '  ·  ' + t('done.tip', { n: res.tip }) : '  ·  ' + t('done.no_tip')), C.copperDark]);
     } else {
       lines.push([t(rep.patient.order.test ? 'bench.not_saved' : 'done.already_paid'), C.inkSoft]);
+    }
+    if (rep.patient.order.free && !rep.patient.order.test) {
+      lines.push([t('free.note'), C.inkSoft]);
     }
     if (res.parts) lines.push([t('done.parts', { n: res.parts }), C.red]);
     if (needStars) lines.push([t('done.need_stars', { n: needStars, s: totalStars() }), C.orangeDark]);

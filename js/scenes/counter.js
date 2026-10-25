@@ -5,11 +5,12 @@ import { t } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, fitText, font, roundRect, wrapLines } from '../ui.js';
 import { withDrone, drawShadow, drawFrame, drawCover, setLook } from '../drone.js';
 import { drawPerson, drawGribouille } from '../portraits.js';
-import { game, getOrder, buildPatient } from '../state.js';
+import { game, getOrder, buildPatient, patientCount } from '../state.js';
 import { meetClient } from '../progress.js';
 import { vibrate } from '../feedback.js';
 import { go } from '../scenes.js';
 import { leftText } from './orders.js';
+import { drawOwnedDecos } from '../deco.js';
 
 const TAU = Math.PI * 2;
 const PERSON = { x: 360, y: 650, s: 1.12 };
@@ -131,6 +132,8 @@ export function drawWorkshop(ctx) {
     ctx.fillStyle = '#8f5426';
     ctx.fillRect(x - 30, 690 - h - 10, 60, 14);
   }
+  // V3b : décorations achetées à la boutique
+  drawOwnedDecos(ctx, 'wall', performance.now() / 1000);
 }
 
 export function drawCounter(ctx) {
@@ -145,20 +148,46 @@ export function drawCounter(ctx) {
   roundRect(ctx, -20, COUNTER_Y - 10, W + 40, 48, 14); ctx.fill();
   ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
   ctx.fillRect(0, COUNTER_Y - 4, W, 8);
+  drawOwnedDecos(ctx, 'counter', performance.now() / 1000);
 }
 
+// Patients sur le comptoir (V3b : jusqu'à 3 pour les commandes de plusieurs patients).
+const ROWS = { 1: [[800, 0.3]], 2: [[680, 0.24], [900, 0.24]], 3: [[620, 0.2], [800, 0.2], [980, 0.2]] };
 function drawPatient(ctx) {
   const done = mode === 'thanks';
-  const hover = done ? 30 + Math.sin(time * 3) * 14 : 0;
-  withDrone(ctx, PATIENT.x, PATIENT.y + 40, PATIENT.s, () => drawShadow(ctx, done ? 0.5 : 0));
-  withDrone(ctx, PATIENT.x, PATIENT.y - hover, PATIENT.s, () => {
-    drawFrame(ctx, {
-      rotorAngle: done ? time * 40 : 0.3,
-      rotorSpeed: done ? 40 : 0,
-      lights: done ? [0, 1, 2, 3].map((i) => (Math.floor(time * 4) + i) % 2 === 0) : [false, false, false, false],
+  const n = patientCount(order);
+  (ROWS[n] || ROWS[1]).forEach(([x, s], i) => {
+    setLook(buildPatient(order.id, i).look);
+    const hover = done ? 30 + Math.sin(time * 3 + i) * 14 : 0;
+    withDrone(ctx, x, PATIENT.y + 40, s, () => drawShadow(ctx, done ? 0.5 : 0));
+    withDrone(ctx, x, PATIENT.y - hover, s, () => {
+      drawFrame(ctx, {
+        rotorAngle: done ? time * 40 : 0.3,
+        rotorSpeed: done ? 40 : 0,
+        lights: done ? [0, 1, 2, 3].map((k) => (Math.floor(time * 4) + k) % 2 === 0) : [false, false, false, false],
+      });
+      drawCover(ctx, { screws: done && rep && n === 1 ? rep.screws : null });
     });
-    drawCover(ctx, { screws: done && rep ? rep.screws : null });
   });
+}
+
+// Maître Ohm n'est plus là : sa lettre est posée sur le comptoir.
+function drawLetter(ctx, x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-0.08);
+  ctx.fillStyle = 'rgba(90, 50, 20, 0.2)';
+  roundRect(ctx, -150, -90, 310, 200, 18); ctx.fill();
+  ctx.fillStyle = '#f7ecd6';
+  roundRect(ctx, -160, -100, 310, 200, 18); ctx.fill();
+  ctx.strokeStyle = '#c9b291'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(-160, -95); ctx.lineTo(-5, 20); ctx.lineTo(150, -95); ctx.stroke();
+  ctx.fillStyle = '#b8322a';
+  ctx.beginPath(); ctx.arc(-5, 20, 34, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#e8d6b0';
+  ctx.font = '900 34px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('Ω', -5, 22);
+  ctx.restore();
 }
 
 function drawBox(ctx) {
@@ -254,8 +283,9 @@ export default {
     const mood = mode === 'intro' ? cinfo.mood || 'neutral' : cinfo.thanks_mood || 'happy';
     const enter = mode === 'intro' ? Math.min(1, time / 0.45) : 1;
     const px = -260 + (PERSON.x + 260) * (1 - Math.pow(1 - enter, 3));
-    drawPerson(ctx, order.client, px, PERSON.y, PERSON.s, { time, talk: clientTalks, mood, seed: order.id });
+    if (!cinfo.letter) drawPerson(ctx, order.client, px, PERSON.y, PERSON.s, { time, talk: clientTalks, mood, seed: order.id });
     drawCounter(ctx);
+    if (cinfo.letter) drawLetter(ctx, 330, 930);
     drawPatient(ctx);
     if (lines.some((x) => x.who === 'gribouille')) {
       const hop = gribTalks ? Math.abs(Math.sin(time * 8)) * 10 : 0;

@@ -94,7 +94,14 @@ export default {
       }
       // commande rejouée : pas de comptoir (ni avant ni après), on va droit aux étoiles
       if (st > 3.8) {
-        if (rep.patient.order.test || orderState(rep.patient.order) === 'done') go('done');
+        const p = rep.patient;
+        // commande à plusieurs patients : on enchaîne sur le suivant
+        if (p.part < p.parts - 1) {
+          (game.multi = game.multi || []).push(rep);
+          go('operation', { order: p.id, part: p.part + 1 });
+          return;
+        }
+        if (rep.patient.order.test || rep.patient.order.free || orderState(rep.patient.order) === 'done') go('done');
         else go('counter', { order: rep.patient.id, mode: 'thanks' });
       }
     }

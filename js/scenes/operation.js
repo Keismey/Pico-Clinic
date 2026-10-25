@@ -4,7 +4,7 @@
 import { W, H } from '../canvas.js';
 import { t } from '../i18n.js';
 import { Buttons, C, drawMatBackground, drawPanel, drawText, drawToast, fitText, easeInOut, roundRect } from '../ui.js';
-import { SEC, D, SOLDER, drawFrame, drawInterior, drawCover, drawScrew, drawTray, trayPos, drawChip, drawPartBox, drawIron, faultSpot, drawVacuum, drawLens, isHidden, drawCapacitor } from '../drone.js';
+import { SEC, D, SOLDER, CUTS, setCut, drawFrame, drawInterior, drawCover, drawScrew, drawTray, trayPos, drawChip, drawPartBox, drawIron, faultSpot, drawVacuum, drawLens, isHidden, drawCapacitor } from '../drone.js';
 import { createCapacitor, SPARE } from '../gestures/capacitor.js';
 import { createVacuum } from '../gestures/vacuum.js';
 import { createMagnifier } from '../gestures/magnifier.js';
@@ -13,7 +13,7 @@ import { createUnscrew } from '../gestures/unscrew.js';
 import { createConnector } from '../gestures/connector.js';
 import { createChip } from '../gestures/chip.js';
 import { createSolder } from '../gestures/solder.js';
-import { game, newRepair } from '../state.js';
+import { game, newRepair, restoreBoard } from '../state.js';
 import { vibrate } from '../feedback.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
@@ -61,7 +61,8 @@ export const debug = { get rep() { return rep; }, get sec() { return sec; } };
 
 export default {
   init(params = {}) {
-    if (!params.resume || !game.repair) newRepair(params.order || game.lastOrder);
+    if (!params.resume || !game.repair) newRepair(params.order || game.lastOrder, params.part || 0);
+    else restoreBoard(game.repair);
     rep = game.repair;
     const g = rep.g; // réglages modifiés par les outils achetés
     closing = false;
@@ -128,7 +129,7 @@ export default {
 
     const rank = rep.patient.rank || 1;
     const tol = g.solder.tolerance_by_rank[Math.min(rank, 5) - 1] + (g.solder.tolerance_bonus || 0);
-    solder = createSolder(rep.weld, g.solder, tol, {
+    const makeSolder = () => createSolder(rep.weld, g.solder, tol, {
       onGrab: () => vibrate(8),
       onHot: () => { vibrate(18); showToast('op.solder_hot', C.orangeDark); },
       onTooEarly: () => { vibrate([15, 25, 15]); showToast('op.too_early', C.inkSoft); },
@@ -147,13 +148,28 @@ export default {
       },
       onBreak: () => { vibrate(20); showToast('op.break', C.inkSoft); },
       onDone: (score) => {
-        rep.faults.delete('trace_cut');
+        const w = rep.weld;
         vibrate([20, 40, 60]);
         fx.spawn(SOLDER.b.x, SOLDER.b.y, { count: 24, color: '#eef2f6', speed: 420, size: 7 });
+        // piste en plusieurs morceaux : on passe au morceau suivant
+        if (w.cut < CUTS.n - 1) {
+          w.segScores.push(score);
+          w.prev.push(w.cells.slice());
+          w.cut++;
+          setCut(w.cut);
+          Object.assign(w, { done: false, score: null, cells: [], progress: 0, devSum: 0, devN: 0 });
+          solder = makeSolder();
+          showToast('op.solder_next', C.green, { p: pct(score), i: w.cut + 1, n: CUTS.n });
+          return;
+        }
+        w.segScores.push(score);
+        w.score = w.segScores.reduce((a, b) => a + b, 0) / w.segScores.length;
+        rep.faults.delete('trace_cut');
         fx.spawn(D.led.x, D.led.y, { count: 10, color: '#5fe08b', speed: 300, size: 6 });
-        showToast('op.solder_done', C.green, { p: pct(score) });
+        showToast('op.solder_done', C.green, { p: pct(w.score) });
       },
     });
+    solder = makeSolder();
 
     vacuum = createVacuum(rep, g.vacuum, {
       onStart: () => vibrate(6),
@@ -219,6 +235,7 @@ export default {
     });
 
     if (rep.scanned && !params.resume) showToast('op.scanned', C.turquoiseDark);
+    else if (rep.patient.part > 0 && !params.resume) showToast('op.next_patient', C.turquoiseDark, { i: rep.patient.part + 1, n: rep.patient.parts });
 
     swipe = null;
     swipeDy = 0;
@@ -407,7 +424,9 @@ export default {
     }
     drawTray(ctx);
     drawPartBox(ctx);
-    fitText(ctx, t(rep.patient.name), W / 2, 110, 480, 54, C.ink, 800);
+    // commande à plusieurs patients : « (2/3) » après le nom
+    const pn = rep.patient.parts > 1 ? `  (${rep.patient.part + 1}/${rep.patient.parts})` : '';
+    fitText(ctx, t(rep.patient.name) + pn, W / 2, 110, 480, 54, C.ink, 800);
 
     if (intro < 1) {
       // tutoriel : le drone attend sur l'établi, on le touche pour zoomer
@@ -610,7 +629,7 @@ export default {
     for (const f of rep.faults) {
       if (f === 'connector_unplugged') return 'op.hint.connector';
       if (f === 'chip_burnt') return rep.chip.old.state === 'slot' ? 'op.hint.chip_remove' : 'op.hint.chip_place';
-      if (f === 'trace_cut') return 'op.hint.solder';
+      if (f === 'trace_cut') return CUTS.n > 1 ? 'op.hint.solder_n' : 'op.hint.solder';
       if (SEC[f]) return 'sec.tap.' + SEC[f];
       if (f.startsWith('capacitor_')) {
         const c = rep.fragile[+f.split('_')[1]];
@@ -642,7 +661,7 @@ export default {
     }
     drawPanel(ctx, 70, 1370, W - 140, 262);
     const gauge = solder.active;
-    drawText(ctx, t(key), W / 2, sub || gauge ? 1460 : 1501, W - 220, 44, { color: key === 'op.fault_here' ? C.red : C.ink });
+    drawText(ctx, t(key, { i: CUTS.i + 1, n: CUTS.n }), W / 2, sub || gauge ? 1460 : 1501, W - 220, 44, { color: key === 'op.fault_here' ? C.red : C.ink });
     if (gauge) this.drawGauge(ctx);
     else if (sub) fitText(ctx, sub, W / 2, 1592, W - 220, 38, C.inkSoft, 700);
   },

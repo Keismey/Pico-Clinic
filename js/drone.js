@@ -23,6 +23,29 @@ export const D = {
   box: { x: 905, y: 222 },             // boîte de pièces neuves
 };
 
+// V3b — Disposition de la carte : 4 variantes en miroir (gauche ↔ droite, haut ↔ bas),
+// pour que la puce, la piste, la batterie et la prise ne soient pas toujours au même endroit.
+// Toutes les positions ci-dessous sont données pour la disposition 0 et passent par lp().
+const BASE = {
+  socket: { ...D.socket }, anchor: { ...D.anchor }, plugStart: { ...D.plugStart },
+  led: { ...D.led }, chip: { ...D.chip }, slot: { ...D.slot },
+};
+export const LAYOUT = { k: 0, mx: false, my: false };
+export function lp(x, y) {
+  return [LAYOUT.mx ? 2 * D.cx - x : x, LAYOUT.my ? 2 * D.cy - y : y];
+}
+export function setLayout(k = 0) {
+  LAYOUT.k = k & 3;
+  LAYOUT.mx = !!(k & 1);
+  LAYOUT.my = !!(k & 2);
+  for (const key of ['socket', 'anchor', 'plugStart', 'led', 'slot']) {
+    const [x, y] = lp(BASE[key].x, BASE[key].y);
+    D[key] = { ...BASE[key], x, y };
+  }
+  // la puce est rangée par son coin haut gauche : on la recentre sur l'emplacement
+  D.chip = { ...BASE.chip, x: D.slot.x - BASE.chip.s / 2, y: D.slot.y - BASE.chip.s / 2 };
+}
+
 // Pistes coupées à souder (de la pastille A à la pastille B), choisies par la commande.
 const TRACES = {
   straight: [[610, 600], [690, 600], [770, 600]],
@@ -47,9 +70,38 @@ function buildPath(pts) {
   out.forEach((p, i) => { if (i) s += Math.hypot(p.x - out[i - 1].x, p.y - out[i - 1].y); p.s = s; });
   return { pts: out, len: s, a: out[0], b: out[out.length - 1] };
 }
+// FULL = la piste entière ; SOLDER = le morceau à souder maintenant.
+// V3b : une piste peut être coupée en 2 ou 3 morceaux (« 2 câbles »), soudés l'un après l'autre.
+export const FULL = {};
 export const SOLDER = {};
-export function setTrace(name) {
-  Object.assign(SOLDER, buildPath(TRACES[name] || TRACES.curve));
+export const CUTS = { n: 1, i: 0 };
+export function setTrace(name, cuts = 1) {
+  Object.assign(FULL, buildPath((TRACES[name] || TRACES.curve).map(([x, y]) => lp(x, y))));
+  CUTS.n = Math.max(1, Math.min(3, cuts || 1));
+  setCut(0);
+}
+function fullAt(s) {
+  const P = FULL.pts;
+  for (let i = 1; i < P.length; i++) {
+    if (P[i].s >= s) {
+      const a = P[i - 1], b = P[i];
+      const k = (s - a.s) / Math.max(1e-6, b.s - a.s);
+      return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k };
+    }
+  }
+  return { x: FULL.b.x, y: FULL.b.y };
+}
+// Longueur (sur la piste entière) où commence le morceau i.
+function cutStart(i) {
+  return (FULL.len * i) / CUTS.n;
+}
+export function setCut(i) {
+  CUTS.i = Math.max(0, Math.min(CUTS.n - 1, i));
+  const s0 = cutStart(CUTS.i), s1 = cutStart(CUTS.i + 1);
+  const pts = [fullAt(s0), ...FULL.pts.filter((p) => p.s > s0 + 1 && p.s < s1 - 1).map((p) => ({ x: p.x, y: p.y })), fullAt(s1)];
+  let s = 0;
+  pts.forEach((p, k) => { if (k) s += Math.hypot(p.x - pts[k - 1].x, p.y - pts[k - 1].y); p.s = s; });
+  Object.assign(SOLDER, { pts, len: s, a: pts[0], b: pts[pts.length - 1] });
 }
 setTrace('curve');
 
@@ -88,10 +140,11 @@ const BAYS = [[740, 1000], [548, 578], [375, 825]];
 export function assignBays(faults) {
   const bay = {};
   let k = 0;
+  const at = (x, y, r) => { const [px, py] = lp(x, y); return { x: px, y: py, r }; };
   for (const f of faults) {
     if (!SEC[f] || bay[f]) continue;
-    if (SEC[f] === 'battery' || SEC[f] === 'heart') bay[f] = { ...BATTERY_SPOT };
-    else { const [x, y] = BAYS[k++ % BAYS.length]; bay[f] = { x, y, r: 70 }; }
+    if (SEC[f] === 'battery' || SEC[f] === 'heart') bay[f] = at(BATTERY_SPOT.x, BATTERY_SPOT.y, BATTERY_SPOT.r);
+    else { const [x, y] = BAYS[k++ % BAYS.length]; bay[f] = at(x, y, 70); }
   }
   return bay;
 }
@@ -132,7 +185,152 @@ export function drawShadow(ctx, lift = 0) {
 export function drawFrame(ctx, opts = {}) {
   if (LOOK.family === 'insect') drawInsectFrame(ctx, opts);
   else if (LOOK.family === 'mascot') drawMascotFrame(ctx, opts);
+  else if (LOOK.family === 'proto') drawProtoFrame(ctx, opts);
   else drawDroneFrame(ctx, opts);
+}
+
+function hexPath(ctx, x, y, r) {
+  ctx.beginPath();
+  for (let k = 0; k < 6; k++) {
+    const a = Math.PI / 6 + (k * Math.PI) / 3;
+    ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+  }
+  ctx.closePath();
+}
+
+// V3b — Prototypes uniques (Prof. Ampère, Dr Quartz, Maître Ohm).
+function drawProtoFrame(ctx, { rotorAngle = 0, rotorSpeed = 0, lights = null } = {}) {
+  const L = LOOK;
+  const sh = L.shape;
+  const top = D.cy - D.half, bottom = D.cy + D.half;
+  const anim = rotorSpeed > 1;
+  const wave = anim ? rotorAngle * 0.25 : 0;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  let spots;
+  if (sh === 'jelly') {
+    // méduse volante : tentacules ondulants, cloche transparente au-dessus
+    ctx.strokeStyle = L.trim;
+    ctx.lineWidth = 18;
+    for (let k = 0; k < 6; k++) {
+      const x0 = D.cx - 225 + k * 90;
+      ctx.beginPath(); ctx.moveTo(x0, bottom - 20);
+      for (let j = 1; j <= 6; j++) ctx.lineTo(x0 + Math.sin(j * 1.1 + k + wave) * 26, bottom - 20 + j * 48);
+      ctx.stroke();
+    }
+    ctx.fillStyle = L.accent;
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath(); ctx.ellipse(D.cx, top + 40, 380, 260, 0, Math.PI, TAU); ctx.fill();
+    ctx.globalAlpha = 1;
+    spots = [[D.cx - 225, bottom + 270], [D.cx + 225, bottom + 270], [D.cx - 200, top - 140], [D.cx + 200, top - 140]];
+  } else if (sh === 'paper_bird') {
+    // oiseau en papier plié : grandes ailes triangulaires, bec, queue
+    const flap = anim ? Math.sin(rotorAngle * 0.5) * 60 : 0;
+    for (const sx of [-1, 1]) {
+      ctx.fillStyle = L.accent;
+      ctx.beginPath(); ctx.moveTo(D.cx + sx * D.half, top + 40); ctx.lineTo(D.cx + sx * (D.half + 260), top - 120 - flap); ctx.lineTo(D.cx + sx * D.half, bottom - 60); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = L.trim; ctx.lineWidth = 6; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(D.cx + sx * D.half, D.cy - 40); ctx.lineTo(D.cx + sx * (D.half + 260), top - 120 - flap); ctx.stroke();
+    }
+    ctx.fillStyle = L.trim;
+    ctx.beginPath(); ctx.moveTo(D.cx - 70, top); ctx.lineTo(D.cx, top - 170); ctx.lineTo(D.cx + 70, top); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = L.accent;
+    ctx.beginPath(); ctx.moveTo(D.cx - 150, bottom); ctx.lineTo(D.cx, bottom + 200); ctx.lineTo(D.cx + 150, bottom); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = L.trim; ctx.lineWidth = 6; ctx.stroke();
+    spots = [[D.cx - D.half - 230, top - 90 - flap], [D.cx + D.half + 230, top - 90 - flap], [D.cx, top - 120], [D.cx, bottom + 150]];
+  } else if (sh === 'dream_box') {
+    // boîte à rêves : couvercle ouvert derrière, lune et étoile sur des ressorts
+    ctx.fillStyle = L.trim;
+    roundRect(ctx, D.cx - D.half - 40, top - 170, (D.half + 40) * 2, 150, 30); ctx.fill();
+    ctx.strokeStyle = '#9aa3ad'; ctx.lineWidth = 8;
+    const bob = anim ? Math.sin(rotorAngle * 0.4) * 30 : 0;
+    for (const [sx, h] of [[-1, 260], [1, 300]]) {
+      ctx.beginPath();
+      for (let k = 0; k <= 8; k++) ctx.lineTo(D.cx + sx * 170 + (k % 2 ? 18 : -18), top - 20 - k * (h + bob * sx) / 8);
+      ctx.stroke();
+    }
+    ctx.fillStyle = L.accent;
+    ctx.beginPath(); ctx.arc(D.cx - 170, top - 300 + bob, 46, 0, TAU); ctx.fill();
+    ctx.fillStyle = L.trim;
+    ctx.beginPath(); ctx.arc(D.cx - 150, top - 315 + bob, 40, 0, TAU); ctx.fill();
+    ctx.fillStyle = L.accent;
+    ctx.beginPath();
+    for (let k = 0; k < 10; k++) {
+      const a = -Math.PI / 2 + (k * Math.PI) / 5, r = k % 2 ? 24 : 54;
+      ctx.lineTo(D.cx + 170 + Math.cos(a) * r, top - 340 - bob + Math.sin(a) * r);
+    }
+    ctx.closePath(); ctx.fill();
+    for (const sx of [-1, 1]) { ctx.fillStyle = L.trim; roundRect(ctx, D.cx + sx * 190 - 50, bottom - 10, 100, 70, 16); ctx.fill(); }
+    spots = [[D.cx - D.half - 10, top - 95], [D.cx + D.half + 10, top - 95], [D.cx - 190, bottom + 35], [D.cx + 190, bottom + 35]];
+  } else if (sh === 'turtle') {
+    // tortue-horloge : 4 pattes, tête, carapace en écailles avec les heures
+    ctx.fillStyle = L.trim;
+    for (const [sx, sy] of CORNERS) { ctx.beginPath(); ctx.ellipse(D.cx + sx * 330, D.cy + sy * 280, 90, 70, sx * sy * 0.6, 0, TAU); ctx.fill(); }
+    ctx.beginPath(); ctx.ellipse(D.cx, top - 90, 95, 110, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = L.accent;
+    ctx.beginPath(); ctx.arc(D.cx, D.cy, D.half + 95, 0, TAU); ctx.fill();
+    ctx.strokeStyle = L.trim; ctx.lineWidth = 10; ctx.stroke();
+    ctx.fillStyle = L.trim;
+    for (let h = 0; h < 12; h++) {
+      const a = -Math.PI / 2 + (h * Math.PI) / 6 + (anim ? rotorAngle * 0.02 : 0);
+      ctx.beginPath(); ctx.arc(D.cx + Math.cos(a) * (D.half + 60), D.cy + Math.sin(a) * (D.half + 60), h % 3 ? 9 : 16, 0, TAU); ctx.fill();
+    }
+    ctx.fillStyle = '#1f2937';
+    ctx.beginPath(); ctx.arc(D.cx - 34, top - 110, 12, 0, TAU); ctx.arc(D.cx + 34, top - 110, 12, 0, TAU); ctx.fill();
+    spots = CORNERS.map(([sx, sy]) => [D.cx + sx * 360, D.cy + sy * 300]);
+  } else if (sh === 'honey') {
+    // rayon de miel : alvéoles tout autour, petites ailes
+    const R = 70;
+    for (let k = 0; k < 14; k++) {
+      const a = (k / 14) * TAU;
+      const x = D.cx + Math.cos(a) * 360, y = D.cy + Math.sin(a) * 360;
+      hexPath(ctx, x, y, R);
+      ctx.fillStyle = k % 3 ? L.accent : L.trim;
+      ctx.fill();
+      ctx.strokeStyle = L.trim; ctx.lineWidth = 6; ctx.stroke();
+    }
+    const flap = anim ? 0.4 + 0.6 * Math.abs(Math.sin(rotorAngle * 0.5)) : 1;
+    for (const sx of [-1, 1]) {
+      ctx.save();
+      ctx.translate(D.cx + sx * 140, top - 30);
+      ctx.scale(1, flap);
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = '#e8f4ff';
+      ctx.beginPath(); ctx.ellipse(sx * 90, -90, 110, 60, sx * -0.5, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+    spots = [0, 0.25, 0.5, 0.75].map((f) => [D.cx + Math.cos(f * TAU + 0.22) * 360, D.cy + Math.sin(f * TAU + 0.22) * 360]);
+  } else {
+    // dernier prototype de Maître Ohm : grande couronne dentée dorée et 4 petites hélices
+    ctx.save();
+    ctx.translate(D.cx, D.cy);
+    ctx.rotate(anim ? rotorAngle * 0.05 : 0);
+    ctx.fillStyle = L.trim;
+    ctx.beginPath();
+    for (let k = 0; k < 48; k++) {
+      const a = (k / 48) * TAU, r = k % 2 ? 420 : 460;
+      ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = L.accent;
+    ctx.beginPath(); ctx.arc(0, 0, 400, 0, TAU); ctx.fill();
+    ctx.restore();
+    for (const [sx, sy] of CORNERS) {
+      const rx = D.cx + sx * 330, ry = D.cy + sy * 330;
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.beginPath(); ctx.arc(rx, ry, 80, 0, TAU); ctx.fill();
+      ctx.save(); ctx.translate(rx, ry); ctx.rotate(rotorAngle * (sx * sy > 0 ? 1 : -1));
+      ctx.globalAlpha = rotorSpeed > 18 ? 0.35 : 1;
+      ctx.fillStyle = L.trim; roundRect(ctx, -76, -11, 152, 22, 11); ctx.fill();
+      ctx.restore();
+    }
+    spots = CORNERS.map(([sx, sy]) => [D.cx + sx * 330, D.cy + sy * 330]);
+    socle(ctx);
+    spots.forEach(([x, y], i) => light(ctx, x, y, lights && lights[i], 15));
+    return;
+  }
+  socle(ctx);
+  spots.forEach(([x, y], i) => light(ctx, x, y, lights && lights[i], 16));
 }
 
 function socle(ctx) {
@@ -410,18 +608,23 @@ export function drawInterior(ctx, rep, { glow = 0, slotGlow = 0, time = 0, xray 
   ctx.lineWidth = 9;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
+  // (coordonnées de la disposition 0, passées dans le miroir de la disposition en cours)
   const tracks = [
     [[489, 628], [540, 628], [565, 600], [594, 600]],
-    [[489, 660], [560, 660], [560, 940], [D.socket.x - 50, 940]],
-    [[489, 724], [520, 724], [520, 1010], [D.socket.x, 1010], [D.socket.x, 971]],
+    [[489, 660], [560, 660], [560, 940], [BASE.socket.x - 50, 940]],
+    [[489, 724], [520, 724], [520, 1010], [BASE.socket.x, 1010], [BASE.socket.x, 971]],
     [[321, 660], [300, 660], [300, 905]],
-    [[SOLDER.b.x, SOLDER.b.y + 16], [D.led.x, D.led.y - 15]],
   ];
   for (const tr of tracks) {
     ctx.beginPath();
-    tr.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    tr.forEach(([x0, y0], i) => { const [x, y] = lp(x0, y0); if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
     ctx.stroke();
   }
+  // fin de la piste à souder → voyant
+  ctx.beginPath();
+  ctx.moveTo(FULL.b.x, FULL.b.y + (LAYOUT.my ? -16 : 16));
+  ctx.lineTo(D.led.x, D.led.y + (LAYOUT.my ? 15 : -15));
+  ctx.stroke();
 
   drawRust(ctx, rep);
   const traceHidden = !xray && isHidden(rep, 'trace_cut');
@@ -430,15 +633,16 @@ export function drawInterior(ctx, rep, { glow = 0, slotGlow = 0, time = 0, xray 
   drawFragile(ctx, rep, time, warn);
 
   // batterie
+  const [bx, by] = lp(370, 967.5);
   ctx.fillStyle = '#f2c14e';
-  roundRect(ctx, 305, 905, 130, 125, 18);
+  roundRect(ctx, bx - 65, by - 62.5, 130, 125, 18);
   ctx.fill();
   ctx.strokeStyle = '#c7962c';
   ctx.lineWidth = 6;
   ctx.stroke();
   ctx.fillStyle = '#8a6418';
-  ctx.fillRect(355, 960, 30, 8);
-  ctx.fillRect(366, 949, 8, 30);
+  ctx.fillRect(bx - 15, by - 7.5, 30, 8);
+  ctx.fillRect(bx - 4, by - 18.5, 8, 30);
 
   // prise
   const so = D.socket;
@@ -468,8 +672,26 @@ export function drawInterior(ctx, rep, { glow = 0, slotGlow = 0, time = 0, xray 
 const CELL_COLORS = { good: ['#eef2f6', '#b9c2cc'], cold: ['#9aa0a6', '#6f757b'], burnt: ['#5a3a22', '#2e1d10'] };
 
 // Piste à souder : pastilles, chemin en pointillés, étain déposé.
+// Étain déposé, cellule par cellule ; at(s) = point du chemin à la longueur s.
+function drawCells(ctx, cells, len, at) {
+  const n = cells.length;
+  const step = len / Math.max(1, n);
+  for (let i = 0; i < n; i++) {
+    const c = cells[i];
+    if (!c) continue;
+    const p0 = at(i * step), p1 = at((i + 1) * step);
+    const [fill, edge] = CELL_COLORS[c];
+    ctx.strokeStyle = edge;
+    ctx.lineWidth = 22;
+    ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+    ctx.strokeStyle = fill;
+    ctx.lineWidth = c === 'cold' ? 12 + (i % 3) * 4 : 14;
+    ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+  }
+}
+
 function drawSolder(ctx, weld, broken, time, xray = false) {
-  const P = SOLDER.pts;
+  const P = FULL.pts;
   if (!broken) {
     ctx.strokeStyle = '#d9a441';
     ctx.lineWidth = 9;
@@ -477,46 +699,41 @@ function drawSolder(ctx, weld, broken, time, xray = false) {
     P.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
     ctx.stroke();
   } else {
-    // chemin à suivre
+    // chemin à suivre (du morceau en cours jusqu'au bout)
+    const s0 = cutStart(CUTS.i);
+    const rest = [fullAt(s0), ...P.filter((p) => p.s > s0)];
     ctx.save();
     ctx.strokeStyle = 'rgba(255, 247, 236, 0.18)';
     ctx.lineWidth = 34;
     ctx.beginPath();
-    P.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    rest.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
     ctx.stroke();
     ctx.setLineDash([12, 14]);
     ctx.strokeStyle = 'rgba(217, 164, 65, 0.85)';
     ctx.lineWidth = 6;
     ctx.stroke();
     ctx.restore();
-    // étain déposé, cellule par cellule
-    const n = weld.cells.length;
-    const step = SOLDER.len / Math.max(1, n);
-    for (let i = 0; i < n; i++) {
-      const c = weld.cells[i];
-      if (!c) continue;
-      const p0 = pathAt(i * step), p1 = pathAt((i + 1) * step);
-      const [fill, edge] = CELL_COLORS[c];
-      ctx.strokeStyle = edge;
-      ctx.lineWidth = 22;
-      ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
-      ctx.strokeStyle = fill;
-      ctx.lineWidth = c === 'cold' ? 12 + (i % 3) * 4 : 14;
-      ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
-    }
+    // morceaux déjà soudés, puis le morceau en cours
+    (weld.prev || []).forEach((cells, k) => {
+      const a = cutStart(k), len = cutStart(k + 1) - a;
+      drawCells(ctx, cells, len, (s) => fullAt(a + s));
+    });
+    drawCells(ctx, weld.cells, SOLDER.len, pathAt);
   }
-  // pastilles
-  for (const [p, isA] of [[SOLDER.a, true], [SOLDER.b, false]]) {
+  // pastilles : une à chaque bout de chaque morceau
+  for (let k = 0; k <= CUTS.n; k++) {
+    const p = k === 0 ? FULL.a : k === CUTS.n ? FULL.b : fullAt(cutStart(k));
     ctx.fillStyle = '#d9a441';
     ctx.beginPath(); ctx.arc(p.x, p.y, 17, 0, TAU); ctx.fill();
     ctx.fillStyle = '#f4d58d';
     ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, TAU); ctx.fill();
-    if (broken && !weld.done && isA && !weld.active && !xray) {
-      const a = 0.5 + 0.5 * Math.sin(time * 6);
-      ctx.strokeStyle = `rgba(63, 208, 187, ${0.4 + 0.6 * a})`;
-      ctx.lineWidth = 7;
-      ctx.beginPath(); ctx.arc(p.x, p.y, 34 + a * 10, 0, TAU); ctx.stroke();
-    }
+  }
+  if (broken && !weld.done && !weld.active && !xray) {
+    const p = SOLDER.a;
+    const a = 0.5 + 0.5 * Math.sin(time * 6);
+    ctx.strokeStyle = `rgba(63, 208, 187, ${0.4 + 0.6 * a})`;
+    ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 34 + a * 10, 0, TAU); ctx.stroke();
   }
 }
 
@@ -664,7 +881,7 @@ function drawCableAndPlug(ctx, plug) {
   ctx.lineWidth = 5;
   ctx.stroke();
   ctx.fillStyle = '#e0453a';
-  ctx.fillRect(-D.plugW / 2 + 10, -6, 14, 12);
+  ctx.fillRect(LAYOUT.mx ? D.plugW / 2 - 24 : -D.plugW / 2 + 10, -6, 14, 12);
   ctx.restore();
 }
 

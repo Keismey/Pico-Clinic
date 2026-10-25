@@ -1,0 +1,13 @@
+{
+  "_doc": "Décorations de l'atelier (GDD 02-progression) : 8 objets cosmétiques, sans effet de jeu. price = crédits ; rank = rang minimum pour l'acheter. Dessinés au comptoir (js/deco.js).",
+  "list": [
+    { "id": "lamp",          "price": 100,  "rank": 1 },
+    { "id": "plant",         "price": 150,  "rank": 1 },
+    { "id": "poster",        "price": 200,  "rank": 2 },
+    { "id": "rug",           "price": 300,  "rank": 2 },
+    { "id": "hanging_drone", "price": 400,  "rank": 3 },
+    { "id": "aquarium",      "price": 600,  "rank": 3 },
+    { "id": "neon_sign",     "price": 800,  "rank": 4 },
+    { "id": "gear_clock",    "price": 1000, "rank": 4 }
+  ]
+}

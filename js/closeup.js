@@ -157,7 +157,7 @@ export function createCloseup(rep, hooks) {
   }
 
   function openItem(it) {
-    if (!it.mod) it.mod = MAKE[it.type](rep.g, fx, rep.patient.order || {});
+    if (!it.mod) it.mod = MAKE[it.type](rep.g, fx, rep.patient);
     open = { item: it, k: 0, closing: false, success: 0 };
     hooks.vibrate(12);
   }

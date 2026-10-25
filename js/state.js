@@ -1,12 +1,12 @@
 // État partagé : données JSON chargées et réparation en cours.
-import { D, faultSpot, spots, setLook, setTrace, assignBays } from './drone.js';
+import { D, faultSpot, spots, setLook, setTrace, setCut, setLayout, lp, assignBays } from './drone.js';
 import { save } from './save.js';
 
 export const game = { data: {}, repair: null, lastOrder: 'o01' };
 
 export async function loadData() {
-  const [gestures, patients, orders, tools, clients, ranks, rare, story] = await Promise.all(
-    ['gestures', 'patients', 'orders', 'tools', 'clients', 'ranks', 'rare_parts', 'story'].map((n) => fetch(`data/${n}.json`).then((r) => r.json()))
+  const [gestures, patients, orders, tools, clients, ranks, rare, story, deco] = await Promise.all(
+    ['gestures', 'patients', 'orders', 'tools', 'clients', 'ranks', 'rare_parts', 'story', 'decorations'].map((n) => fetch(`data/${n}.json`).then((r) => r.json()))
   );
   delete patients._doc;
   game.data.gestures = gestures;
@@ -18,10 +18,25 @@ export async function loadData() {
   game.data.ranks = ranks.list;
   game.data.rareParts = rare.list;
   game.data.story = story;
+  game.data.decorations = deco.list;
 }
 
 export function getOrder(id) {
+  if (id === 'free' && game.free) return game.free;
   return game.data.orders.find((o) => o.id === id) || game.data.tests.find((o) => o.id === id) || game.data.orders[0];
+}
+
+// Nombre de patients d'une commande (V3b : 2 ou 3 patients à la suite).
+export function patientCount(o) {
+  return o && o.patients ? o.patients.length : 1;
+}
+
+// Disposition de la carte : fixe pour une commande (rejouer = même carte), variée d'une commande à l'autre.
+// Les 6 premières commandes (tutoriel) gardent la disposition de base.
+function layoutOf(o, part) {
+  if (o.layout !== undefined) return o.layout;
+  if (!o.n || o.n <= 6) return 0;
+  return (o.n * 5 + part * 3) % 4;
 }
 
 // Niveau d'un outil (1 à 3) dans la sauvegarde.
@@ -48,24 +63,33 @@ export function toolGestures() {
 }
 
 // Patient d'une commande : le modèle (data/patients.json) complété par la commande (data/orders.json).
-export function buildPatient(orderId) {
+// part = numéro du patient dans une commande à plusieurs patients (o.patients[part] complète la commande).
+export function buildPatient(orderId, part = 0) {
   const o = getOrder(orderId);
-  const m = game.data.patients[o.model];
+  const parts = patientCount(o);
+  part = Math.max(0, Math.min(parts - 1, part));
+  // chaque patient d'une commande multiple a ses propres pannes ; le reste vient de la commande
+  const q = o.patients ? { n: o.n, ...o.patients[part] } : o;
+  const m = game.data.patients[q.model] || game.data.patients.mini_drone;
   return {
     id: o.id,
     order: o,
+    part, parts,
     model: m,
     family: m.family,
-    name: o.name || 'patient.' + m.id,
-    look: { family: m.family, ...m.look, ...(o.look || {}) },
+    name: q.name || 'patient.' + m.id,
+    look: { family: m.family, ...m.look, ...(q.look || {}) },
     rank: o.rank || m.rank_min,
-    trace: o.trace || m.trace,
-    faults: o.faults || [],
-    hidden_faults: o.hidden || [],
-    rusty_screws: o.rusty_screws || [],
-    rust: o.rust || [],
-    fragile: o.fragile || m.fragile || [[625, 852, 30, 48], [452, 800, 30, 48]],
-    decoys: o.decoys || [],
+    trace: q.trace || m.trace,
+    cuts: q.cuts || 1,
+    pins: q.pins,
+    layout: layoutOf(q, part),
+    faults: q.faults || [],
+    hidden_faults: q.hidden || [],
+    rusty_screws: q.rusty_screws || [],
+    rust: q.rust || [],
+    fragile: q.fragile || m.fragile || [[625, 852, 30, 48], [452, 800, 30, 48]],
+    decoys: q.decoys || [],
     target_time: o.target_time,
     reward: o.reward,
   };
@@ -98,12 +122,32 @@ function buildRust(patches, cell, fragile = []) {
   return { cells, total: cells.reduce((s, c) => s + c.a0, 0) };
 }
 
-export function newRepair(orderId) {
-  const p = buildPatient(orderId);
+// Remet la carte (disposition, piste, morceau en cours, apparence) d'une réparation déjà commencée.
+export function restoreBoard(rep) {
+  setLayout(rep.patient.layout);
+  setTrace(rep.patient.trace, rep.patient.cuts);
+  setCut(rep.weld.cut || 0);
+  setLook(rep.patient.look);
+  spots.bay = rep.bay;
+  spots.fragile = rep.fragile;
+}
+
+// part > 0 : patient suivant d'une commande à plusieurs patients (les précédents restent dans game.multi).
+export function newRepair(orderId, part = 0) {
+  const p = buildPatient(orderId, part);
+  if (p.part === 0) game.multi = [];
   game.lastOrder = p.id;
   setLook(p.look);
-  setTrace(p.trace);
+  // disposition de la carte, puis tout ce qui est placé dessus passe par le miroir
+  setLayout(p.layout);
+  setTrace(p.trace, p.cuts);
+  p.rust = p.rust.map(([x, y, r]) => [...lp(x, y), r]);
+  p.decoys = p.decoys.map(([x, y]) => lp(x, y));
+  p.fragile = p.fragile.map(([x, y, w, h]) => [...lp(x, y), w, h]);
   const g = toolGestures();
+  // pièces de rechange plus chères aux rangs élevés (équilibrage V3b)
+  const costs = g.scoring.capacitor_cost_by_rank;
+  if (costs) g.scoring.capacitor_cost = costs[Math.min(5, p.rank) - 1];
   const u = g.unscrew;
   // scanner : les pannes cachées sont affichées dès l'ouverture
   const scanned = g.magnifier.scan && p.hidden_faults.length > 0;
@@ -129,9 +173,11 @@ export function newRepair(orderId) {
       ? { x: D.plugStart.x, y: D.plugStart.y, connected: false, lift: false }
       : { x: D.socket.x, y: D.socket.y, connected: true, lift: false },
     // soudure de la piste coupée (déjà faite si le patient n'a pas cette panne)
+    // cut = morceau en cours, prev = étain des morceaux déjà soudés, segScores = leurs notes
     weld: {
       cells: [], progress: 0, done: !p.faults.includes('trace_cut'), active: false,
       devSum: 0, devN: 0, burns: 0, shorts: 0, score: null,
+      cut: 0, prev: [], segScores: [],
     },
     // puce : l'ancienne (grillée) et la neuve
     chip: p.faults.includes('chip_burnt')

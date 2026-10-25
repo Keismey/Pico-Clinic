@@ -17,6 +17,7 @@ import notebook from './scenes/notebook.js';
 import rank from './scenes/rank.js';
 import story from './scenes/story.js';
 import bench from './scenes/bench.js';
+import free from './scenes/free.js';
 import { initBack, asking, tickAsk, askPointer, drawAsk } from './back.js';
 
 // La langue se choisit uniquement sur l'écran titre.
@@ -74,6 +75,7 @@ async function boot() {
   register('rank', rank);
   register('story', story);
   register('bench', bench);
+  register('free', free);
 
   canvas.addEventListener('pointerdown', (e) => onPointer('down', e));
   canvas.addEventListener('pointermove', (e) => onPointer('move', e));

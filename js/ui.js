@@ -115,6 +115,7 @@ export function drawButton(ctx, b, pressed) {
   const push = pressed ? depth - 3 : 0;
   const pulse = b.pulse ? 1 + 0.03 * Math.sin(pulseClock * 6) : 1;
   ctx.save();
+  if (b.alpha !== undefined) ctx.globalAlpha *= b.alpha;
   ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
   ctx.scale(pulse, pulse);
   ctx.translate(-b.w / 2, -b.h / 2);

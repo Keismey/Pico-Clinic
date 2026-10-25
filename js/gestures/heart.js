@@ -210,7 +210,8 @@ export function createHeart(params, fx) {
 
       // l'intérieur, découvert de la gauche jusqu'à la tirette
       const tp = zipAt(zip);
-      const openR = step === 'beat' || step === 'done' ? PX + PW - 30 : tp.x;
+      // refermée (étape « done ») : on ne montre plus l'intérieur
+      const openR = step === 'beat' ? PX + PW - 30 : tp.x;
       if (openR > PX + 40) {
         ctx.save();
         ctx.beginPath(); ctx.rect(PX, PY, openR - PX, PH); ctx.clip();
