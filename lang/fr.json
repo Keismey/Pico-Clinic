@@ -257,6 +257,8 @@
   "tuto.open": "Touche le drone pour le poser sous la lampe.",
   "tuto.click": "Clic ! La vis est sortie. Bien joué !",
   "tuto.screws": "Fais pareil avec les trois autres vis.",
+  "tuto.driver": "Nouvelle dévisseuse ! Pas besoin de tourner : garde juste le doigt sur une vis, elle sort toute seule.",
+  "tuto.driver_ok": "Bzzz ! Trop facile.",
   "tuto.cover": "Plus de vis ! Fais glisser la plaque vers le haut.",
   "tuto.connector": "Tu vois la fiche qui clignote ? Glisse-la jusqu'à sa prise.",
   "tuto.bravo": "Bravo, patron !",

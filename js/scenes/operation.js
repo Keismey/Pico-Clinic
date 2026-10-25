@@ -259,7 +259,17 @@ export default {
     const firstTime = !(save.orders[rep.patient.id] && save.orders[rep.patient.id].paid);
     // atelier d'essai : Gribouille montre toujours le geste, sans le noter comme vu
     const test = !!rep.patient.order.test;
-    coach = createCoach(this.lessons(rep.patient.order.n).concat(sec.lessons()), { enabled: firstTime || test, remember: !test });
+    let lessons = this.lessons(rep.patient.order.n);
+    // dévisseuse : on maintient le doigt sur la vis au lieu de tourner (leçon du cercle inutile)
+    if (unscrew.hold) {
+      lessons = lessons.filter((l) => l.id !== 'screw1');
+      const left = rep.screws.filter((s) => !s.out).length;
+      if (left > 0) {
+        const at = lessons.findIndex((l) => l.id === 'open') + 1;
+        lessons.splice(at, 0, this.driverLesson(left));
+      }
+    }
+    coach = createCoach(lessons.concat(sec.lessons()), { enabled: firstTime || test, remember: !test });
     // (atelier d'essai : le capot est déjà ouvert, pas de zoom d'arrivée)
     intro = coach.has('open') && !params.resume && !rep.coverOpen ? 0 : 1;
 
@@ -269,6 +279,18 @@ export default {
       label: () => t('op.start'),
       onTap: () => { closing = true; sfx('plate'); this.release(); },
     });
+  },
+
+  // Première utilisation de la dévisseuse : Gribouille montre qu'il suffit de garder le doigt sur la vis.
+  driverLesson(left) {
+    const firstScrew = () => rep.screws.find((s) => !s.out) || rep.screws[0];
+    return {
+      id: 'tool_electric_driver', key: 'tuto.driver', praise: 'tuto.driver_ok', always: true,
+      start: () => intro >= 1 && !rep.coverOpen,
+      done: () => rep.screws.filter((s) => !s.out).length < left,
+      demo: () => { const s = firstScrew(); return demo.path([[s.x, s.y], [s.x + 1, s.y]], 1.6, 220, false); },
+      ring: () => { const s = firstScrew(); return { x: s.x, y: s.y, r: s.r * 1.9 }; },
+    };
   },
 
   // Leçons de Gribouille, par commande (GDD : un indice la première fois seulement).

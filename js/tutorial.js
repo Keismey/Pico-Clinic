@@ -262,10 +262,11 @@ export function drawGribBox(ctx, r, text, shown, time, { sub = null, more = fals
 
 // ---------- Suite de leçons pendant un geste ----------
 // lessons : [{ id, key: string | () => string, start(), done(), demo?() → démonstration, ring?() → {x, y, r}, praise?,
-//   offset?() → [dx, dy] (où se trouve l'outil par rapport au doigt), carry?(ctx, x, y) (outil fantôme dessiné là) }]
+//   always? (montrée même si la commande est déjà connue), offset?() → [dx, dy] (où se trouve l'outil par rapport au doigt), carry?(ctx, x, y) (outil fantôme dessiné là) }]
 // remember = false (atelier d'essai) : les leçons sont toujours montrées et jamais notées comme vues.
 export function createCoach(lessons, { enabled = true, remember = true } = {}) {
-  const list = enabled ? lessons.filter((l) => !remember || !seen(l.id)) : [];
+  // always : leçon d'un nouvel outil, montrée même sur une commande déjà réussie
+  const list = lessons.filter((l) => (enabled || l.always) && (!remember || !seen(l.id)));
   const mark = (id) => { if (remember) markSeen(id); };
   let i = 0;
   let cur = null;       // leçon affichée

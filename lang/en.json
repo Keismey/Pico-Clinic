@@ -257,6 +257,8 @@
   "tuto.open": "Tap the drone to put it under the lamp.",
   "tuto.click": "Click! The screw is out. Nice job!",
   "tuto.screws": "Now do the same with the other three screws.",
+  "tuto.driver": "New power screwdriver! No need to turn: just keep your finger on a screw and it comes out by itself.",
+  "tuto.driver_ok": "Bzzz! Too easy.",
   "tuto.cover": "No more screws! Slide the cover upward.",
   "tuto.connector": "See the blinking plug? Slide it into its socket.",
   "tuto.bravo": "Well done, boss!",
