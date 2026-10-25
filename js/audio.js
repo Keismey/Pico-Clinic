@@ -7,6 +7,7 @@ import { save } from './save.js';
 let ac = null, master, musicBus, sfxBus, noiseBuf = null;
 const files = {};      // nom -> AudioBuffer décodé
 let manifestLoaded = false;
+const loopPoints = {}; // nom -> [début, fin] de la boucle en secondes (sons.json « loops »)
 
 // ---------- Mise en route (au premier toucher : les navigateurs l'exigent) ----------
 
@@ -39,6 +40,7 @@ function ctx() {
 }
 
 const MUSIC_VOL = 0.55;
+const FILE_MUSIC_GAIN = 0.6;
 
 export function unlock() {
   const a = ctx();
@@ -65,7 +67,11 @@ async function loadFiles() {
   let list = [];
   try {
     const r = await fetch('audio/sons.json', { cache: 'no-cache' });
-    if (r.ok) list = (await r.json()).files || [];
+    if (r.ok) {
+      const j = await r.json();
+      list = j.files || [];
+      Object.assign(loopPoints, j.loops || {});
+    }
   } catch (e) { return; }
   await Promise.all(list.map(async (name) => {
     try {
@@ -389,10 +395,15 @@ function startMusic(name) {
   g.connect(musicBus);
   playing = { name, out: g };
   const file = files['music_' + name];
+  // les vrais morceaux sont plus forts que la version en code : on les baisse un peu
+  if (file) g.gain.cancelScheduledValues(a.currentTime), g.gain.setValueAtTime(0.0001, a.currentTime), g.gain.exponentialRampToValueAtTime(FILE_MUSIC_GAIN, a.currentTime + 1.5);
   if (file) {
     const s = a.createBufferSource();
     s.buffer = file;
     s.loop = true;
+    // l'intro se joue une fois, puis on boucle entre les deux points choisis au découpage
+    const lp = loopPoints['music_' + name];
+    if (lp) { s.loopStart = lp[0]; s.loopEnd = Math.min(lp[1], file.duration); }
     s.connect(g);
     s.start();
     playing.src = s;

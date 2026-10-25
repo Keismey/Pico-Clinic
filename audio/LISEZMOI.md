@@ -2,6 +2,7 @@
 
 Chaque fichier MP3 déposé ici remplace le son fabriqué en code du même nom.
 Après avoir ajouté un fichier, ajouter son nom (sans `.mp3`) dans `sons.json`.
+Pour une musique, `loops` donne le début et la fin de la boucle (en secondes) : l'intro avant le début ne se joue qu'une fois. Les musiques actuelles (Gemini) ont été découpées avec un fondu de 1 s (atelier) et 2 s (opération) déjà intégré à la fin de la boucle.
 
 | Fichier | Quand |
 |---|---|
