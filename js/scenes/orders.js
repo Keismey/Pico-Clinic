@@ -9,6 +9,7 @@ import { orderState, orderStars, examStars, orderByNumber, missingParts } from '
 import { seen } from '../tutorial.js';
 import { drawGribouille, drawRarePart } from '../portraits.js';
 import { vibrate } from '../feedback.js';
+import { sfx } from '../audio.js';
 import { go } from '../scenes.js';
 
 const TAU = Math.PI * 2;
@@ -116,11 +117,11 @@ function showToast(key, vars, color = C.inkSoft) {
 
 function open(o) {
   const st = orderState(o);
-  if (st === 'locked') { vibrate([15, 25, 15]); showToast('orders.locked'); return; }
-  if (st === 'stars') { vibrate([15, 25, 15]); grib = { text: () => t('orders.gribouille_stars', { n: examStars(o), s: totalStars() }), t: 0 }; return; }
+  if (st === 'locked') { vibrate([15, 25, 15]); sfx('error'); showToast('orders.locked'); return; }
+  if (st === 'stars') { vibrate([15, 25, 15]); sfx('error'); grib = { text: () => t('orders.gribouille_stars', { n: examStars(o), s: totalStars() }), t: 0 }; return; }
   // prototype : il manque une pièce rare, Gribouille dit quelle commande refaire en 3 étoiles
   if (st === 'part') {
-    vibrate([15, 25, 15]);
+    vibrate([15, 25, 15]); sfx('error');
     const p = missingParts(o)[0];
     const key = p.how === 'stars3' ? 'orders.gribouille_part' : 'orders.gribouille_gift';
     grib = { text: () => t(key, { part: t('rare.' + p.id), n: p.order }), t: 0 };

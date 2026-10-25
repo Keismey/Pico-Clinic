@@ -15,6 +15,7 @@ import { createChip } from '../gestures/chip.js';
 import { createSolder } from '../gestures/solder.js';
 import { game, newRepair, restoreBoard } from '../state.js';
 import { vibrate } from '../feedback.js';
+import { sfx, loop, loopStop } from '../audio.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 import { save } from '../save.js';
@@ -76,11 +77,12 @@ export default {
     if (rep.coverOpen) rep.coverAnim = 1;
 
     unscrew = createUnscrew(rep.screws, g.unscrew, {
-      onTick: (s) => vibrate(s.rusty ? 12 : 7),
+      onTick: (s) => { vibrate(s.rusty ? 12 : 7); sfx('screw_turn', { rusty: s.rusty }); },
       onSlip: (s) => {
         s.damaged++;
         rep.slips++;
         vibrate([30, 40, 30]);
+        sfx('slip');
         fx.spawn(s.x, s.y, { count: 8, color: '#9aa3ad', speed: 260, size: 6 });
         showToast('op.slip', C.red);
       },
@@ -89,6 +91,7 @@ export default {
         const to = trayPos(s.slot);
         s.fly = { t: 0, fromX: s.x, fromY: s.y, toX: to.x, toY: to.y };
         vibrate(30);
+        sfx('screw_out');
         fx.spawn(s.x, s.y, { count: 14, color: '#ffd36b', speed: 380, size: 7 });
         if (rep.screws.every((sc) => sc.out)) {
           rep.coverLoose = true;
@@ -99,29 +102,32 @@ export default {
     });
 
     connector = createConnector(rep.plug, g.connector, {
-      onGrab: () => vibrate(8),
+      onGrab: () => { vibrate(8); sfx('grab'); },
       onConnect: () => {
         rep.faults.delete('connector_unplugged');
         vibrate(25);
+        sfx('connect');
         fx.spawn(D.socket.x, D.socket.y, { count: 16, color: '#5fe08b', speed: 360, size: 7 });
         showToast('op.connected', C.green);
       },
     });
 
     chip = createChip(rep.chip, g.chip, {
-      onGrab: () => vibrate(8),
+      onGrab: () => { vibrate(8); sfx('grab'); },
       onRemove: () => {
         vibrate([15, 30, 15]);
+        sfx('chip_out');
         fx.spawn(D.slot.x, D.slot.y, { count: 6, color: '#6b6f75', speed: 90, life: 1.1, size: 22, gravity: -120, kind: 'smoke', dir: -Math.PI / 2, spread: 1.4 });
         showToast('op.chip_out', C.turquoiseDark);
       },
       onStay: () => showToast('op.chip_off_board', C.inkSoft),
-      onSnapEnter: () => vibrate(10),
-      onBlocked: () => { vibrate([20, 30, 20]); showToast('op.chip_blocked', C.red); },
-      onMiss: () => { vibrate(12); showToast('op.chip_miss', C.inkSoft); },
+      onSnapEnter: () => { vibrate(10); sfx('snap_hint'); },
+      onBlocked: () => { vibrate([20, 30, 20]); sfx('error'); showToast('op.chip_blocked', C.red); },
+      onMiss: () => { vibrate(12); sfx('miss'); showToast('op.chip_miss', C.inkSoft); },
       onPlace: (score) => {
         rep.faults.delete('chip_burnt');
         vibrate([10, 20, 35]);
+        sfx('chip');
         fx.spawn(D.slot.x, D.slot.y, { count: 22, color: C.turquoise, speed: 420, size: 8 });
         showToast('op.chip_in', C.green, { p: pct(score) });
       },
@@ -130,26 +136,29 @@ export default {
     const rank = rep.patient.rank || 1;
     const tol = g.solder.tolerance_by_rank[Math.min(rank, 5) - 1] + (g.solder.tolerance_bonus || 0);
     const makeSolder = () => createSolder(rep.weld, g.solder, tol, {
-      onGrab: () => vibrate(8),
-      onHot: () => { vibrate(18); showToast('op.solder_hot', C.orangeDark); },
-      onTooEarly: () => { vibrate([15, 25, 15]); showToast('op.too_early', C.inkSoft); },
+      onGrab: () => { vibrate(8); sfx('grab'); },
+      onHot: () => { vibrate(18); sfx('bad'); showToast('op.solder_hot', C.orangeDark); },
+      onTooEarly: () => { vibrate([15, 25, 15]); sfx('miss'); showToast('op.too_early', C.inkSoft); },
       onBurn: (p) => {
         vibrate(45);
+        sfx('cold');
         fx.spawn(p.x, p.y, { count: 5, color: '#3b2a1e', speed: 80, life: 1.2, size: 20, gravity: -150, kind: 'smoke', dir: -Math.PI / 2, spread: 1 });
         showToast('op.too_slow', C.red);
       },
       onShort: (p) => {
         vibrate([60, 30, 60, 30, 60]);
+        sfx('short');
         shake = 0.35;
         white = 0.5;
         fx.spawn(p.x, p.y, { count: 28, color: '#fff3a6', speed: 650, life: 0.5, size: 7, gravity: 300 });
         fx.spawn(p.x, p.y, { count: 14, color: '#5fd3ff', speed: 520, life: 0.4, size: 6, gravity: 300 });
         showToast('op.short', C.red);
       },
-      onBreak: () => { vibrate(20); showToast('op.break', C.inkSoft); },
+      onBreak: () => { vibrate(20); sfx('cold'); showToast('op.break', C.inkSoft); },
       onDone: (score) => {
         const w = rep.weld;
         vibrate([20, 40, 60]);
+        sfx('weld_done');
         fx.spawn(SOLDER.b.x, SOLDER.b.y, { count: 24, color: '#eef2f6', speed: 420, size: 7 });
         // piste en plusieurs morceaux : on passe au morceau suivant
         if (w.cut < CUTS.n - 1) {
@@ -174,11 +183,13 @@ export default {
     vacuum = createVacuum(rep, g.vacuum, {
       onStart: () => vibrate(6),
       onCellClean: (c) => {
+        if (Math.random() < 0.12) sfx('rust');
         if (Math.random() < 0.35) fx.spawn(c.x, c.y, { count: 2, color: '#a8562a', speed: 120, life: 0.35, size: 5, gravity: 0 });
       },
-      onFragileTouch: () => { vibrate([25, 25, 25]); showToast('op.fragile', C.orangeDark); },
+      onFragileTouch: () => { vibrate([25, 25, 25]); sfx('bad'); showToast('op.fragile', C.orangeDark); },
       onFragileBreak: (c) => {
         vibrate([70, 40, 70]);
+        sfx('fragile');
         fx.spawn(c.x, c.y, { count: 14, color: '#fff3a6', speed: 380, life: 0.4, size: 6 });
         fx.spawn(c.x, c.y - 20, { count: 4, color: '#6b6f75', speed: 70, life: 1.1, size: 14, gravity: -120, kind: 'smoke', dir: -Math.PI / 2, spread: 1 });
         showToast('op.fragile_broken', C.red);
@@ -186,17 +197,19 @@ export default {
     });
 
     cap = createCapacitor(rep, g.capacitor, {
-      onGrab: () => vibrate(8),
+      onGrab: () => { vibrate(8); sfx('grab'); },
       onRemove: (c) => {
         vibrate([15, 30, 15]);
+        sfx('chip_out');
         fx.spawn(c.x, c.y, { count: 4, color: '#6b6f75', speed: 70, life: 0.9, size: 12, gravity: -120, kind: 'smoke', dir: -Math.PI / 2, spread: 1 });
         showToast('op.cap_out', C.turquoiseDark);
       },
       onStay: () => showToast('op.chip_off_board', C.inkSoft),
-      onMiss: () => { vibrate(12); showToast('op.cap_miss', C.inkSoft); },
+      onMiss: () => { vibrate(12); sfx('miss'); showToast('op.cap_miss', C.inkSoft); },
       onPlace: (c) => {
         rep.faults.delete('capacitor_' + c.i);
         vibrate([10, 20, 35]);
+        sfx('chip');
         fx.spawn(c.x, c.y, { count: 18, color: C.turquoise, speed: 380, size: 7 });
         showToast('op.cap_in', C.green, { n: g.scoring.capacitor_cost });
       },
@@ -206,16 +219,19 @@ export default {
       onStart: () => vibrate(6),
       onReveal: (tg) => {
         vibrate([20, 30, 40]);
+        sfx('found');
         fx.spawn(tg.x, tg.y, { count: 18, color: '#ff8a3d', speed: 340, size: 7 });
         showToast('op.found.' + tg.id, C.red);
         if (rep.diag.targets.every((x) => x.kind !== 'fault' || x.done)) {
           rep.phase = 'repair';
           lens.up();
+          sfx('diag_done');
           showToast('op.diag_done', C.turquoiseDark);
         }
       },
       onNothing: (tg) => {
         vibrate(12);
+        sfx('miss');
         rep.elapsed += g.magnifier.wrong_penalty;
         rep.diag.penalty += g.magnifier.wrong_penalty;
         showToast('op.nothing', C.inkSoft, { s: g.magnifier.wrong_penalty });
@@ -251,7 +267,7 @@ export default {
     startBtn = buttons.add({
       x: 190, y: 1660, w: 700, h: 170, size: 68,
       label: () => t('op.start'),
-      onTap: () => { closing = true; this.release(); },
+      onTap: () => { closing = true; sfx('plate'); this.release(); },
     });
   },
 
@@ -365,7 +381,7 @@ export default {
     for (const s of rep.screws) {
       if (!s.fly) continue;
       s.fly.t += dt / 0.5;
-      if (s.fly.t >= 1) { s.fly = null; s.inTray = true; vibrate(6); }
+      if (s.fly.t >= 1) { s.fly = null; s.inTray = true; vibrate(6); sfx('screw_tray'); }
     }
 
     unscrew.update(dt);
@@ -380,6 +396,9 @@ export default {
     if (vacuum.active) rep.vacuumUsed = true;
     if (rep.phase === 'diag' && rep.coverAnim >= 1) rep.diag.time += dt;
     if (vacuum.active && vacuum.sucking) vibrate(3);
+    // sons en boucle : aspirateur (plus fort quand il aspire), fer (grésille plus aigu en chauffant)
+    if (vacuum.active) loop('vacuum', vacuum.sucking ? 1 : 0.25); else loopStop('vacuum');
+    if (solder.active && solder.heat > 0.05) loop('solder', Math.min(1, solder.heat)); else loopStop('solder');
 
     // fumée de la puce grillée
     smokeT -= dt;
@@ -753,6 +772,7 @@ export default {
           rep.coverAnim = unease(Math.min(0.99, swipeDy / 1150));
           swipeDy = 0;
           vibrate([15, 30, 15]);
+          sfx('page');
           showToast('op.cover_off', C.turquoiseDark);
         }
       }

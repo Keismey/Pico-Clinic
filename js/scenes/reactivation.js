@@ -6,6 +6,7 @@ import { C, drawCreamBackground, drawPanel, drawText, drawToast, roundRect, clam
 import { D, withDrone, drawShadow, drawFrame, drawCover, faultSpot } from '../drone.js';
 import { game } from '../state.js';
 import { vibrate } from '../feedback.js';
+import { sfx } from '../audio.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 import { orderState } from '../progress.js';
@@ -36,9 +37,13 @@ function trigger() {
   if (rep.faults.size > 0) {
     state = 'cough';
     vibrate([80, 60, 80, 60, 80]);
+    sfx('lever');
+    sfx('cough');
   } else {
     state = 'success';
     vibrate([20, 30, 30, 30, 40, 30, 90]);
+    sfx('lever');
+    sfx('rotor_start');
   }
 }
 
@@ -89,6 +94,8 @@ export default {
       if (st > 1) lift = Math.min(1, lift + dt * 0.9);
       if (st > 1 && !burst) {
         burst = true;
+        sfx('lights');
+        sfx('jingle');
         fx.spawn(DX, DY, { count: 40, color: C.turquoise, speed: 700, life: 0.9, size: 10, gravity: 500 });
         fx.spawn(DX, DY, { count: 30, color: C.orange, speed: 600, life: 0.9, size: 9, gravity: 500 });
       }
@@ -198,6 +205,7 @@ export default {
       if (Math.hypot(x - DX, y - knobY()) < KNOB_R + 60) {
         grab = { y, start: lever };
         vibrate(8);
+        sfx('grab');
       }
     } else if (type === 'move' && grab) {
       lever = clamp(grab.start + (y - grab.y) / params.travel, 0, 1);

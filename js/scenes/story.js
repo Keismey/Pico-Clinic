@@ -7,6 +7,7 @@ import { drawGribouille, drawPerson } from '../portraits.js';
 import { game } from '../state.js';
 import { seen, markSeen } from '../tutorial.js';
 import { vibrate } from '../feedback.js';
+import { sfx } from '../audio.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 import { drawWorkshop, drawCounter, drawLetter } from './counter.js';
@@ -53,7 +54,7 @@ function advance() {
   if (phase === 'card') { phase = 'talk'; time = Math.max(time, CARD_TIME); return; }
   const len = text().length;
   if (shown < len) { shown = len; return; }
-  if (idx < sc.lines.length - 1) { idx++; shown = 0; wrapped = null; vibrate(8); return; }
+  if (idx < sc.lines.length - 1) { idx++; shown = 0; wrapped = null; vibrate(8); sfx('page'); return; }
   // la fin du jeu : le générique défile avant de rendre la main
   if (sc.credits && phase !== 'credits') { phase = 'credits'; creditsTime = 0; vibrate(20); return; }
   finish();

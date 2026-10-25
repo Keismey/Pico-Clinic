@@ -7,6 +7,7 @@ import { save } from '../save.js';
 import { game, toolLevel } from '../state.js';
 import { TOOL_KEYS, currentTool, nextTool, buyState, buyTool } from '../progress.js';
 import { vibrate } from '../feedback.js';
+import { sfx } from '../audio.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 import { leftText } from './orders.js';
@@ -84,10 +85,12 @@ function tapDeco(d, x, y) {
   if (st === 'ok') {
     buyDeco(d);
     vibrate([10, 20, 40]);
+    sfx('buy');
     fx.spawn(x + 110, y + 150, { count: 26, color: '#ffd36b', speed: 480, size: 8 });
     showToast('shop.deco_bought', { name: t('deco.' + d.id) }, C.green);
   } else {
     vibrate([15, 25, 15]);
+    sfx('error');
     if (st === 'rank') showToast('shop.toast_rank', { r: d.rank });
     else if (st === 'money') showToast('shop.toast_money', { n: d.price - save.credits });
     else showToast('shop.deco_owned');
@@ -100,11 +103,13 @@ function tap(k, i) {
   if (st === 'ok') {
     buyTool(k);
     vibrate([10, 20, 40]);
+    sfx('buy');
     const cy = CARD.y + i * CARD.step + CARD.h / 2;
     fx.spawn(CARD.x + 110, cy, { count: 26, color: '#ffd36b', speed: 480, size: 8 });
     showToast('shop.bought', { name: t('tool.' + n.id) }, C.green);
   } else {
     vibrate([15, 25, 15]);
+    sfx('error');
     if (st === 'rank') showToast('shop.toast_rank', { r: n.rank });
     else if (st === 'money') showToast('shop.toast_money', { n: n.price - save.credits });
     else showToast('shop.maxed');

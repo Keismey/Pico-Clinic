@@ -19,7 +19,7 @@ function defaults() {
     free: { plays: 0 },
     // tutoriel et histoire : leçons de Gribouille et scènes déjà vues
     story: [],
-    settings: { lang: null, sound: true, vibration: true, lefty: false },
+    settings: { lang: null, sound: true, music: true, vibration: true, lefty: false },
   };
 }
 

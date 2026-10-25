@@ -8,6 +8,7 @@ import { drawPerson, drawGribouille } from '../portraits.js';
 import { game, getOrder, buildPatient, patientCount } from '../state.js';
 import { meetClient } from '../progress.js';
 import { vibrate } from '../feedback.js';
+import { sfx } from '../audio.js';
 import { go } from '../scenes.js';
 import { leftText } from './orders.js';
 import { drawOwnedDecos } from '../deco.js';
@@ -77,6 +78,7 @@ function advance() {
     lineTime = 0;
     wrapped = null;
     vibrate(8);
+    sfx('page');
     return;
   }
   finish();

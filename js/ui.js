@@ -1,6 +1,7 @@
 // Outils d'interface : couleurs, police, boutons, texte avec retour à la ligne.
 import { W, H } from './canvas.js';
 import { vibrate } from './feedback.js';
+import { sfx } from './audio.js';
 
 export const C = {
   copper: '#c47a3c',
@@ -157,6 +158,7 @@ export class Buttons {
     if (!b) return false;
     if (type === 'up' && hit(b, x, y) && b.visible !== false) {
       vibrate(10);
+      if (!b.silent) sfx('click');
       b.onTap();
     }
     return true;

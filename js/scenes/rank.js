@@ -5,6 +5,7 @@ import { Buttons, C, drawCreamBackground, drawText, fitText, roundRect } from '.
 import { drawGribouille } from '../portraits.js';
 import { rankInfo } from '../progress.js';
 import { vibrate } from '../feedback.js';
+import { sfx } from '../audio.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 import { miniStar } from './orders.js';
@@ -32,6 +33,7 @@ export default {
     if (!burst && time > 0.5) {
       burst = true;
       vibrate([30, 40, 60]);
+      sfx('fanfare');
       fx.spawn(W / 2, 560, { count: 50, color: '#ffd36b', speed: 760, life: 1.1, size: 10, gravity: 500 });
       fx.spawn(W / 2, 560, { count: 30, color: C.turquoise, speed: 620, life: 1, size: 9, gravity: 500 });
     }

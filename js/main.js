@@ -6,6 +6,7 @@ import { loadData } from './state.js';
 import { register, go, scene } from './scenes.js';
 import { tickUI } from './ui.js';
 import * as fx from './particles.js';
+import { unlock, loopStopAll } from './audio.js';
 import title from './scenes/title.js';
 import operation from './scenes/operation.js';
 import reactivation from './scenes/reactivation.js';
@@ -34,7 +35,7 @@ function loop(ts) {
   last = ts;
   tickUI(dt);
   // « Quitter la réparation ? » : le jeu est en pause derrière la question
-  if (asking()) tickAsk(dt);
+  if (asking()) { tickAsk(dt); loopStopAll(); }
   else { scene().update(dt); fx.update(dt); }
   beginFrame();
   scene().draw(ctx);
@@ -52,9 +53,10 @@ function onPointer(type, e) {
   }
   e.preventDefault();
   const p = toLogical(e);
-  if (type === 'down') owner = 'scene';
+  if (type === 'down') { owner = 'scene'; unlock(); }
   if (asking()) askPointer(type, p.x, p.y);
   else scene().pointer(type, p.x, p.y);
+  if (type === 'up') unlock();
   if (type === 'up' || type === 'cancel') { activeId = null; owner = null; }
 }
 

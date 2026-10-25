@@ -5,8 +5,9 @@ import { Buttons, C, drawCreamBackground, drawText, fitText } from '../ui.js';
 import { withDrone, drawShadow, drawFrame, drawCover, setLook } from '../drone.js';
 import { go } from '../scenes.js';
 import { changeLang, VERSION } from '../settings.js';
-import { save, resetSave, totalStars } from '../save.js';
+import { save, resetSave, totalStars, persist } from '../save.js';
 import { seen } from '../tutorial.js';
+import { setSound, setMusic } from '../audio.js';
 
 // Toute première partie : le chapitre 1 commence directement, puis Léa arrive au comptoir.
 function play() {
@@ -28,6 +29,10 @@ export default {
     buttons.add({ x: 200, y: 1360, w: 680, h: 170, size: 72, label: () => t('title.play'), onTap: () => play() });
     buttons.add({ x: 200, y: 1590, w: 320, h: 130, style: 'secondary', label: () => 'Français', selected: () => getLang() === 'fr', onTap: () => changeLang('fr') });
     buttons.add({ x: 560, y: 1590, w: 320, h: 130, style: 'secondary', label: () => 'English', selected: () => getLang() === 'en', onTap: () => changeLang('en') });
+    // Musique et sons (les autres réglages arrivent avec l'écran Options)
+    const onOff = (on) => t(on ? 'title.on' : 'title.off');
+    buttons.add({ x: 40, y: 30, w: 360, h: 96, size: 32, style: 'secondary', label: () => t('title.music', { v: onOff(save.settings.music) }), selected: () => save.settings.music, onTap: () => { setMusic(!save.settings.music); persist(); } });
+    buttons.add({ x: 680, y: 30, w: 360, h: 96, size: 32, style: 'secondary', label: () => t('title.sound', { v: onOff(save.settings.sound) }), selected: () => save.settings.sound, onTap: () => { setSound(!save.settings.sound); persist(); } });
     // Nouvelle partie : deux touches pour ne pas effacer par erreur
     buttons.add({
       x: 290, y: 1745, w: 500, h: 96, size: 32, style: 'secondary',

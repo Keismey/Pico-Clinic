@@ -8,6 +8,7 @@ import { save, totalStars } from '../save.js';
 import { scoreRepair, recordRepair, recordFree } from '../score.js';
 import { makeFree } from '../free.js';
 import { vibrate } from '../feedback.js';
+import { sfx } from '../audio.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 import { orderState, nextOrder, examStars } from '../progress.js';
@@ -111,6 +112,7 @@ export default {
     while (shown < 3 && time > 0.6 + shown * STAR_DELAY) {
       if (res.stars[shown]) {
         vibrate(25 + shown * 10);
+        sfx('star', { i: shown });
         fx.spawn(STAR_X[shown], STAR_Y, { count: 18, color: '#ffd36b', speed: 420, size: 8 });
       }
       shown++;
@@ -119,7 +121,10 @@ export default {
     const target = save.credits;
     if (time > 0.6 + 3 * STAR_DELAY && Math.abs(creditsShown - target) > 0.5) {
       const step = Math.max(1, Math.abs(target - creditsShown) * dt * 4);
+      const before = Math.floor(creditsShown / 5);
       creditsShown += Math.sign(target - creditsShown) * Math.min(step, Math.abs(target - creditsShown));
+      if (Math.floor(creditsShown / 5) !== before) sfx('coin_tick');
+      if (Math.abs(creditsShown - target) <= 0.5) sfx('coin');
     } else if (time > 0.6 + 3 * STAR_DELAY) {
       creditsShown = target;
     }

@@ -7,6 +7,7 @@ import { game } from '../state.js';
 import { save, totalStars } from '../save.js';
 import { clientMet, clientDone, lastOrderOf, hasPart, rankInfo, orderByNumber } from '../progress.js';
 import { vibrate } from '../feedback.js';
+import { sfx } from '../audio.js';
 import { go } from '../scenes.js';
 import { leftText, miniStar } from './orders.js';
 
@@ -207,6 +208,7 @@ export default {
       const z = zoneAt(x, y);
       if (z && pressed && z.id === pressed.id) {
         vibrate(10);
+        sfx('page');
         detail = { kind: tab === 'clients' ? 'client' : 'part', id: z.id };
       }
       pressed = null;

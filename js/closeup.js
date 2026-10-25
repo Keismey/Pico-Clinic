@@ -18,6 +18,7 @@ import { createPins } from './gestures/pins.js';
 import { createSpring } from './gestures/spring.js';
 import { createBatteries } from './gestures/batteries.js';
 import { createOxide } from './gestures/oxide.js';
+import { sfx } from './audio.js';
 
 const TAU = Math.PI * 2;
 export const PANEL = { x: 60, y: 300, w: 960, h: 960, cx: 540, cy: 780 };
@@ -141,10 +142,11 @@ export function createCloseup(rep, hooks) {
   let open = null;   // { item, k, closing, success }
 
   const fx = {
-    ok: (key, vars) => hooks.toast(key, C.green, vars),
-    bad: (key, vars) => hooks.toast(key, C.red, vars),
-    info: (key, vars) => hooks.toast(key, C.inkSoft, vars),
-    vibrate: (p) => hooks.vibrate(p),
+    ok: (key, vars) => { hooks.toast(key, C.green, vars); sfx(key === 'sec.spring.ok' ? 'spring' : 'ok'); },
+    bad: (key, vars) => { hooks.toast(key, C.red, vars); sfx('bad'); },
+    info: (key, vars) => { hooks.toast(key, C.inkSoft, vars); sfx('miss'); },
+    // petit cliquetis pour les vibrations courtes (prise, cran, battement)
+    vibrate: (p) => { hooks.vibrate(p); if (typeof p === 'number') sfx(p >= 30 ? 'thump' : 'tick'); },
     spawn: (x, y, o) => hooks.spawn(x, y, o),
     care: (n) => { rep.care = (rep.care || 0) + n; },
     score: (v) => { (rep.scores = rep.scores || []).push(Math.max(0, Math.min(1, v))); },
@@ -160,6 +162,7 @@ export function createCloseup(rep, hooks) {
     if (!it.mod) it.mod = MAKE[it.type](rep.g, fx, rep.patient);
     open = { item: it, k: 0, closing: false, success: 0 };
     hooks.vibrate(12);
+    sfx('zoom');
   }
 
   function close() {
