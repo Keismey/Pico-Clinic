@@ -217,9 +217,9 @@
   "rank.4.exam": "drone de course de Turbo",
   "rank.5.exam": "partenariat de Dr Quartz",
   "rank.1.unlocks": "Drones jouets simples, tournevis et fer de base",
-  "rank.2.unlocks": "Insectes cybernétiques, aspirateur renforcé, fer de précision, dévisseuse, Pantoufle",
+  "rank.2.unlocks": "Insectes cybernétiques, aspirateur renforcé, fer de précision, tournevis à cliquet, Pantoufle",
   "rank.3.unlocks": "Mascottes mécaniques, loupe thermique, pince fine",
-  "rank.4.unlocks": "Drones pro et de course, laser, pompe magnétique, pince antistatique",
+  "rank.4.unlocks": "Drones pro et de course, laser, pompe magnétique, pince antistatique, dévisseuse",
   "rank.5.unlocks": "Prototypes uniques, scanner, Atelier libre",
   "client.lea.bio": "Une petite fille timide. Sa peluche robot Pantoufle a été fabriquée par sa grand-mère.",
   "client.volute.bio": "Collectionneuse bavarde d'insectes mécaniques. Elle donne un nom à chacun et prépare une grande exposition.",
@@ -590,5 +590,7 @@
   "tool.electric_driver": "Dévisseuse",
   "tool.electric_driver.desc": "Dévisse en maintenant le doigt sur la vis",
   "op.hint.unscrew_hold": "Dévisseuse : garde le doigt posé sur une vis, elle se dévisse toute seule.",
-  "op.hint.rusty_hold": "Vis rouillée : garde le doigt dessus un peu plus longtemps !"
+  "op.hint.rusty_hold": "Vis rouillée : garde le doigt dessus un peu plus longtemps !",
+  "tool.ratchet_driver": "Tournevis à cliquet",
+  "tool.ratchet_driver.desc": "Moins de tours pour sortir chaque vis"
 }

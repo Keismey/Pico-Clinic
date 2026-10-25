@@ -50,8 +50,12 @@ export function toolGestures() {
   const g = JSON.parse(JSON.stringify(game.data.gestures));
   const T = game.data.tools;
   const e = (k, name) => T[k].effect[name][toolLevel(k) - 1];
-  // dévisseuse : maintenir le doigt sur la vis suffit
+  // dévisseuse (niveau 3) : maintenir le doigt sur la vis suffit
   g.unscrew.hold_turns = T.driver ? e('driver', 'hold_turns') : 0;
+  // tournevis à cliquet : moins de tours à faire (vis rouillées comprises)
+  const tf = T.driver ? e('driver', 'turns_factor') : 1;
+  g.unscrew.turns *= tf;
+  g.unscrew.turns_rusty *= tf;
   g.solder.tolerance_bonus = e('iron', 'tolerance_bonus');
   g.solder.burn_time *= e('iron', 'burn_factor');
   g.vacuum.radius = Math.round(g.vacuum.radius * e('vacuum', 'radius_factor'));

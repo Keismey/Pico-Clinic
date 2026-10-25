@@ -9,7 +9,7 @@ Mis à jour : 2026-10-25 (C9 V3b contenu + dévisseuse). Jeu : https://keismey.g
 - 6 prototypes dessinés (famille `proto`) ; pièce rare exigée (rare_parts.json `use`) : sinon la commande attend et Gribouille dit laquelle refaire en 3 étoiles ; les suivantes restent jouables. Commande 60 : lettre de Maître Ohm sur le comptoir, sans limite de temps.
 - Décorations (`data/decorations.json`, `js/deco.js`) : onglet de la boutique, 8 objets visibles au comptoir. Atelier libre au rang 5 (`js/free.js`, `js/scenes/free.js`) : patient et pannes au hasard, gains 50 %, rien d'enregistré. Équilibrage : paie ≈ 44 → 436 du rang 1 au 5, temps cible 2 à 4 min, pièces 5 à 30 crédits.
 - Atelier d'essai : capot déjà ouvert (pas de vis), « Les 60 commandes » et « Atelier libre » (tous les rangs). Correctif : la pochette du cœur reste fermée.
-- Ajout hors GDD : dévisseuse (outil `driver`, 180 crédits, rang 2) : on garde le doigt sur la vis, elle se dévisse seule (1,25 s, rouillée 2,5 s).
+- Ajout hors GDD, outil `driver` : tournevis à cliquet (150 cr., rang 2, 1 tour au lieu de 1,5), puis dévisseuse (800 cr., rang 4 : on garde le doigt sur la vis, 1,25 s, rouillée 2,5 s).
 - Testé en navigateur automatique : 60 commandes sans erreur, soudure en 3 morceaux, 3 patients enchaînés, Atelier libre payé, dévisseuse, clés FR = EN (592).
 
 ## Écarts au GDD

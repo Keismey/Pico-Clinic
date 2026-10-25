@@ -38,7 +38,7 @@ function drawIcon(ctx, k, x, y) {
     ctx.rotate(-0.7);
     ctx.strokeStyle = '#9aa3ad'; ctx.lineWidth = 10;
     ctx.beginPath(); ctx.moveTo(0, -75); ctx.lineTo(0, -15); ctx.stroke();
-    if (toolLevel('driver') > 1) {
+    if (toolLevel('driver') > 2) {
       ctx.fillStyle = C.turquoise; roundRect(ctx, -30, -20, 60, 50, 14); ctx.fill();
       ctx.fillStyle = '#374151'; roundRect(ctx, -16, 24, 32, 50, 10); ctx.fill();
       ctx.fillStyle = '#ffd166'; ctx.fillRect(-20, -6, 10, 20);
@@ -48,6 +48,8 @@ function drawIcon(ctx, k, x, y) {
       ctx.strokeStyle = '#c4862a'; ctx.lineWidth = 4;
       for (const dx of [-7, 0, 7]) { ctx.beginPath(); ctx.moveTo(dx, -5); ctx.lineTo(dx, 55); ctx.stroke(); }
       ctx.fillStyle = '#9aa3ad'; ctx.fillRect(-9, -84, 18, 10);
+      // tournevis à cliquet : petite molette sombre en haut du manche
+      if (toolLevel('driver') === 2) { ctx.fillStyle = '#374151'; ctx.beginPath(); ctx.arc(0, -20, 20, 0, TAU); ctx.fill(); ctx.fillStyle = '#aeb6c0'; ctx.beginPath(); ctx.arc(0, -20, 7, 0, TAU); ctx.fill(); }
     }
   } else if (k === 'iron') {
     ctx.rotate(-0.8);

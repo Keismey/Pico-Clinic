@@ -217,9 +217,9 @@
   "rank.4.exam": "Turbo's race drone",
   "rank.5.exam": "Dr Quartz's partnership",
   "rank.1.unlocks": "Simple toy drones, screwdriver and basic iron",
-  "rank.2.unlocks": "Cyber insects, strong vacuum, precision iron, power screwdriver, Pantoufle",
+  "rank.2.unlocks": "Cyber insects, strong vacuum, precision iron, ratchet screwdriver, Pantoufle",
   "rank.3.unlocks": "Mechanical mascots, thermal magnifier, fine tweezers",
-  "rank.4.unlocks": "Pro and race drones, laser, magnetic pump, antistatic tweezers",
+  "rank.4.unlocks": "Pro and race drones, laser, magnetic pump, antistatic tweezers, power screwdriver",
   "rank.5.unlocks": "Unique prototypes, scanner, Free workshop",
   "client.lea.bio": "A shy little girl. Her robot plush Pantoufle was made by her grandmother.",
   "client.volute.bio": "A chatty collector of mechanical insects. She names every one of them and is preparing a big exhibition.",
@@ -590,5 +590,7 @@
   "tool.electric_driver": "Power screwdriver",
   "tool.electric_driver.desc": "Unscrews while you hold your finger on the screw",
   "op.hint.unscrew_hold": "Power screwdriver: keep your finger on a screw, it unscrews by itself.",
-  "op.hint.rusty_hold": "Rusty screw: hold your finger on it a little longer!"
+  "op.hint.rusty_hold": "Rusty screw: hold your finger on it a little longer!",
+  "tool.ratchet_driver": "Ratchet screwdriver",
+  "tool.ratchet_driver.desc": "Fewer turns to remove each screw"
 }
