@@ -1,6 +1,9 @@
 // État partagé : données JSON chargées et réparation en cours.
 import { D, faultSpot, spots, setLook, setTrace, setCut, setLayout, lp, assignBays } from './drone.js';
 import { save } from './save.js';
+import { TRAY } from './drone.js';
+import { SPARE } from './gestures/capacitor.js';
+import { ACCESS } from './ui.js';
 
 export const game = { data: {}, repair: null, lastOrder: 'o01' };
 
@@ -66,7 +69,45 @@ export function toolGestures() {
   // V3a : la pince aide aussi pour les piles (même aimantation que les puces) et les broches
   g.batteries.snap_radius = g.chip.snap_radius;
   g.pins.tolerance *= e('tweezers', 'snap_factor');
+  if (save.settings.tremor) easeForTremor(g);
+  // gaucher : le fer se tient de l'autre côté de la pointe
+  if (save.settings.lefty) g.solder.grip = [-g.solder.grip[0], g.solder.grip[1]];
   return g;
+}
+
+// V4b — Option « tremblement réduit » : tolérances élargies pour tous les gestes.
+function easeForTremor(g) {
+  g.solder.tolerance_bonus = (g.solder.tolerance_bonus || 0) + 12;
+  g.solder.off_path_time *= 2;
+  g.solder.burn_time *= 1.5;
+  g.solder.speed_max *= 1.25;
+  g.unscrew.slip_factor *= 1.4;
+  g.unscrew.grab_factor *= 1.2;
+  for (const k of ['connector', 'chip', 'capacitor', 'batteries']) g[k].snap_radius = Math.round(g[k].snap_radius * 1.5);
+  g.vacuum.fragile_grace *= 1.6;
+  g.magnifier.catch_radius = Math.round(g.magnifier.catch_radius * 1.4);
+  g.battery.max_dev *= 1.4;
+  g.battery.edge_tol *= 1.3;
+  g.battery.risk_rise *= 0.7;
+  g.gear.tolerance *= 1.5;
+  g.gear.snap_radius = Math.round(g.gear.snap_radius * 1.4);
+  g.sensor.zone *= 1.5;
+  g.pins.tolerance *= 1.6;
+  g.spring.speed_min *= 0.7;
+  g.spring.speed_max *= 1.3;
+  g.spring.risk_rise *= 0.7;
+  g.oxide.break_hits += 2;
+  g.heart.window *= 1.5;
+  g.heart.zip_tol *= 1.3;
+}
+
+// V4b — Option « gaucher » : bac à vis à droite, boîte de pièces neuves à gauche (miroir).
+export function applyHand() {
+  const L = !!save.settings.lefty;
+  ACCESS.lefty = L;
+  D.box.x = L ? 175 : 905;
+  TRAY.x = L ? 930 : 150;
+  SPARE.x = L ? 325 : 755;
 }
 
 // Patient d'une commande : le modèle (data/patients.json) complété par la commande (data/orders.json).
@@ -151,6 +192,7 @@ export function newRepair(orderId, part = 0) {
   p.rust = p.rust.map(([x, y, r]) => [...lp(x, y), r]);
   p.decoys = p.decoys.map(([x, y]) => lp(x, y));
   p.fragile = p.fragile.map(([x, y, w, h]) => [...lp(x, y), w, h]);
+  applyHand();
   const g = toolGestures();
   // pièces de rechange plus chères aux rangs élevés (équilibrage V3b)
   const costs = g.scoring.capacitor_cost_by_rank;

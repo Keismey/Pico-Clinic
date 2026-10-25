@@ -19,6 +19,10 @@ import rank from './scenes/rank.js';
 import story from './scenes/story.js';
 import bench from './scenes/bench.js';
 import free from './scenes/free.js';
+import options from './scenes/options.js';
+import daily from './scenes/daily.js';
+import { setContrast } from './ui.js';
+import { applyHand } from './state.js';
 import { initBack, asking, tickAsk, askPointer, drawAsk } from './back.js';
 
 // La langue se choisit uniquement sur l'écran titre.
@@ -65,6 +69,9 @@ async function boot() {
   window.addEventListener('resize', resize);
   await Promise.all([loadLanguages(), loadData()]);
   setLang(save.settings.lang || detectLang());
+  // options d'accessibilité mémorisées
+  setContrast(save.settings.contrast);
+  applyHand();
 
   register('title', title);
   register('operation', operation);
@@ -78,6 +85,8 @@ async function boot() {
   register('story', story);
   register('bench', bench);
   register('free', free);
+  register('options', options);
+  register('daily', daily);
 
   canvas.addEventListener('pointerdown', (e) => onPointer('down', e));
   canvas.addEventListener('pointermove', (e) => onPointer('move', e));

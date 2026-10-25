@@ -7,6 +7,7 @@ import { game } from '../state.js';
 import { save, totalStars } from '../save.js';
 import { scoreRepair, recordRepair, recordFree } from '../score.js';
 import { makeFree } from '../free.js';
+import { recordDaily, startDaily, triesLeft, drawBadge } from '../daily.js';
 import { vibrate } from '../feedback.js';
 import { sfx } from '../audio.js';
 import * as fx from '../particles.js';
@@ -69,7 +70,8 @@ export default {
     const o = rep.patient.order;
     const test = !!o.test;
     const free = !!o.free;
-    pay = test ? { firstPay: false, paid: 0, record: false, rankUp: 0, part: null } : free ? recordFree(rep, res) : recordRepair(rep, res);
+    const daily = !!o.daily;
+    pay = test ? { firstPay: false, paid: 0, record: false, rankUp: 0, part: null } : daily ? recordDaily(rep, res) : free ? recordFree(rep, res) : recordRepair(rep, res);
     creditsShown = before;
     // commande suivante si elle est jouable, sinon retour à la liste
     const next = test || free ? null : nextOrder(o);
@@ -80,6 +82,14 @@ export default {
     const story = pay.firstPay && !free ? storyAfter(o) : null;
     const benchBack = () => go('bench', { page: o.clone ? 'orders' : 'gestures' });
     buttons = new Buttons();
+    if (daily) {
+      // défi quotidien : un 2e essai s'il en reste, l'historique du Carnet, les commandes
+      if (triesLeft(o.daily) > 0) buttons.add({ x: 190, y: 1500, w: 700, h: 170, size: 60, label: () => t('daily.retry'), onTap: () => { if (startDaily()) go('operation', { order: 'free' }); else go('daily'); } });
+      else buttons.add({ x: 190, y: 1500, w: 700, h: 170, size: 60, label: () => t('daily.history'), onTap: () => go('notebook', { tab: 'daily' }) });
+      buttons.add({ x: 110, y: 1700, w: 410, h: 150, style: 'secondary', label: () => t('daily.title'), onTap: () => go('daily') });
+      buttons.add({ x: 560, y: 1700, w: 410, h: 150, style: 'secondary', label: () => t('done.orders'), onTap: () => go('orders') });
+      return;
+    }
     if (free) {
       // Atelier libre : un autre patient au hasard, du même rang
       buttons.add({ x: 190, y: 1500, w: 700, h: 170, size: 64, label: () => t('free.again'), onTap: () => { makeFree(o.rank, test); go('operation', { order: 'free' }); } });
@@ -155,9 +165,11 @@ export default {
     if (pay.firstPay) {
       lines.push([t('done.pay', { b: res.base }) + (res.tip ? '  ·  ' + t('done.tip', { n: res.tip }) : '  ·  ' + t('done.no_tip')), C.copperDark]);
     } else {
-      lines.push([t(rep.patient.order.test ? 'bench.not_saved' : 'done.already_paid'), C.inkSoft]);
+      lines.push([t(rep.patient.order.test ? 'bench.not_saved' : rep.patient.order.daily ? (res.stars[0] ? 'daily.already_paid' : 'daily.not_paid') : 'done.already_paid'), C.inkSoft]);
     }
-    if (rep.patient.order.free && !rep.patient.order.test) {
+    if (rep.patient.order.daily) {
+      lines.push([t('daily.done_note'), C.inkSoft]);
+    } else if (rep.patient.order.free && !rep.patient.order.test) {
       lines.push([t('free.note'), C.inkSoft]);
     }
     if (res.parts) lines.push([t('done.parts', { n: res.parts }), C.red]);
@@ -169,7 +181,8 @@ export default {
     // bandeau : pièce rare gagnée, sinon nouveau rang (qui a aussi son propre écran juste après)
     const banner = pay.part
       ? { text: t('done.rare', { name: t('rare.' + pay.part.id) }), color: C.copper, part: pay.part.id }
-      : pay.rankUp ? { text: t('done.rank_up', { r: pay.rankUp, name: t('rank.' + pay.rankUp) }), color: C.orange } : null;
+      : pay.rankUp ? { text: t('done.rank_up', { r: pay.rankUp, name: t('rank.' + pay.rankUp) }), color: C.orange }
+      : pay.badge ? { text: t('daily.badge_won.' + pay.badge), color: C.turquoiseDark, badge: pay.badge } : null;
     if (banner) {
       const a = Math.min(1, Math.max(0, time - 2.4) * 3);
       ctx.save();
@@ -177,9 +190,10 @@ export default {
       ctx.fillStyle = banner.color;
       roundRect(ctx, 90, 300, W - 180, 110, 55);
       ctx.fill();
-      const off = banner.part ? 50 : 0;
+      const off = banner.part || banner.badge ? 50 : 0;
       fitText(ctx, banner.text, W / 2 + off, 357, W - 260 - off * 2, 46, '#fff', 900);
       if (banner.part) drawRarePart(ctx, banner.part, 160, 355, 52, true, time);
+      if (banner.badge) drawBadge(ctx, 160, 340, 42, banner.badge, time);
       ctx.restore();
     }
     buttons.draw(ctx);

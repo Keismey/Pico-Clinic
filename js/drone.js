@@ -1,6 +1,6 @@
 // Patients dessinés en formes simples (remplacés plus tard par les images Gemini) :
 // drones, insectes et mascottes, avec les couleurs du modèle (LOOK).
-import { C, roundRect } from './ui.js';
+import { C, roundRect, ACCESS } from './ui.js';
 
 const TAU = Math.PI * 2;
 
@@ -703,14 +703,17 @@ function drawSolder(ctx, weld, broken, time, xray = false) {
     const s0 = cutStart(CUTS.i);
     const rest = [fullAt(s0), ...P.filter((p) => p.s > s0)];
     ctx.save();
-    ctx.strokeStyle = 'rgba(255, 247, 236, 0.18)';
+    // contrastes forts : couloir plus visible, pointillés jaune vif cerclés de sombre
+    const hc = ACCESS.contrast;
+    ctx.strokeStyle = hc ? 'rgba(255, 255, 255, 0.42)' : 'rgba(255, 247, 236, 0.18)';
     ctx.lineWidth = 34;
     ctx.beginPath();
     rest.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
     ctx.stroke();
+    if (hc) { ctx.strokeStyle = '#1d140d'; ctx.lineWidth = 14; ctx.stroke(); }
     ctx.setLineDash([12, 14]);
-    ctx.strokeStyle = 'rgba(217, 164, 65, 0.85)';
-    ctx.lineWidth = 6;
+    ctx.strokeStyle = hc ? '#ffd21f' : 'rgba(217, 164, 65, 0.85)';
+    ctx.lineWidth = hc ? 8 : 6;
     ctx.stroke();
     ctx.restore();
     // morceaux déjà soudés, puis le morceau en cours
@@ -753,7 +756,7 @@ function drawSlot(ctx, chip, slotGlow, disguised = false) {
   }
   ctx.save();
   ctx.setLineDash([10, 10]);
-  ctx.strokeStyle = slotGlow > 0.95 ? '#fff' : 'rgba(255, 255, 255, 0.55)';
+  ctx.strokeStyle = slotGlow > 0.95 || ACCESS.contrast ? '#fff' : 'rgba(255, 255, 255, 0.55)';
   ctx.lineWidth = 5;
   roundRect(ctx, ch.x, ch.y, ch.s, ch.s, 12);
   ctx.stroke();
@@ -817,7 +820,8 @@ export function drawPartBox(ctx) {
 // Fer à souder : pointe en (x, y), chaleur 0 → 1. Le manche part vers le bas à droite,
 // là où le doigt le tient (gestures.json solder.grip), pour que la pointe reste visible.
 export function drawIron(ctx, x, y, heat, alpha = 1) {
-  const dx = 0.45, dy = 0.89;
+  // gaucher : le manche part vers le bas à gauche
+  const dx = ACCESS.lefty ? -0.45 : 0.45, dy = 0.89;
   const at = (d) => [x + dx * d, y + dy * d];
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -825,7 +829,7 @@ export function drawIron(ctx, x, y, heat, alpha = 1) {
   // ombre
   ctx.strokeStyle = 'rgba(0,0,0,0.2)';
   ctx.lineWidth = 40;
-  ctx.beginPath(); ctx.moveTo(...at(110).map((v, i) => v + (i ? 26 : 18))); ctx.lineTo(...at(320).map((v, i) => v + (i ? 26 : 18))); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(...at(110).map((v, i) => v + (i ? 26 : 18 * Math.sign(dx)))); ctx.lineTo(...at(320).map((v, i) => v + (i ? 26 : 18 * Math.sign(dx)))); ctx.stroke();
   // tige et pointe
   ctx.strokeStyle = '#9aa3ad';
   ctx.lineWidth = 16;

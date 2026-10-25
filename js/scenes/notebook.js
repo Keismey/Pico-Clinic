@@ -10,6 +10,8 @@ import { vibrate } from '../feedback.js';
 import { sfx } from '../audio.js';
 import { go } from '../scenes.js';
 import { leftText, miniStar } from './orders.js';
+import { lastDays, dayEntry, badgeOf, badgeCount, drawBadge, dailyOpen, dateKey } from '../daily.js';
+import { dayLabel } from './daily.js';
 
 const TAU = Math.PI * 2;
 const TOP = 300;
@@ -162,6 +164,31 @@ function drawDetail(ctx) {
   fitText(ctx, t('orders.tap_close'), W / 2, y + h - 60, w - 80, 32, C.inkSoft, 700);
 }
 
+// V4b — Défis : les 7 derniers jours, aujourd'hui en haut.
+function drawDaily(ctx, time) {
+  fitText(ctx, t('nb.daily.count', { n: badgeCount() }), W / 2, TOP + 40, W - 120, 40, C.copperDark, 900);
+  const today = dateKey();
+  lastDays(7).forEach((k, i) => {
+    const y = TOP + 100 + i * 180, h = 160;
+    const e = dayEntry(k);
+    const b = badgeOf(k);
+    card(ctx, { x: 50, y, w: W - 100, h }, false);
+    drawBadge(ctx, 140, y + h / 2 - 8, 46, b, time);
+    leftText(ctx, (k === today ? t('nb.daily.today') + ' · ' : '') + dayLabel(k), 230, y + 52, 560, 38, C.ink, 800);
+    let sub;
+    if (!e || !e.tries) sub = t(k === today ? 'nb.daily.open' : 'nb.daily.missed');
+    else if (b) sub = t('nb.daily.result', { b: t('daily.badge.' + b), t: fmtTime(e.time) });
+    else sub = t('nb.daily.failed');
+    leftText(ctx, sub, 230, y + 108, 560, 30, b ? C.turquoiseDark : C.inkSoft, 700);
+    if (e && e.tries) for (let s = 0; s < 3; s++) miniStar(ctx, 840 + s * 60, y + h / 2 - 4, 24, s < e.best);
+  });
+}
+
+function fmtTime(s) {
+  s = Math.round(s || 0);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
 export default {
   init(params = {}) {
     if (params.tab) tab = params.tab;
@@ -169,9 +196,13 @@ export default {
     detail = null;
     pressed = null;
     buttons = new Buttons();
+    // V4b : onglet « Défis » (historique des 7 derniers jours) à partir du rang 3
     const tabs = ['clients', 'parts', 'ranks'];
+    if (dailyOpen() || Object.keys(save.daily || {}).length) tabs.push('daily');
+    if (!tabs.includes(tab)) tab = 'clients';
+    const tw = (W - 100 + 20) / tabs.length;
     tabs.forEach((id, i) => buttons.add({
-      x: 50 + i * 333, y: 150, w: 313, h: 120, size: 40, style: 'secondary',
+      x: 50 + i * tw, y: 150, w: tw - 20, h: 120, size: tabs.length > 3 ? 34 : 40, style: 'secondary',
       label: () => t('nb.tab.' + id),
       selected: () => tab === id,
       onTap: () => { tab = id; },
@@ -192,6 +223,7 @@ export default {
     leftText(ctx, t('nb.title'), 60, 85, 680, 60, C.copperDark, 900);
     if (tab === 'clients') drawClients(ctx);
     else if (tab === 'parts') drawParts(ctx);
+    else if (tab === 'daily') drawDaily(ctx, time);
     else drawRanks(ctx);
     buttons.draw(ctx);
     if (detail) drawDetail(ctx);

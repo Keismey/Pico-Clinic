@@ -21,10 +21,10 @@ function ctx() {
     master.gain.value = 0.9;
     master.connect(ac.destination);
     musicBus = ac.createGain();
-    musicBus.gain.value = save.settings.music ? MUSIC_VOL : 0;
+    musicBus.gain.value = musicLevel();
     musicBus.connect(master);
     sfxBus = ac.createGain();
-    sfxBus.gain.value = 0.8;
+    sfxBus.gain.value = sfxLevel();
     sfxBus.connect(master);
     // bruit blanc partagé (aspirateur, soudure, cliquetis)
     noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
@@ -39,7 +39,11 @@ function ctx() {
   return ac;
 }
 
-const MUSIC_VOL = 0.55;
+// V4b : volumes réglés dans l'écran Options (musique 60 % et sons 80 % par défaut,
+// ce qui donne les mêmes niveaux qu'avant les réglages).
+const MUSIC_MAX = 0.92;
+function musicLevel() { return save.settings.music ? MUSIC_MAX * (save.settings.musicVol ?? 0.6) : 0; }
+function sfxLevel() { return save.settings.sound ? (save.settings.sfxVol ?? 0.8) : 0; }
 const FILE_MUSIC_GAIN = 0.6;
 
 export function unlock() {
@@ -374,8 +378,8 @@ function duck(sec) {
   if (!ac || !save.settings.music) return;
   const now = ac.currentTime;
   musicBus.gain.cancelScheduledValues(now);
-  musicBus.gain.setTargetAtTime(MUSIC_VOL * 0.2, now, 0.05);
-  musicBus.gain.setTargetAtTime(MUSIC_VOL, now + sec, 0.6);
+  musicBus.gain.setTargetAtTime(musicLevel() * 0.2, now, 0.05);
+  musicBus.gain.setTargetAtTime(musicLevel(), now + sec, 0.6);
 }
 
 export function music(name) {
@@ -532,6 +536,20 @@ const PIECES = {
 export function setSound(on) {
   save.settings.sound = on;
   if (!on) { loopStopAll(); pitchStop(); }
+  if (ac) sfxBus.gain.setTargetAtTime(sfxLevel(), ac.currentTime, 0.05);
+}
+
+// Volumes (0 à 1) de l'écran Options. 0 = coupé.
+export function setMusicVol(v) {
+  save.settings.musicVol = v;
+  const on = v > 0;
+  if (on !== save.settings.music) { setMusic(on); return; }
+  if (ac) musicBus.gain.setTargetAtTime(musicLevel(), ac.currentTime, 0.08);
+}
+
+export function setSfxVol(v) {
+  save.settings.sfxVol = v;
+  setSound(v > 0);
 }
 
 export function setMusic(on) {
@@ -539,7 +557,7 @@ export function setMusic(on) {
   const a = ctx();
   if (!a) return;
   musicBus.gain.cancelScheduledValues(a.currentTime);
-  musicBus.gain.setTargetAtTime(on ? MUSIC_VOL : 0, a.currentTime, 0.1);
+  musicBus.gain.setTargetAtTime(musicLevel(), a.currentTime, 0.1);
   if (on) { const w = wantedMusic; stopMusic(); wantedMusic = w; if (w) startMusic(w); } else { const w = wantedMusic; stopMusic(); wantedMusic = w; }
 }
 

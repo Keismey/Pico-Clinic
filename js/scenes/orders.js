@@ -1,6 +1,7 @@
 // Liste des commandes : une ligne par réparation, débloquées l'une après l'autre,
 // rangées par chapitre (un chapitre = un rang). Boutique et Carnet apparaissent avec l'histoire.
 import { W } from '../canvas.js';
+import { dailyOpen, triesLeft, DAILY_TRIES } from '../daily.js';
 import { t } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawToast, drawText, fitText, roundRect, font } from '../ui.js';
 import { game } from '../state.js';
@@ -153,6 +154,12 @@ export default {
     buttons.add({ x: 720, y: 1570, w: 310, h: 160, size: 52, style: 'secondary', label: () => t('orders.menu'), onTap: () => go('title') });
     // V3b : Atelier libre, ouvert au rang 5
     buttons.add({ x: 760, y: 30, w: 280, h: 120, size: 40, label: () => t('orders.free'), visible: save.rank >= 5, onTap: () => go('free') });
+    // V4b : défi quotidien, ouvert au rang 3 (il clignote tant qu'il n'est pas tenté aujourd'hui)
+    buttons.add({
+      x: save.rank >= 5 ? 460 : 760, y: 30, w: 280, h: 120, size: 40, style: 'on',
+      label: () => t('orders.daily'), visible: dailyOpen(), pulse: triesLeft() >= DAILY_TRIES,
+      onTap: () => go('daily'),
+    });
   },
 
   update(dt) {
@@ -163,7 +170,7 @@ export default {
 
   draw(ctx) {
     drawCreamBackground(ctx);
-    leftText(ctx, t('orders.title'), 60, 85, save.rank >= 5 ? 660 : 680, 76, C.copperDark, 900);
+    leftText(ctx, t('orders.title'), 60, 85, save.rank >= 5 ? 380 : 680, 76, C.copperDark, 900);
     leftText(ctx, t('orders.status', { r: save.rank, name: t('rank.' + save.rank), n: save.credits, s: totalStars() }), 60, 180, W - 120, 38, C.inkSoft, 800);
     this.drawTabs(ctx);
 

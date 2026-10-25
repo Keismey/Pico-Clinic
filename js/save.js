@@ -19,7 +19,13 @@ function defaults() {
     free: { plays: 0 },
     // tutoriel et histoire : leçons de Gribouille et scènes déjà vues
     story: [],
-    settings: { lang: null, sound: true, music: true, vibration: true, lefty: false },
+    // V4b : défi quotidien, par date (« 2026-10-25 ») : essais, étoiles, temps, payé
+    daily: {},
+    // V4b : écran Options. musicVol / sfxVol de 0 à 1 ; music / sound = volume au-dessus de 0
+    settings: {
+      lang: null, sound: true, music: true, musicVol: 0.6, sfxVol: 0.8,
+      vibration: true, tremor: false, lefty: false, contrast: false,
+    },
   };
 }
 
@@ -29,6 +35,13 @@ function migrate(d) {
   const def = defaults();
   const out = { ...def, ...d };
   out.settings = { ...def.settings, ...(d.settings || {}) };
+  // anciens boutons Musique / Sons (V4a) : « non » devient un volume à 0
+  const st = d.settings || {};
+  if (st.musicVol === undefined && st.music === false) out.settings.musicVol = 0;
+  if (st.sfxVol === undefined && st.sound === false) out.settings.sfxVol = 0;
+  out.settings.music = out.settings.musicVol > 0;
+  out.settings.sound = out.settings.sfxVol > 0;
+  out.daily = d.daily && typeof d.daily === 'object' ? d.daily : {};
   out.tools = { ...def.tools, ...(d.tools || {}) };
   out.orders = {};
   for (const [k, v] of Object.entries(d.orders || {})) if (/^o\d+$/.test(k)) out.orders[k] = v;

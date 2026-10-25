@@ -18,6 +18,10 @@ export const C = {
   green: '#3cbf6a',
 };
 
+// V4b — Options d'accessibilité lues au dessin (contrastes forts, gaucher).
+export const ACCESS = { contrast: false, lefty: false };
+const SOFT = { inkSoft: C.inkSoft, copper: C.copper, turquoiseDark: C.turquoiseDark };
+
 export function font(size, weight = 700) {
   return `${weight} ${size}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
 }
@@ -99,11 +103,25 @@ export function fitText(ctx, text, x, y, maxW, size, color = C.ink, weight = 800
   ctx.fillText(text, x, y);
 }
 
-const STYLES = {
+export const STYLES = {
   primary: { fill: C.orange, shadow: C.orangeDark, text: '#fff' },
   secondary: { fill: C.paper, shadow: '#d9c3a3', text: C.ink },
   on: { fill: C.turquoise, shadow: C.turquoiseDark, text: '#fff' },
 };
+
+// Contrastes forts : textes secondaires plus foncés, boutons cerclés, panneaux opaques.
+export function setContrast(on) {
+  ACCESS.contrast = !!on;
+  C.inkSoft = on ? '#3d2c1f' : SOFT.inkSoft;
+  C.copper = on ? '#9a5520' : SOFT.copper;
+  C.turquoiseDark = on ? '#13705f' : SOFT.turquoiseDark;
+  STYLES.secondary.fill = on ? '#ffffff' : C.paper;
+  STYLES.secondary.shadow = on ? '#3a2a1e' : '#d9c3a3';
+  STYLES.on.fill = on ? '#11806f' : C.turquoise;
+  STYLES.on.shadow = on ? '#073f37' : C.turquoiseDark;
+  STYLES.primary.fill = on ? '#d9580f' : C.orange;
+  STYLES.primary.shadow = on ? '#7a3208' : C.orangeDark;
+}
 
 let pulseClock = 0;
 export function tickUI(dt) {
@@ -126,6 +144,7 @@ export function drawButton(ctx, b, pressed) {
   ctx.fillStyle = st.fill;
   roundRect(ctx, 0, push, b.w, b.h - depth, 36);
   ctx.fill();
+  if (ACCESS.contrast) { ctx.strokeStyle = C.ink; ctx.lineWidth = 5; ctx.stroke(); }
   fitText(ctx, b.label(), b.w / 2, push + (b.h - depth) / 2 + 2, b.w - 48, b.size || 60, st.text);
   ctx.restore();
 }
@@ -195,11 +214,11 @@ export function drawMatBackground(ctx) {
 
 // Panneau d'aide en bas d'écran.
 export function drawPanel(ctx, x, y, w, h) {
-  ctx.fillStyle = 'rgba(255, 250, 242, 0.92)';
+  ctx.fillStyle = ACCESS.contrast ? '#ffffff' : 'rgba(255, 250, 242, 0.92)';
   roundRect(ctx, x, y, w, h, 40);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(196, 122, 60, 0.35)';
-  ctx.lineWidth = 4;
+  ctx.strokeStyle = ACCESS.contrast ? C.ink : 'rgba(196, 122, 60, 0.35)';
+  ctx.lineWidth = ACCESS.contrast ? 5 : 4;
   ctx.stroke();
 }
 
