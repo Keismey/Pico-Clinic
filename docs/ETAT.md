@@ -24,7 +24,7 @@ Mis à jour : 2026-10-25 (C11 V4a habillage). Jeu : https://keismey.github.io/Pi
 - Vibrations iPhone : à vérifier au doigt (iOS 18+ seulement, un simple « tic »). En diagnostic, la fiche peut attraper le doigt avant la loupe. Indices longs un peu serrés.
 
 ## Prochaine étape
-- Si MP3 : les déposer dans `audio/` (conversation « Correctifs V4a »). Sinon C12 V4b : options d'accessibilité et défi quotidien.
+- Musiques générées avec Gemini (atelier, opération ; plus d'1 min) : je les découpe en boucles et les dépose dans `audio/` (conversation « Correctifs V4a »). Le jingle reste en code. Puis C12 V4b : options d'accessibilité et défi quotidien.
 
 ## Plus tard
 - Images Gemini (clients, Gribouille, pièces rares, gestes secondaires, image de groupe finale, Mamie). Générique : créateur « Keismey » à confirmer, outil des MP3 à créditer s'ils arrivent. Réglages de volume (son 80 %, musique 60 %) en V4b. Défi quotidien, succès. Finitions graphiques des icônes de la carte. Indice 20 s ; bouton pause ; gaucher ; sauver une réparation en cours ; revoir le tutoriel ; pannes cachées visibles dans la loupe ; retour qui ferme d'abord la vue rapprochée.
