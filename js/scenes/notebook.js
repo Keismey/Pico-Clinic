@@ -147,7 +147,7 @@ function drawDetail(ctx) {
     drawText(ctx, met ? t('client.' + id + '.bio') : t('nb.not_met'), W / 2, y + 700, w - 120, 38, { color: C.ink, weight: 600, lineH: 50 });
     const last = met ? lastOrderOf(id) : null;
     if (last && last.thanks && last.thanks.length) {
-      const q = t(last.thanks[last.thanks.length - 1].replace(/^gribouille:/, ''));
+      const q = t(last.thanks[last.thanks.length - 1].replace(/^[a-z]+:/, ''));
       drawText(ctx, t('nb.last_words', { q }), W / 2, y + 890, w - 120, 34, { color: info.color, weight: 700, lineH: 46 });
     }
   } else {

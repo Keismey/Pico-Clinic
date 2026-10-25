@@ -3,21 +3,26 @@
 import { W, H } from '../canvas.js';
 import { t } from '../i18n.js';
 import { Buttons, C, fitText, font, roundRect, wrapLines, easeInOut } from '../ui.js';
-import { drawGribouille } from '../portraits.js';
+import { drawGribouille, drawPerson } from '../portraits.js';
 import { game } from '../state.js';
 import { seen, markSeen } from '../tutorial.js';
 import { vibrate } from '../feedback.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
-import { drawWorkshop, drawCounter } from './counter.js';
+import { drawWorkshop, drawCounter, drawLetter } from './counter.js';
 
 const TAU = Math.PI * 2;
 const BOX = { x: 50, y: 1190, w: W - 100, h: 340 };
 const TEXT = { x: 100, y: 1262, w: W - 200, size: 48, lineH: 62 };
 const CPS = 42;
 const CARD_TIME = 2.8;
+const CREDITS_SPEED = 110; // pixels par seconde
+const CREDITS_GAP = 190;
+const ENDING_CLIENTS = ['lea', 'volute', 'turbo', 'ampere', 'brindille', 'quartz'];
+// couleur de l'étiquette de celui qui parle (Gribouille par défaut ; Maître Ohm pour sa lettre)
+const SPEAKER_COLORS = { gribouille: '#6b7684', ohm: '#a8822a' };
 
-let sc, id, then, phase, time, idx, shown, wrapped, buttons, sparkled;
+let sc, id, then, phase, time, idx, shown, wrapped, buttons, sparkled, speaker, creditsTime;
 
 // Scène à jouer après une commande (null si aucune ou déjà vue).
 export function storyAfter(order) {
@@ -49,6 +54,8 @@ function advance() {
   const len = text().length;
   if (shown < len) { shown = len; return; }
   if (idx < sc.lines.length - 1) { idx++; shown = 0; wrapped = null; vibrate(8); return; }
+  // la fin du jeu : le générique défile avant de rendre la main
+  if (sc.credits && phase !== 'credits') { phase = 'credits'; creditsTime = 0; vibrate(20); return; }
   finish();
 }
 
@@ -91,13 +98,13 @@ function drawBox(ctx) {
   roundRect(ctx, BOX.x, BOX.y + 10, BOX.w, BOX.h, 40); ctx.fill();
   ctx.fillStyle = C.paper;
   roundRect(ctx, BOX.x, BOX.y, BOX.w, BOX.h, 40); ctx.fill();
-  ctx.strokeStyle = '#6b7684';
+  ctx.strokeStyle = SPEAKER_COLORS[speaker] || '#6b7684';
   ctx.lineWidth = 6;
   ctx.stroke();
-  const name = t('name.gribouille');
+  const name = t('name.' + speaker);
   ctx.font = font(38, 900);
   const nw = ctx.measureText(name).width + 70;
-  ctx.fillStyle = '#6b7684';
+  ctx.fillStyle = SPEAKER_COLORS[speaker] || '#6b7684';
   roundRect(ctx, BOX.x + 40, BOX.y - 40, nw, 76, 38); ctx.fill();
   fitText(ctx, name, BOX.x + 40 + nw / 2, BOX.y - 1, nw - 40, 38, '#fff', 900);
   ctx.font = font(TEXT.size, 700);
@@ -120,6 +127,46 @@ function drawBox(ctx) {
     ctx.fillStyle = i === idx ? C.copper : 'rgba(58, 42, 30, 0.2)';
     ctx.beginPath(); ctx.arc(W / 2 + (i - (sc.lines.length - 1) / 2) * 34, 1860, 10, 0, TAU); ctx.fill();
   });
+}
+
+// Générique court : les lignes défilent vers le haut sur fond sombre.
+function drawCredits(ctx) {
+  ctx.fillStyle = '#3b2412';
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const y0 = H + 120 - creditsTime * CREDITS_SPEED;
+  sc.credits.forEach((key, i) => {
+    const y = y0 + i * CREDITS_GAP + (i > 0 ? 90 : 0);
+    if (y < -160 || y > H + 160) return;
+    const title = i === 0;
+    ctx.font = font(title ? 120 : 52, title ? 900 : 700);
+    const lines = wrapLines(ctx, t(key), W - 160);
+    ctx.fillStyle = title ? '#3fd0bb' : '#ffe9c8';
+    if (title) { ctx.lineJoin = 'round'; ctx.lineWidth = 24; ctx.strokeStyle = '#8f5426'; }
+    lines.forEach((l, j) => {
+      const ly = y + (j - (lines.length - 1) / 2) * 64;
+      if (title) ctx.strokeText(l, W / 2, ly);
+      ctx.fillText(l, W / 2, ly);
+    });
+  });
+  ctx.restore();
+}
+
+function creditsDone() {
+  return creditsTime * CREDITS_SPEED > H + 120 + (sc.credits.length - 1) * CREDITS_GAP + 90 + 300;
+}
+
+// L'atelier à la fin du jeu : enseigne repeinte « Pico-Clinic », tous les clients en une image de groupe.
+function drawEnding(ctx) {
+  drawWorkshop(ctx, t('credits.title'));
+  ENDING_CLIENTS.forEach((c, i) => {
+    const x = 110 + i * 172;
+    const y = 720 + (i % 2) * 40;
+    drawPerson(ctx, c, x, y, 0.5, { time: time + i * 0.7, mood: 'happy', seed: c });
+  });
+  drawCounter(ctx);
 }
 
 // Carte de chapitre : grand titre sur fond cuivre, qui s'efface.
@@ -164,6 +211,8 @@ export default {
     sc = game.data.story.scenes[id];
     then = params.then || { scene: 'orders' };
     if (!sc) { go(then.scene, then.params || {}); return; }
+    speaker = sc.speaker || 'gribouille';
+    creditsTime = 0;
     phase = sc.chapter ? 'card' : 'talk';
     time = 0;
     idx = 0;
@@ -190,6 +239,12 @@ export default {
       for (const b of buttons.list) b.visible = false;
       return;
     }
+    if (phase === 'credits') {
+      creditsTime += dt;
+      for (const b of buttons.list) b.visible = false;
+      if (creditsDone()) finish();
+      return;
+    }
     // une poignée d'étincelles quand le carnet apparaît
     if (sc.backdrop === 'notebook' && !sparkled) {
       sparkled = true;
@@ -203,12 +258,24 @@ export default {
   },
 
   draw(ctx) {
+    if (phase === 'credits') { drawCredits(ctx); return; }
+    const talk = phase === 'talk' && shown < text().length && speaker === 'gribouille';
+    if (sc.backdrop === 'ending') {
+      drawEnding(ctx);
+      drawGribouille(ctx, W / 2, 930 - (talk ? Math.abs(Math.sin(time * 8)) * 10 : 0), 0.62, { time, talk });
+      if (phase === 'talk') drawBox(ctx);
+      buttons.draw(ctx);
+      return;
+    }
     drawWorkshop(ctx);
     drawCounter(ctx);
-    const talk = phase === 'talk' && shown < text().length;
     if (sc.backdrop === 'notebook') {
       drawGribouille(ctx, 230, 870 - (talk ? Math.abs(Math.sin(time * 8)) * 10 : 0), 0.95, { time, talk });
       drawNotebook(ctx, 700, 870, 0.62 + 0.04 * Math.sin(time * 1.5));
+    } else if (sc.backdrop === 'letter') {
+      // la lettre de Maître Ohm, ouverte sur le comptoir ; c'est elle qui « parle »
+      drawGribouille(ctx, 230, 870, 0.95, { time, talk: false });
+      drawLetter(ctx, 700, 880 + Math.sin(time * 1.5) * 6, 1.25);
     } else {
       drawGribouille(ctx, W / 2, 860 - (talk ? Math.abs(Math.sin(time * 8)) * 14 : 0), 1.25, { time, talk });
     }
@@ -224,6 +291,7 @@ export default {
   },
 
   pointer(type, x, y) {
+    if (phase === 'credits') { if (type === 'up' && creditsTime > 2) finish(); return; }
     if (phase === 'talk' && buttons.pointer(type, x, y)) return;
     if (type === 'up') advance();
   },

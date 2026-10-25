@@ -23,23 +23,29 @@ const CPS = 42; // lettres par seconde
 
 let order, mode, lines, idx, shown, time, lineTime, buttons, wrapped, rep;
 
+// Orateurs qui ne sont pas des clients (V3c) : Mamie, le mot caché dans le cœur de Pantoufle, la carte postale d'Ohm.
+const EXTRA_SPEAKERS = { mamie: '#b5547a', note: '#a8822a', postcard: '#a8822a' };
+
 function speakerName(who) {
   if (who === 'gribouille') return t('name.gribouille');
   if (who === 'passage') return t('name.passage');
+  if (EXTRA_SPEAKERS[who]) return t('name.' + who);
   return t('client.' + who);
 }
 
 function speakerColor(who) {
+  if (EXTRA_SPEAKERS[who]) return EXTRA_SPEAKERS[who];
   const c = game.data.clients.list[who];
   return c ? c.color : C.copper;
 }
 
-// Bulles de la commande : « clé » (le client parle) ou « gribouille:clé ».
+// Bulles de la commande : « clé » (le client parle) ou « orateur:clé » (gribouille, mamie, note, postcard).
 function buildLines(o, m) {
   const keys = (m === 'intro' ? o.intro : o.thanks) || [];
-  const out = keys.map((k) => (k.startsWith('gribouille:')
-    ? { who: 'gribouille', key: k.slice(11) }
-    : { who: o.client, key: k }));
+  const out = keys.map((k) => {
+    const i = k.indexOf(':');
+    return i > 0 ? { who: k.slice(0, i), key: k.slice(i + 1) } : { who: o.client, key: k };
+  });
   if (m === 'intro' && o.exam) out.push({ who: 'gribouille', key: 'counter.exam_line', vars: { r: o.exam } });
   return out;
 }
@@ -77,7 +83,7 @@ function advance() {
 }
 
 // Fond : le mur de l'atelier, l'enseigne, le panneau à outils et l'étagère.
-export function drawWorkshop(ctx) {
+export function drawWorkshop(ctx, sign) {
   drawCreamBackground(ctx);
   const g = ctx.createLinearGradient(0, 200, 0, COUNTER_Y);
   g.addColorStop(0, 'rgba(232, 205, 166, 0.0)');
@@ -93,7 +99,7 @@ export function drawWorkshop(ctx) {
   roundRect(ctx, 70, 258, 440, 104, 22); ctx.fill();
   ctx.fillStyle = '#c47a3c';
   roundRect(ctx, 80, 250, 420, 100, 20); ctx.fill();
-  fitText(ctx, t('counter.sign'), 290, 302, 380, 52, '#fff7ec', 900);
+  fitText(ctx, sign || t('counter.sign'), 290, 302, 380, 52, '#fff7ec', 900);
 
   // panneau à outils
   ctx.fillStyle = '#d2ac80';
@@ -172,10 +178,11 @@ function drawPatient(ctx) {
 }
 
 // Maître Ohm n'est plus là : sa lettre est posée sur le comptoir.
-function drawLetter(ctx, x, y) {
+export function drawLetter(ctx, x, y, k = 1) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(-0.08);
+  ctx.scale(k, k);
   ctx.fillStyle = 'rgba(90, 50, 20, 0.2)';
   roundRect(ctx, -150, -90, 310, 200, 18); ctx.fill();
   ctx.fillStyle = '#f7ecd6';
