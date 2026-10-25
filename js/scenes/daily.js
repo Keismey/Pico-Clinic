@@ -9,7 +9,7 @@ import { drawGribouille } from '../portraits.js';
 import { dateKey, makeDaily, startDaily, triesLeft, dayEntry, badgeOf, drawBadge, DAILY_TRIES } from '../daily.js';
 import { leftText, miniStar } from './orders.js';
 
-let buttons, time, key, order, look;
+let buttons, time, key, order, look, test;
 
 // « dimanche 25 octobre » / « Sunday, October 25 »
 export function dayLabel(k, opts = { weekday: 'long', day: 'numeric', month: 'long' }) {
@@ -23,7 +23,8 @@ function fmt(s) {
 }
 
 export default {
-  init() {
+  init(params = {}) {
+    test = !!params.test;
     time = 0;
     key = dateKey();
     order = makeDaily(key); // aperçu : l'essai ne compte qu'en touchant « Commencer »
@@ -32,12 +33,16 @@ export default {
     buttons.add({
       x: 190, y: 1500, w: 700, h: 170, size: 64,
       label: () => t(triesLeft(key) >= DAILY_TRIES ? 'daily.start' : 'daily.retry'),
-      visible: triesLeft(key) > 0,
-      pulse: triesLeft(key) >= DAILY_TRIES,
-      onTap: () => { if (startDaily()) go('operation', { order: 'free' }); },
+      visible: test || triesLeft(key) > 0,
+      pulse: test || triesLeft(key) >= DAILY_TRIES,
+      onTap: () => {
+        // atelier d'essai : l'essai ne compte pas, rien n'est payé ni enregistré
+        if (test) { makeDaily(key).test = true; go('operation', { order: 'free' }); return; }
+        if (startDaily()) go('operation', { order: 'free' });
+      },
     });
-    buttons.add({ x: 110, y: 1700, w: 410, h: 150, size: 50, style: 'secondary', label: () => t('daily.history'), onTap: () => go('notebook', { tab: 'daily' }) });
-    buttons.add({ x: 560, y: 1700, w: 410, h: 150, size: 50, style: 'secondary', label: () => t('shop.back'), onTap: () => go('orders') });
+    buttons.add({ x: 110, y: 1700, w: 410, h: 150, size: 50, style: 'secondary', label: () => t('daily.history'), visible: !test, onTap: () => go('notebook', { tab: 'daily' }) });
+    buttons.add({ x: 560, y: 1700, w: 410, h: 150, size: 50, style: 'secondary', label: () => t('shop.back'), onTap: () => this.back() });
   },
 
   update(dt) {
@@ -74,8 +79,10 @@ export default {
     lines.forEach(([l, col], i) => fitText(ctx, l, W / 2, 1060 + i * 52, W - 180, 38, col, 800));
 
     // résultat du jour
-    const e = dayEntry(key);
-    if (e && e.tries > 0) {
+    const e = test ? null : dayEntry(key);
+    if (test) {
+      fitText(ctx, t('bench.not_saved'), W / 2, 1365, W - 140, 32, C.inkSoft, 700);
+    } else if (e && e.tries > 0) {
       const b = badgeOf(key);
       drawBadge(ctx, 200, 1375, 52, b, time);
       for (let k = 0; k < 3; k++) miniStar(ctx, 360 + k * 70, 1360, 28, k < e.best);
@@ -89,7 +96,7 @@ export default {
   },
 
   back() {
-    go('orders');
+    go(test ? 'bench' : 'orders');
     return true;
   },
 

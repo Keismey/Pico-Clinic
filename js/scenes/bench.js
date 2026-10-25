@@ -36,6 +36,8 @@ export default {
       });
       buttons.add({ x: 70, y: 1340, w: 460, h: 190, size: 44, label: () => t('bench.orders'), onTap: () => { page = 'orders'; this.build(); } });
       buttons.add({ x: 550, y: 1340, w: 460, h: 190, size: 44, label: () => t('bench.free'), onTap: () => go('free', { test: true }) });
+      // V4b : défi du jour d'essai (les essais ne comptent pas, rien n'est payé)
+      buttons.add({ x: 70, y: 1555, w: 940, h: 120, size: 44, label: () => t('daily.title'), onTap: () => go('daily', { test: true }) });
       buttons.add({ x: 240, y: 1700, w: 600, h: 150, size: 54, style: 'secondary', label: () => t('bench.menu'), onTap: () => go('title') });
     } else {
       // les 60 commandes : 6 colonnes × 10 lignes

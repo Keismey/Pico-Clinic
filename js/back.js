@@ -14,7 +14,8 @@ const REPAIR = ['operation', 'reactivation'];
 // Quitter une réparation : atelier d'essai (gestes ou commandes), Atelier libre ou liste des commandes.
 function leave() {
   const o = game.repair && game.repair.patient.order;
-  if (o && o.test) go(o.free ? 'free' : 'bench', o.free ? { test: true } : { page: o.clone ? 'orders' : 'gestures' });
+  if (o && o.daily) go('daily', { test: !!o.test });
+  else if (o && o.test) go(o.free ? 'free' : 'bench', o.free ? { test: true } : { page: o.clone ? 'orders' : 'gestures' });
   else go(o && o.daily ? 'daily' : o && o.free ? 'free' : 'orders');
 }
 

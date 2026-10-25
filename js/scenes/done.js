@@ -82,6 +82,11 @@ export default {
     const story = pay.firstPay && !free ? storyAfter(o) : null;
     const benchBack = () => go('bench', { page: o.clone ? 'orders' : 'gestures' });
     buttons = new Buttons();
+    if (daily && test) {
+      buttons.add({ x: 190, y: 1500, w: 700, h: 170, size: 60, label: () => t('daily.title'), onTap: () => go('daily', { test: true }) });
+      buttons.add({ x: 240, y: 1700, w: 600, h: 150, style: 'secondary', label: () => t('bench.back'), onTap: () => go('bench') });
+      return;
+    }
     if (daily) {
       // défi quotidien : un 2e essai s'il en reste, l'historique du Carnet, les commandes
       if (triesLeft(o.daily) > 0) buttons.add({ x: 190, y: 1500, w: 700, h: 170, size: 60, label: () => t('daily.retry'), onTap: () => { if (startDaily()) go('operation', { order: 'free' }); else go('daily'); } });
@@ -167,7 +172,7 @@ export default {
     } else {
       lines.push([t(rep.patient.order.test ? 'bench.not_saved' : rep.patient.order.daily ? (res.stars[0] ? 'daily.already_paid' : 'daily.not_paid') : 'done.already_paid'), C.inkSoft]);
     }
-    if (rep.patient.order.daily) {
+    if (rep.patient.order.daily && !rep.patient.order.test) {
       lines.push([t('daily.done_note'), C.inkSoft]);
     } else if (rep.patient.order.free && !rep.patient.order.test) {
       lines.push([t('free.note'), C.inkSoft]);
