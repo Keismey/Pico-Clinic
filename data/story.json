@@ -11,7 +11,7 @@
     "end": {
       "backdrop": "ending",
       "lines": ["story.end.1", "story.end.2"],
-      "credits": ["credits.title", "credits.1", "credits.2", "credits.3", "credits.4", "credits.5"]
+      "credits": ["credits.title", "credits.1", "credits.2", "credits.3", "credits.4"]
     }
   },
   "after_order": { "3": "notebook", "59": "letter", "60": "end" }

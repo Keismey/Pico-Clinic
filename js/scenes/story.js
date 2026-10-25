@@ -142,6 +142,17 @@ function drawCredits(ctx) {
     const y = y0 + i * CREDITS_GAP + (i > 0 ? 90 : 0);
     if (y < -160 || y > H + 160) return;
     const title = i === 0;
+    // « Rôle | Nom » (comme les autres jeux Keismey Studio) : rôle en petit, nom en grand dessous
+    const pair = t(key).split(' | ');
+    if (!title && pair.length === 2) {
+      ctx.font = font(36, 600);
+      ctx.fillStyle = '#d9b48a';
+      ctx.fillText(pair[0], W / 2, y - 34);
+      ctx.font = font(60, 800);
+      ctx.fillStyle = '#ffe9c8';
+      ctx.fillText(pair[1], W / 2, y + 22);
+      return;
+    }
     ctx.font = font(title ? 120 : 52, title ? 900 : 700);
     const lines = wrapLines(ctx, t(key), W - 160);
     ctx.fillStyle = title ? '#3fd0bb' : '#ffe9c8';
