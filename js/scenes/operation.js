@@ -401,12 +401,14 @@ export default {
     if (solder.active && solder.heat > 0.05) loop('solder', Math.min(1, solder.heat)); else loopStop('solder');
 
     // fumée de la puce grillée
+    // (cachée pendant une vue rapprochée : la fumée passerait par-dessus le panneau)
+    if (sec.active) fx.clearTag('chipSmoke');
     smokeT -= dt;
-    if (smokeT <= 0 && rep.coverAnim >= 1) {
+    if (smokeT <= 0 && rep.coverAnim >= 1 && !sec.active) {
       smokeT = 0.45;
       const o = rep.chip.old;
       if ((o.state === 'slot' && !isHidden(rep, 'chip_burnt')) || o.state === 'drag') {
-        fx.spawn(o.x + (Math.random() - 0.5) * 60, o.y - 20, { count: 1, color: '#7d8188', speed: 50, life: 1.4, size: 14, gravity: -90, kind: 'smoke', dir: -Math.PI / 2, spread: 0.8 });
+        fx.spawn(o.x + (Math.random() - 0.5) * 60, o.y - 20, { count: 1, color: '#7d8188', speed: 50, life: 1.4, size: 14, gravity: -90, kind: 'smoke', dir: -Math.PI / 2, spread: 0.8, tag: 'chipSmoke' });
       }
     }
 
