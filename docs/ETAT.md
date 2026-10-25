@@ -1,29 +1,27 @@
 # Pico-Clinic — État du projet
-Mis à jour : 2026-10-25 (C12 V4b options et défi quotidien). Jeu : https://keismey.github.io/Pico-Clinic/ · Essai : https://keismey.github.io/Pico-Clinic/?essai
+Mis à jour : 2026-10-25 (C13 V5 publication, version 1.0.0). Jeu : https://keismey.github.io/Pico-Clinic/ · Essai : https://keismey.github.io/Pico-Clinic/?essai
 
 ## Fait
-- C12 V4b : écran « Options » (bouton de l'écran titre, remplace Musique / Sons et « Nouvelle partie ») : langue, curseurs Musique (60 %) et Sons (80 %) par pas de 5 %, vibrations, tremblement réduit (tolérances élargies pour tous les gestes, `easeForTremor` dans `js/state.js`), gaucher (fer tenu de l'autre côté, bac à vis à droite, boîte de pièces à gauche), contrastes forts (textes foncés, boutons cerclés, piste à souder jaune vif), effacer la sauvegarde (2 confirmations, options gardées). Défi quotidien (`js/daily.js`, `js/scenes/daily.js`) dès le rang 3 : bouton « Défi du jour » sur l'écran des commandes, patient tiré de la date (même pour tous), rang 2 à 4, 2 essais (quitter compte), gains ×2 payés une fois par jour, badge bronze / argent / or selon les étoiles, onglet « Défis » du Carnet (7 derniers jours). Aussi dans l'atelier d'essai (rien d'enregistré).
-- C11 V4a : `js/audio.js`. Musiques Gemini découpées en boucles (`audio/music_workshop.mp3` 5,8→107,5 s, `music_op.mp3` 11,3→167,1 s, points dans `audio/sons.json`, fondu intégré), jingle en code, ~35 effets (vis, aspirateur et soudure en boucle, puce, court-circuit, manette, rotors, pièces, étoiles, achat…), tous fabriqués en code. Un MP3 déposé dans `audio/` et listé dans `audio/sons.json` remplace le son du même nom (noms dans `audio/LISEZMOI.md`). Boutons Musique / Sons sur l'écran titre. Vibrations iPhone (iOS 18+, astuce de l'interrupteur caché). Particules déjà en place (max 150).
-- C11 relecture des textes : examens des rangs 3 et 5 corrigés (joyaux de Mme Volute, prototype de la clinique Quartz), hérisson 51 (vert-de-gris), EN : Pantoufle (plus « Slipper »), Mrs./Dr., titres des chapitres, « Last said ». FR : espaces insécables avant ! ? : % (plus de « ! » seul en début de ligne), « … ». Générique aligné sur les autres jeux (Lanterval) : « Un jeu | Keismey Studio », « Conception et direction | Keismey », « Développé avec l'aide d'outils IA », phrase de fin.
-- C1-C8 : gestes de base et secondaires (vue rapprochée), loupe, aspirateur, étoiles, paie, sauvegarde v3, boutique, comptoir, rangs, Carnet, pièces rares, tutoriel de Gribouille, chapitres 1-2, bouton retour.
-- C10 V3c : textes du GDD pour les arcs des commandes 23 à 60 (mêmes clés `arc.<client>.<n>.intro/.thanks`), ouvertures des chapitres 3 à 5, lettre de Maître Ohm (après la 59), fin et générique (après la 60), dans `data/story.json`. Nouveaux orateurs dans les bulles : `mamie:` (54), `note:` (mot caché de la 28), `postcard:` (carte de la 60). Noms corrigés : o32 « Abeille rarissime », o37 « Aurore, la luciole », o21 « Drone sans plan ». Clés FR = EN (625).
-- C9 V3b : les 60 commandes dans `data/orders.json` (rangs 1 à 5, examens 10/22/34/46). Carte en 4 dispositions miroir (`setLayout`, `lp()` dans `js/drone.js`) : puce, piste, batterie et prise changent de place selon le numéro de commande (1 à 6 : disposition de base). Pistes en 2 ou 3 morceaux (`cuts`), soudés l'un après l'autre. Commandes à 2-3 patients (`patients`, 22/33/42/48/52/57) : notés ensemble (moyennes, temps additionné). 6 prototypes dessinés (famille `proto`) ; pièce rare exigée (rare_parts.json `use`) : sinon la commande attend et Gribouille dit laquelle refaire en 3 étoiles ; les suivantes restent jouables. Commande 60 : lettre de Maître Ohm sur le comptoir, sans limite de temps.
-- Décorations (`data/decorations.json`, `js/deco.js`) : onglet de la boutique, 8 objets visibles au comptoir. Atelier libre au rang 5 (`js/free.js`, `js/scenes/free.js`) : patient et pannes au hasard, gains 50 %, rien d'enregistré. Équilibrage : paie ≈ 44 → 436 du rang 1 au 5, temps cible 2 à 4 min, pièces 5 à 30 crédits.
-- Atelier d'essai : capot déjà ouvert (pas de vis), « Les 60 commandes » et « Atelier libre » (tous les rangs). Correctif : la pochette du cœur reste fermée. Ajout hors GDD, outil `driver` : tournevis à cliquet (150 cr., rang 2, 1 tour au lieu de 1,5), puis dévisseuse (800 cr., rang 4 : on garde le doigt sur la vis, 1,25 s, rouillée 2,5 s). Testé en navigateur automatique (C9) : 60 commandes sans erreur, soudure en 3 morceaux, 3 patients enchaînés, Atelier libre payé, dévisseuse, clés FR = EN (592).
+- C13 V5 : hors ligne (`sw.js` : en ligne la dernière version, sinon la copie ; réseau lent > 4 s → copie ; liste refaite par `node tools/maj-cache.mjs`). Installation : `manifest.webmanifest` (FR) et `manifest-en.webmanifest` (choisi selon la langue), icônes `icons/` et couverture `couverture.webp` dessinées en code (provisoires). Lien `?lang=fr|en`. `tools/verif-langues.mjs` : 678 clés FR = EN, aucune clé manquante, variables identiques. Relecture : EN harmonisé (trace, customer, fried chip, magnifier, power vacuum, racing drone, blueprint), FR « morceau {i} sur {n} », « Version {v} » à l'écran titre. Hub : carte Pico-Clinic (`games.js`, progression rang / étoiles / crédits), raccourci du manifest, nouvelle dans `news.json` (sans notification).
+- C12 V4b : écran Options (langue, volumes, vibrations, tremblement réduit, gaucher, contrastes, effacer) ; défi quotidien dès le rang 3 (`js/daily.js`).
+- C11 V4a : musiques Gemini en boucle, ~35 effets en code (`js/audio.js`, `audio/LISEZMOI.md`), vibrations, particules (max 150), relecture des textes, générique.
+- C9-C10 V3 : 60 commandes, 5 rangs, examens, prototypes et pièces rares exigées, décorations, Atelier libre, textes des chapitres 3 à 5 et de la fin.
+- C1-C8 : gestes de base et secondaires, loupe, aspirateur, étoiles, paie, sauvegarde `pico_save_v1`, boutique, comptoir, Carnet, tutoriel, chapitres 1-2, bouton retour.
 
 ## Écarts au GDD
-- Absents : élytres à clips (7), coutures (17), mécanisme à clé (29), 3 engrenages de la tortue (55) ; un seul geste de chaque type par patient. Pas de panne secondaire cachée.
-- Clients de passage (23, 25, 27, 29, 31, 36, 38, 41, 44, 47, 51) : pas de texte dans le GDD, les dialogues d'origine restent. Les textes des chapitres 3 à 5 et de la fin (`story.ch3.*`, `.ch4.*`, `.ch5.*`, `story.end.*`) sont nouveaux, écrits d'après le résumé des chapitres.
-- Défi quotidien : « 1 tentative gratuite et 1 de plus » lu comme 2 essais par jour, le meilleur compte ; la paie n'est versée qu'une fois (si le patient est réparé).
+- Absents : élytres à clips (7), coutures (17), mécanisme à clé (29), 3 engrenages de la tortue (55) ; un geste de chaque type par patient ; pas de panne secondaire cachée.
+- Clients de passage sans texte dans le GDD (dialogues d'origine). Défi quotidien : 2 essais, une seule paie.
+- Bouton retour : module propre au jeu (`js/back.js`), pas le `ks-back.js` commun du hub.
 
-## Valeurs à valider au doigt
-- Vitesse de la dévisseuse (1,2 tour/s), batterie (340), cœur (1 s, ±0,16 s), ressort (0,35 à 1,6 tour/s), broches (6°), temps cibles de Turbo (26, 34, 39, 49, 56), `data/gestures.json`. Tremblement réduit (+12 px soudure, aimantations ×1,5) et curseurs de volume : à essayer au doigt.
+## À vérifier au doigt (recette)
+- Installation depuis le hub, jeu complet en mode avion, sauvegarde après fermeture, les deux langues.
+- Vitesses (dévisseuse, batterie, cœur, ressort, broches), temps cibles de Turbo, tremblement réduit, volumes, vibrations iPhone (iOS 18+).
 
 ## Bugs connus
-- Vibrations iPhone : à vérifier au doigt (iOS 18+ seulement, un simple « tic »). En diagnostic, la fiche peut attraper le doigt avant la loupe. Indices longs un peu serrés.
+- En diagnostic, la fiche peut attraper le doigt avant la loupe. Indices longs un peu serrés.
 
 ## Prochaine étape
-- C13 V5 : PWA hors ligne, clés FR/EN, relecture, carte sur le hub, recette finale.
+- Plan terminé (C13 était la dernière étape). Ensuite : correctifs de la recette, puis images Gemini.
 
 ## Plus tard
-- Images Gemini (clients, Gribouille, pièces rares, gestes secondaires, image de groupe finale, Mamie). Succès. Finitions graphiques des icônes de la carte. Indice 20 s ; bouton pause ; mode gaucher dans les vues rapprochées des gestes secondaires ; écran Options aussi depuis l'atelier ; sauver une réparation en cours ; revoir le tutoriel ; pannes cachées visibles dans la loupe ; retour qui ferme d'abord la vue rapprochée.
+- Images Gemini (clients, Gribouille, pièces rares, gestes secondaires, image finale, Mamie, icône et couverture du hub). Remplacer `js/back.js` par `ks-back.js` du hub. Succès. Indice 20 s ; pause ; gaucher dans les vues rapprochées ; Options depuis l'atelier ; sauver une réparation en cours ; revoir le tutoriel ; pannes cachées dans la loupe ; retour qui ferme d'abord la vue rapprochée.

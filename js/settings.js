@@ -2,7 +2,7 @@
 import { setLang } from './i18n.js';
 import { save, persist } from './save.js';
 
-export const VERSION = '0.9.0 · V4b';
+export const VERSION = '1.0.0';
 
 export function changeLang(l) {
   setLang(l);

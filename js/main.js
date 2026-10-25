@@ -1,7 +1,7 @@
 // Démarrage, boucle de jeu, doigt (un seul à la fois), pause automatique.
 import { canvas, ctx, resize, beginFrame, toLogical } from './canvas.js';
-import { loadLanguages, detectLang, setLang } from './i18n.js';
-import { save } from './save.js';
+import { loadLanguages, detectLang, setLang, LANGS } from './i18n.js';
+import { save, persist } from './save.js';
 import { loadData } from './state.js';
 import { register, go, scene } from './scenes.js';
 import { tickUI } from './ui.js';
@@ -25,7 +25,7 @@ import { setContrast } from './ui.js';
 import { applyHand } from './state.js';
 import { initBack, asking, tickAsk, askPointer, drawAsk } from './back.js';
 
-// La langue se choisit uniquement sur l'écran titre.
+// La langue se choisit sur l'écran titre, dans les Options ou par le lien « ?lang= ».
 
 let last = 0;
 let paused = false;
@@ -68,6 +68,9 @@ async function boot() {
   resize();
   window.addEventListener('resize', resize);
   await Promise.all([loadLanguages(), loadData()]);
+  // lien du hub « ?lang=fr » ou « ?lang=en » : choisit la langue et la retient
+  const asked = new URLSearchParams(location.search).get('lang');
+  if (LANGS.includes(asked) && save.settings.lang !== asked) { save.settings.lang = asked; persist(); }
   setLang(save.settings.lang || detectLang());
   // options d'accessibilité mémorisées
   setContrast(save.settings.contrast);
@@ -115,6 +118,10 @@ async function boot() {
     owner = null;
   });
   requestAnimationFrame(loop);
+  // V5 : jeu disponible hors ligne (sw.js met tous les fichiers en cache)
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch((e) => console.warn('hors ligne indisponible', e));
+  }
 }
 
 boot().catch((err) => {
