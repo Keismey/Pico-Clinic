@@ -52,7 +52,8 @@ function onBack() {
   const sc = scene();
   if (sc.back && sc.back()) return;
   if (name === 'title') { openAsk('hub'); return; }
-  if (name === 'orders') { openAsk('menu'); return; }
+  if (name === 'orders' && game.replay) { go('lobby'); return; }
+  if (name === 'orders' || name === 'lobby') { openAsk('menu'); return; }
   if (PARENT[name]) go(PARENT[name]);
 }
 

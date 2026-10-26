@@ -11,12 +11,13 @@ import { sfx } from '../audio.js';
 import { changeLang, VERSION } from '../settings.js';
 import { save, totalStars } from '../save.js';
 import { seen } from '../tutorial.js';
+import { game } from '../state.js';
 
 // Toute première partie : le chapitre 1 commence directement, puis Léa arrive au comptoir.
 function play() {
   const first = !seen('ch1') && !(save.orders.o01 && save.orders.o01.paid);
   if (first) go('story', { id: 'ch1', then: { scene: 'counter', params: { order: 'o01', mode: 'intro' } } });
-  else go('orders');
+  else { game.replay = false; go('orders'); }
 }
 
 // Images : logo du studio (commun aux jeux) et fond vertical de l'écran « Appuie pour continuer ».

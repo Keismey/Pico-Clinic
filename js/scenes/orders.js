@@ -13,6 +13,7 @@ import { vibrate } from '../feedback.js';
 import { sfx } from '../audio.js';
 import { go } from '../scenes.js';
 import { askMenu } from '../back.js';
+import { allDone } from './lobby.js';
 
 const TAU = Math.PI * 2;
 const ROW = { x: 50, w: W - 100, top: 350, bottom: 1545 };
@@ -136,13 +137,15 @@ function open(o) {
 }
 
 // Défi du jour / Atelier libre : au premier appui, Gribouille présente le mode s'il ne l'a pas encore fait.
-function openMode(s) {
+export function openMode(s) {
   if (seen(s)) go(s);
   else go('story', { id: s, then: { scene: s } });
 }
 
 export default {
   init() {
+    // les 60 commandes réparées : « Jouer » mène à l'écran de fin (sauf si on a choisi « Rejouer les niveaux »)
+    if (!game.replay && allDone()) { go('lobby'); return; }
     toast = null;
     grib = null;
     pressed = -1;
@@ -151,6 +154,11 @@ export default {
     const list = chapters();
     const next = game.data.orders.find((o) => list.includes(o.rank) && orderState(o) !== 'done');
     chapter = next ? next.rank : list[list.length - 1];
+    // « Rejouer les niveaux » : on ouvre le premier chapitre où il manque des étoiles
+    if (!next && game.replay) {
+      const miss = game.data.orders.find((o) => list.includes(o.rank) && orderStars(o) < 3);
+      if (miss) chapter = miss.rank;
+    }
     buttons = new Buttons();
     buttons.add({ x: 50, y: 1570, w: 310, h: 160, size: 52, label: () => t('orders.shop'), visible: shopOpen(), onTap: () => go('shop') });
     buttons.add({
@@ -158,7 +166,9 @@ export default {
       // première fois : Gribouille montre d'abord le carnet de Maître Ohm
       onTap: () => (seen('notebook') ? go('notebook') : go('story', { id: 'notebook', then: { scene: 'notebook' } })),
     });
-    buttons.add({ x: 720, y: 1570, w: 310, h: 160, size: 52, style: 'secondary', label: () => t('orders.menu'), onTap: () => askMenu() });
+    // « Rejouer les niveaux » : ce bouton ramène à l'écran de fin au lieu du menu
+    const replay = !!game.replay;
+    buttons.add({ x: 720, y: 1570, w: 310, h: 160, size: 52, style: 'secondary', label: () => t(replay ? 'shop.back' : 'orders.menu'), onTap: () => (replay ? go('lobby') : askMenu()) });
     // V3b : Atelier libre, ouvert au rang 5
     buttons.add({ x: 760, y: 30, w: 280, h: 120, size: 40, label: () => t('orders.free'), visible: save.rank >= 5, onTap: () => openMode('free') });
     // V4b : défi quotidien, ouvert au rang 3 (il clignote tant qu'il n'est pas tenté aujourd'hui)
