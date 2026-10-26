@@ -41,7 +41,8 @@ function skipLogo() {
   logo.out = logo.time;
 }
 
-function drawTitleLogo(ctx, y) {
+// halo : contour crème autour du titre, comme sur la couverture du hub (lisible sur le bois)
+function drawTitleLogo(ctx, y, halo = false) {
   ctx.save();
   ctx.translate(W / 2, y);
   ctx.rotate(-0.03);
@@ -49,6 +50,11 @@ function drawTitleLogo(ctx, y) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round';
+  if (halo) {
+    ctx.lineWidth = 60;
+    ctx.strokeStyle = C.paper;
+    ctx.strokeText(t('game.title'), 0, 0);
+  }
   ctx.lineWidth = 34;
   ctx.strokeStyle = C.copperDark;
   ctx.strokeText(t('game.title'), 0, 0);
@@ -83,15 +89,14 @@ function drawPress(ctx) {
     drawText(ctx, t('title.subtitle'), W / 2, 420, 860, 52, { color: C.inkSoft, weight: 700 });
     drawDrone(ctx, 960, 0.95);
   }
-  drawTitleLogo(ctx, 250);
-  // « Appuie pour continuer » qui respire doucement, sur une étiquette lisible même sur l'image
-  const pulse = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(time * 3.2));
-  ctx.save();
-  ctx.globalAlpha = pulse;
-  ctx.fillStyle = 'rgba(58, 42, 30, 0.12)';
+  drawTitleLogo(ctx, 250, COVER.ok);
+  // « Appuie pour continuer » : étiquette toujours nette, le texte respire doucement
+  ctx.fillStyle = 'rgba(58, 42, 30, 0.25)';
   roundRect(ctx, 150, 1606, W - 300, 128, 64); ctx.fill();
   ctx.fillStyle = C.paper;
   roundRect(ctx, 150, 1596, W - 300, 128, 64); ctx.fill();
+  ctx.save();
+  ctx.globalAlpha = 0.6 + 0.4 * (0.5 + 0.5 * Math.sin(time * 3.2));
   fitText(ctx, t('title.press'), W / 2, 1660, W - 380, 54, C.copperDark, 900);
   ctx.restore();
 }
