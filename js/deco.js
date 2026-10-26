@@ -165,8 +165,13 @@ export function drawDeco(ctx, id, x, y, s = 1, time = 0) {
 }
 
 // Toutes les décorations achetées, au mur ('wall') ou sur le comptoir ('counter').
+// Ordre de dessin fixe (de l'arrière vers l'avant), quel que soit l'ordre d'achat :
+// le drone suspendu passe par-dessus l'enseigne lumineuse.
+const LAYER = ['neon_sign', 'poster', 'aquarium', 'gear_clock', 'lamp', 'hanging_drone', 'rug', 'plant'];
+
 export function drawOwnedDecos(ctx, where, time = 0) {
-  for (const id of save.deco || []) {
+  const owned = save.deco || [];
+  for (const id of LAYER.filter((d) => owned.includes(d))) {
     const p = PLACE[id];
     if (p && p[3] === where) drawDeco(ctx, id, p[0], p[1], p[2], time);
   }
