@@ -2,12 +2,13 @@
 // En ligne : on prend toujours la version la plus récente sur le site (et on la garde en cache).
 // Hors ligne (ou réseau trop lent) : on sert la copie en cache.
 // La liste FILES est refaite par « node tools/maj-cache.mjs » (à lancer après chaque ajout de fichier).
-const VERSION = 'pico-clinic-35470169';
+const VERSION = 'pico-clinic-e2d07a3b';
 const FILES = [
   './',
   'audio/music_op.mp3',
   'audio/music_workshop.mp3',
   'audio/sons.json',
+  'commun/ks-back.js',
   'couverture.webp',
   'data/clients.json',
   'data/decorations.json',
@@ -23,6 +24,7 @@ const FILES = [
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/maskable-512.png',
+  'img/keismey-studio.webp',
   'index.html',
   'js/audio.js',
   'js/back.js',

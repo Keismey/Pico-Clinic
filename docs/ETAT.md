@@ -1,7 +1,8 @@
 # Pico-Clinic — État du projet
-Mis à jour : 2026-10-26 (correctifs de la recette, version 1.0.0). Jeu : https://keismey.github.io/Pico-Clinic/ · Essai : https://keismey.github.io/Pico-Clinic/?essai
+Mis à jour : 2026-10-26 (logo du studio et écran titre). Jeu : https://keismey.github.io/Pico-Clinic/ · Essai : https://keismey.github.io/Pico-Clinic/?essai
 
 ## Fait
+- Lancement comme les autres jeux : logo Keismey Studio (`img/keismey-studio.webp`, 2,3 s, un toucher le passe), puis « Appuie pour continuer », puis le menu. Retour : `commun/ks-back.js` du hub ; liste des commandes (retour ou bouton Menu) → « Revenir à l'écran titre ? » ; écran titre → « Aller au hub ? ».
 - Correctifs recette 2 : la main de Gribouille (circuit oxydé) ne frotte plus sur les composants (zigzag vérifié, sinon pas de démo) ; en diagnostic, la loupe prend toujours le doigt (la fiche se branche après) ; bulle de la boutique descendue sous la ligne Pince ; texte d'aide qui rétrécit pour rester dans son cadre (circuit oxydé, rouille en FR).
 - 2026-10-26 : icône (`icons/`, 5 tailles, maskable réduite à 80 %) et couverture `couverture.webp` (titre ajouté en code) tirées des images Gemini ; le hub les reprend tout seul. Recette robot : 56 commandes sur 60 jouées au doigt simulé, aucune erreur, FR/EN sans débordement, sons et cache complets.
 - Correctifs recette : bandes de l'abeille découpées à la forme du ventre (ne dépassent plus) ; fumée de la puce grillée cachée pendant les vues rapprochées (gestes secondaires) ; Gribouille explique la dévisseuse à sa première utilisation (leçon `tool_electric_driver`, montrée même sur une commande déjà réussie).
@@ -14,7 +15,6 @@ Mis à jour : 2026-10-26 (correctifs de la recette, version 1.0.0). Jeu : https:
 ## Écarts au GDD
 - Absents : élytres à clips (7), coutures (17), mécanisme à clé (29), 3 engrenages de la tortue (55) ; un geste de chaque type par patient ; pas de panne secondaire cachée.
 - Clients de passage sans texte dans le GDD (dialogues d'origine). Défi quotidien : 2 essais, une seule paie.
-- Bouton retour : module propre au jeu (`js/back.js`), pas le `ks-back.js` commun du hub.
 
 ## À vérifier au doigt (recette)
 - Installation depuis le hub, jeu complet en mode avion, sauvegarde après fermeture, les deux langues.
@@ -24,7 +24,7 @@ Mis à jour : 2026-10-26 (correctifs de la recette, version 1.0.0). Jeu : https:
 - Temps cibles peut-être trop larges (robot : 10 à 30 s pour 90 à 120 s) : à juger au doigt.
 
 ## Prochaine étape
-- Recette au doigt sur téléphone (rubrique « À vérifier »), puis correctifs éventuels.
+- Image verticale de l'écran titre `img/titre.webp` (1080×1920, sans texte) : le jeu l'affiche toute seule dès qu'elle existe (sinon le drone dessiné). Puis recette au doigt.
 
 ## Plus tard
-- Images Gemini : non conseillées dans le jeu (mélange de styles, zones à toucher décalées). Remplacer `js/back.js` par `ks-back.js` du hub. Succès. Indice 20 s ; pause ; gaucher dans les vues rapprochées ; Options depuis l'atelier ; sauver une réparation en cours ; revoir le tutoriel ; pannes cachées dans la loupe ; retour qui ferme d'abord la vue rapprochée.
+- Images Gemini : non conseillées dans le jeu (mélange de styles, zones à toucher décalées). Succès. Indice 20 s ; pause ; gaucher dans les vues rapprochées ; Options depuis l'atelier ; sauver une réparation en cours ; revoir le tutoriel ; pannes cachées dans la loupe ; retour qui ferme d'abord la vue rapprochée.

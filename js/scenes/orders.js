@@ -12,6 +12,7 @@ import { drawGribouille, drawRarePart } from '../portraits.js';
 import { vibrate } from '../feedback.js';
 import { sfx } from '../audio.js';
 import { go } from '../scenes.js';
+import { askMenu } from '../back.js';
 
 const TAU = Math.PI * 2;
 const ROW = { x: 50, w: W - 100, top: 350, bottom: 1545 };
@@ -151,7 +152,7 @@ export default {
       // première fois : Gribouille montre d'abord le carnet de Maître Ohm
       onTap: () => (seen('notebook') ? go('notebook') : go('story', { id: 'notebook', then: { scene: 'notebook' } })),
     });
-    buttons.add({ x: 720, y: 1570, w: 310, h: 160, size: 52, style: 'secondary', label: () => t('orders.menu'), onTap: () => go('title') });
+    buttons.add({ x: 720, y: 1570, w: 310, h: 160, size: 52, style: 'secondary', label: () => t('orders.menu'), onTap: () => askMenu() });
     // V3b : Atelier libre, ouvert au rang 5
     buttons.add({ x: 760, y: 30, w: 280, h: 120, size: 40, label: () => t('orders.free'), visible: save.rank >= 5, onTap: () => go('free') });
     // V4b : défi quotidien, ouvert au rang 3 (il clignote tant qu'il n'est pas tenté aujourd'hui)

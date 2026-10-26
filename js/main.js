@@ -110,8 +110,9 @@ async function boot() {
   const loading = document.getElementById('loading');
   if (loading) loading.remove();
   // lien de test « ?essai » : l'atelier d'essai des gestes secondaires
-  go(new URLSearchParams(location.search).has('essai') ? 'bench' : 'title');
-  // bouton retour du téléphone : on remonte d'un écran au lieu de quitter le jeu
+  if (new URLSearchParams(location.search).has('essai')) go('bench');
+  else go('title', { intro: true }); // logo Keismey Studio, puis « Appuie pour continuer »
+  // bouton retour du téléphone : on remonte d'un écran (commun/ks-back.js gère l'historique)
   initBack(() => {
     if (activeId !== null && owner === 'scene') scene().pointer('cancel', 0, 0);
     activeId = null;
