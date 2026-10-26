@@ -3,7 +3,7 @@
 // Boutique · Carnet · Menu. « Rejouer » ouvre la liste (game.replay) ; son « Retour » ramène ici.
 import { W } from '../canvas.js';
 import { t } from '../i18n.js';
-import { Buttons, C, STYLES, ACCESS, drawCreamBackground, fitText, roundRect, font } from '../ui.js';
+import { Buttons, C, STYLES, ACCESS, fitText, roundRect, font } from '../ui.js';
 import { game } from '../state.js';
 import { save, totalStars } from '../save.js';
 import { orderState, orderStars } from '../progress.js';
@@ -12,8 +12,11 @@ import { go } from '../scenes.js';
 import { askMenu } from '../back.js';
 import { leftText, miniStar, shopOpen, notebookOpen, openMode } from './orders.js';
 import { seen } from '../tutorial.js';
+import { drawWorkshop, drawCounter } from './counter.js';
+import { drawGribouille } from '../portraits.js';
 
 const DEPTH = 12;
+const GRIB = { x: 330, y: 870, s: 0.95 };
 let bottom, big, time;
 
 // Les 60 commandes sont réparées (la liste laisse alors place à cet écran).
@@ -55,20 +58,20 @@ function drawBig(ctx, b, pressed) {
   roundRect(ctx, 0, push, b.w, face, 36); ctx.fill();
   if (ACCESS.contrast) { ctx.strokeStyle = C.ink; ctx.lineWidth = 5; ctx.stroke(); }
   const cy = push + face / 2;
-  fitText(ctx, b.label(), b.w / 2, cy - 30, b.w - 60, 64, st.text, 900);
+  fitText(ctx, b.label(), b.w / 2, cy - 24, b.w - 60, 54, st.text, 900);
   const sub = b.sub();
   const subColor = b.style === 'secondary' ? (sub.star ? C.orangeDark : C.turquoiseDark) : st.text;
   if (sub.star) {
     // petite étoile devant « x étoiles manquantes »
-    ctx.font = font(34, 800);
+    ctx.font = font(30, 800);
     const w = Math.min(ctx.measureText(sub.text).width, b.w - 140);
     const sx = b.w / 2 - (w + 48) / 2;
     ctx.save();
-    miniStar(ctx, sx + 18, cy + 40, 20, true);
+    miniStar(ctx, sx + 18, cy + 30, 18, true);
     ctx.restore();
-    leftText(ctx, sub.text, sx + 48, cy + 42, b.w - 140, 34, subColor, 800);
+    leftText(ctx, sub.text, sx + 48, cy + 32, b.w - 140, 30, subColor, 800);
   } else {
-    fitText(ctx, sub.text, b.w / 2, cy + 42, b.w - 60, 34, subColor, 800);
+    fitText(ctx, sub.text, b.w / 2, cy + 32, b.w - 60, 30, subColor, 800);
   }
   ctx.restore();
 }
@@ -79,18 +82,18 @@ export default {
     game.replay = false;
     big = new Buttons();
     big.add({
-      x: 140, y: 570, w: 800, h: 240, style: 'on',
+      x: 50, y: 1050, w: 980, h: 150, style: 'on',
       label: () => t('orders.daily'), sub: () => ({ text: dailySub() }),
       pulse: () => triesLeft() >= DAILY_TRIES,
       onTap: () => openMode('daily'),
     });
     big.add({
-      x: 140, y: 870, w: 800, h: 240, style: 'primary',
+      x: 50, y: 1220, w: 980, h: 150, style: 'primary',
       label: () => t('orders.free'), sub: () => ({ text: t('lobby.free_sub') }),
       onTap: () => openMode('free'),
     });
     big.add({
-      x: 140, y: 1170, w: 800, h: 240, style: 'secondary',
+      x: 50, y: 1390, w: 980, h: 150, style: 'secondary',
       label: () => t('lobby.replay'), sub: replaySub,
       onTap: () => { game.replay = true; go('orders'); },
     });
@@ -108,10 +111,12 @@ export default {
   },
 
   draw(ctx) {
-    drawCreamBackground(ctx);
-    leftText(ctx, t('counter.sign'), 60, 85, W - 120, 76, C.copperDark, 900);
-    leftText(ctx, t('orders.status', { r: save.rank, name: t('rank.' + save.rank), n: save.credits, s: totalStars() }), 60, 180, W - 120, 38, C.inkSoft, 800);
-    fitText(ctx, t('lobby.done'), W / 2, 486, W - 160, 40, C.copperDark, 800);
+    // l'atelier en fond (sans client) : on y voit les décorations achetées, et Gribouille sur le comptoir
+    drawWorkshop(ctx);
+    drawCounter(ctx);
+    drawGribouille(ctx, GRIB.x, GRIB.y, GRIB.s, { time, talk: false });
+    leftText(ctx, t('lobby.done'), 60, 85, W - 120, 64, C.copperDark, 900);
+    leftText(ctx, t('orders.status', { r: save.rank, name: t('rank.' + save.rank), n: save.credits, s: totalStars() }), 60, 170, W - 120, 38, C.inkSoft, 800);
     for (const b of big.list) drawBig(ctx, b, b === big.pressed);
     bottom.draw(ctx);
   },
