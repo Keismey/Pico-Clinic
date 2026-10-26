@@ -46,6 +46,7 @@ export function askMenu() {
 }
 
 function onBack() {
+  if (window.KS && window.KS.closeDialog()) return;   // fenêtre « Sauvegarde » (commun/ks-studio.js)
   if (ask) { ask = null; return; }                    // retour pendant la question = rester
   const name = sceneName();
   if (REPAIR.includes(name)) { openAsk('repair'); return; }

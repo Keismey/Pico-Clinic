@@ -22,6 +22,7 @@ import free from './scenes/free.js';
 import options from './scenes/options.js';
 import daily from './scenes/daily.js';
 import lobby from './scenes/lobby.js';
+import notes from './scenes/notes.js';
 import { setContrast } from './ui.js';
 import { applyHand } from './state.js';
 import { initBack, asking, tickAsk, askPointer, drawAsk } from './back.js';
@@ -94,6 +95,7 @@ async function boot() {
   register('options', options);
   register('daily', daily);
   register('lobby', lobby);
+  register('notes', notes);
 
   canvas.addEventListener('pointerdown', (e) => onPointer('down', e));
   canvas.addEventListener('pointermove', (e) => onPointer('move', e));

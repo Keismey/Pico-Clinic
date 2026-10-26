@@ -1,14 +1,14 @@
 // Écran titre, comme les autres jeux du studio :
 // 1. au lancement, le logo Keismey Studio sur fond noir (un toucher le passe) ;
 // 2. l'écran « Appuie pour continuer » (image titre.webp si elle existe, sinon le drone dessiné) ;
-// 3. le menu : Jouer, langue, Options. Les retours suivants à l'écran titre arrivent directement au menu.
+// 3. le menu : Jouer, Options (la langue se choisit dans les Options, comme dans les autres jeux). Les retours suivants à l'écran titre arrivent directement au menu.
 import { W, H } from '../canvas.js';
-import { t, getLang } from '../i18n.js';
+import { t } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawText, fitText, roundRect, font } from '../ui.js';
 import { withDrone, drawShadow, drawFrame, drawCover, setLook } from '../drone.js';
 import { go, fadeFrom } from '../scenes.js';
 import { sfx } from '../audio.js';
-import { changeLang, VERSION } from '../settings.js';
+import { VERSION, notesDue } from '../settings.js';
 import { save, totalStars } from '../save.js';
 import { seen } from '../tutorial.js';
 import { game } from '../state.js';
@@ -55,7 +55,12 @@ function openMenu() {
   menu = true;
   menuTime = 0;
   sfx('click');
+  // après une mise à jour, une fois : les notes (seulement pour un joueur qui a déjà joué)
+  if (notesDue()) go('notes', { from: 'title' });
 }
+
+// « Touche pour commencer » au doigt, « Clique pour commencer » à la souris
+const MOUSE = typeof matchMedia === 'function' && matchMedia('(hover: hover) and (pointer: fine)').matches;
 
 // halo : contour crème autour du titre, comme sur la couverture du hub (lisible sur le bois)
 function drawTitleLogo(ctx, y, halo = false) {
@@ -113,7 +118,7 @@ function drawPress(ctx) {
   roundRect(ctx, 150, 1596, W - 300, 128, 64); ctx.fill();
   ctx.save();
   ctx.globalAlpha = 0.6 + 0.4 * (0.5 + 0.5 * Math.sin(time * 3.2));
-  fitText(ctx, t('title.press'), W / 2, 1660, W - 380, 54, C.copperDark, 900);
+  fitText(ctx, t(MOUSE ? 'title.press_click' : 'title.press'), W / 2, 1660, W - 380, 54, C.copperDark, 900);
   ctx.restore();
 }
 
@@ -127,7 +132,6 @@ function drawMenu(ctx) {
   ctx.save();
   ctx.translate(0, 90 * (1 - k) * (1 - k));
   fitText(ctx, t('title.wallet', { n: save.credits, s: totalStars() }), W / 2, 1318, 860, 40, C.copperDark, 800);
-  fitText(ctx, t('title.language'), W / 2, 1562, 600, 36, C.inkSoft, 700);
   buttons.draw(ctx);
   fitText(ctx, t('title.version', { v: VERSION }), W / 2, 1885, 800, 30, C.inkSoft, 500);
   ctx.restore();
@@ -161,10 +165,8 @@ export default {
     }
     buttons = new Buttons();
     buttons.add({ x: 200, y: 1360, w: 680, h: 170, size: 72, label: () => t('title.play'), onTap: () => play() });
-    buttons.add({ x: 200, y: 1590, w: 320, h: 130, style: 'secondary', label: () => 'Français', selected: () => getLang() === 'fr', onTap: () => changeLang('fr') });
-    buttons.add({ x: 560, y: 1590, w: 320, h: 130, style: 'secondary', label: () => 'English', selected: () => getLang() === 'en', onTap: () => changeLang('en') });
-    // V4b : Options (volumes, vibrations, accessibilité, effacer la sauvegarde)
-    buttons.add({ x: 290, y: 1745, w: 500, h: 110, size: 40, style: 'secondary', label: () => t('title.options'), onTap: () => go('options', { from: 'title' }) });
+    // Options : langue, volumes, vibrations, accessibilité, notes, sauvegarde, bug, soutien
+    buttons.add({ x: 260, y: 1600, w: 560, h: 130, size: 48, style: 'secondary', label: () => t('title.options'), onTap: () => go('options', { from: 'title' }) });
   },
 
   update(dt) {

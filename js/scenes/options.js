@@ -1,11 +1,14 @@
 // V4b — Écran « Options » : langue, volumes, vibrations, tremblement réduit, gaucher, contrastes forts,
-// effacer la sauvegarde (deux confirmations). Ouvert depuis l'écran titre.
+// puis, comme dans tous les jeux du studio : notes de mise à jour, sauvegarde (exporter / importer),
+// signaler un bug, soutenir le studio, version et crédits ; effacer la sauvegarde (deux confirmations).
+// Ouvert depuis l'écran titre.
 import { W, H } from '../canvas.js';
 import { t, getLang } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawText, fitText, roundRect, clamp, setContrast } from '../ui.js';
 import { go } from '../scenes.js';
 import { changeLang } from '../settings.js';
 import { save, persist, resetSave } from '../save.js';
+import { VERSION } from '../settings.js';
 import { setMusicVol, setSfxVol, sfx } from '../audio.js';
 import { vibrate } from '../feedback.js';
 import { applyHand } from '../state.js';
@@ -15,20 +18,20 @@ import { leftText } from './orders.js';
 const X0 = 50, CW = W - 100;          // cartes des réglages
 const SL = { x0: 110, x1: W - 110 };  // piste des curseurs de volume
 const ROWS = {
-  lang: { y: 230, h: 150 },
-  music: { y: 400, h: 170 },
-  sound: { y: 590, h: 170 },
-  vibration: { y: 780, h: 140 },
-  tremor: { y: 940, h: 140 },
-  lefty: { y: 1100, h: 140 },
-  contrast: { y: 1260, h: 140 },
+  lang: { y: 200, h: 136 },
+  music: { y: 346, h: 158 },
+  sound: { y: 514, h: 158 },
+  vibration: { y: 682, h: 124 },
+  tremor: { y: 816, h: 124 },
+  lefty: { y: 950, h: 124 },
+  contrast: { y: 1084, h: 124 },
 };
 const SLIDERS = { music: 'musicVol', sound: 'sfxVol' };
 const TOGGLES = ['vibration', 'tremor', 'lefty', 'contrast'];
 
 let buttons, from, time, drag, confirm, toast;
 
-const sliderY = (k) => ROWS[k].y + 118;
+const sliderY = (k) => ROWS[k].y + 106;
 
 function setVol(k, v) {
   v = Math.round(clamp(v, 0, 1) * 20) / 20; // pas de 5 %
@@ -95,18 +98,25 @@ export default {
     confirm = null;
     toast = null;
     buttons = new Buttons();
-    buttons.add({ x: 520, y: ROWS.lang.y + 22, w: 240, h: 110, size: 36, style: 'secondary', label: () => 'Français', selected: () => getLang() === 'fr', onTap: () => changeLang('fr') });
-    buttons.add({ x: 780, y: ROWS.lang.y + 22, w: 240, h: 110, size: 36, style: 'secondary', label: () => 'English', selected: () => getLang() === 'en', onTap: () => changeLang('en') });
+    buttons.add({ x: 520, y: ROWS.lang.y + 12, w: 240, h: 106, size: 36, style: 'secondary', label: () => 'Français', selected: () => getLang() === 'fr', onTap: () => changeLang('fr') });
+    buttons.add({ x: 780, y: ROWS.lang.y + 12, w: 240, h: 106, size: 36, style: 'secondary', label: () => 'English', selected: () => getLang() === 'en', onTap: () => changeLang('en') });
     for (const k of TOGGLES) {
       buttons.add({
-        x: 790, y: ROWS[k].y + 18, w: 210, h: 106, size: 38, style: 'secondary',
+        x: 790, y: ROWS[k].y + 8, w: 210, h: 100, size: 38, style: 'secondary',
         label: () => t(save.settings[k] ? 'opt.on' : 'opt.off'),
         selected: () => !!save.settings[k],
         onTap: () => toggle(k),
       });
     }
-    buttons.add({ x: 190, y: 1440, w: 700, h: 120, size: 40, style: 'secondary', label: () => t('opt.erase'), onTap: () => openConfirm(1) });
-    buttons.add({ x: 240, y: 1700, w: 600, h: 160, size: 60, label: () => t('opt.back'), onTap: () => go(from) });
+    // communs aux jeux du studio (commun/ks-studio.js)
+    const lang = () => (getLang() === 'en' ? 'en' : 'fr');
+    buttons.add({ x: 50, y: 1222, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.notes'), onTap: () => go('notes', { from: 'options' }) });
+    buttons.add({ x: 550, y: 1222, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.save'),
+      onTap: () => { if (window.KS) window.KS.saveDialog({ jeu: 'Pico-Clinic', keys: ['pico_save_v1'], lang: lang(), save: persist, file: 'pico-clinic', accent: '#3fd0bb' }); } });
+    buttons.add({ x: 50, y: 1338, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.bug'), onTap: () => { persist(); if (window.KS) window.KS.bug('Pico-Clinic', lang()); } });
+    buttons.add({ x: 550, y: 1338, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.support'), onTap: () => { if (window.KS) window.KS.support(); } });
+    buttons.add({ x: 190, y: 1458, w: 700, h: 104, size: 36, style: 'secondary', label: () => t('opt.erase'), onTap: () => openConfirm(1) });
+    buttons.add({ x: 240, y: 1590, w: 600, h: 150, size: 58, label: () => t('opt.back'), onTap: () => go(from) });
   },
 
   update(dt) {
@@ -123,26 +133,28 @@ export default {
     for (const [k, r] of Object.entries(ROWS)) {
       card(ctx, r);
       if (k === 'lang') {
-        leftText(ctx, t('opt.lang'), 90, r.y + 70, 400, 44, C.ink, 800);
+        leftText(ctx, t('opt.lang'), 90, r.y + 64, 400, 44, C.ink, 800);
       } else if (SLIDERS[k]) {
         const v = Math.round((save.settings[SLIDERS[k]] || 0) * 100);
-        leftText(ctx, t('opt.' + k), 90, r.y + 50, 600, 44, C.ink, 800);
-        fitText(ctx, v ? t('opt.pct', { n: v }) : t('opt.muted'), 880, r.y + 50, 240, 40, v ? C.turquoiseDark : C.inkSoft, 900);
+        leftText(ctx, t('opt.' + k), 90, r.y + 44, 600, 44, C.ink, 800);
+        fitText(ctx, v ? t('opt.pct', { n: v }) : t('opt.muted'), 880, r.y + 44, 240, 40, v ? C.turquoiseDark : C.inkSoft, 900);
         drawSlider(ctx, k);
       } else {
-        leftText(ctx, t('opt.' + k), 90, r.y + 46, 680, 42, C.ink, 800);
-        leftText(ctx, t('opt.' + k + '.sub'), 90, r.y + 94, 680, 30, C.inkSoft, 700);
+        leftText(ctx, t('opt.' + k), 90, r.y + 38, 680, 40, C.ink, 800);
+        leftText(ctx, t('opt.' + k + '.sub'), 90, r.y + 82, 680, 28, C.inkSoft, 700);
       }
     }
     buttons.draw(ctx);
+    fitText(ctx, t('title.version', { v: VERSION }), W / 2, 1790, W - 120, 30, C.inkSoft, 700);
+    fitText(ctx, t('opt.credits'), W / 2, 1838, W - 120, 28, C.inkSoft, 600);
 
     if (toast) {
       const a = Math.min(1, toast.t * 2);
       ctx.save();
       ctx.globalAlpha = a;
       ctx.fillStyle = C.turquoiseDark;
-      roundRect(ctx, 140, 1590, W - 280, 90, 45); ctx.fill();
-      fitText(ctx, t('opt.erased'), W / 2, 1635, W - 340, 38, '#fff', 800);
+      roundRect(ctx, 140, 1480, W - 280, 90, 45); ctx.fill();
+      fitText(ctx, t('opt.erased'), W / 2, 1525, W - 340, 38, '#fff', 800);
       ctx.restore();
     }
     if (confirm) this.drawConfirm(ctx);

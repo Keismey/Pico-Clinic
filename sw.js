@@ -2,17 +2,14 @@
 // En ligne : on prend toujours la version la plus récente sur le site (et on la garde en cache).
 // Hors ligne (ou réseau trop lent) : on sert la copie en cache.
 // La liste FILES est refaite par « node tools/maj-cache.mjs » (à lancer après chaque ajout de fichier).
-<<<<<<< HEAD
-const VERSION = 'pico-clinic-8e573c2f';
-=======
-const VERSION = 'pico-clinic-ad8df536';
->>>>>>> fe2ad10 (Achats de fin de jeu au rang 5 : visseuse turbo, aspirateur cyclone, soudeuse de maître et 4 décorations de prestige)
+const VERSION = 'pico-clinic-68e892f0';
 const FILES = [
   './',
   'audio/music_op.mp3',
   'audio/music_workshop.mp3',
   'audio/sons.json',
   'commun/ks-back.js',
+  'commun/ks-studio.js',
   'couverture.webp',
   'data/clients.json',
   'data/decorations.json',
@@ -68,6 +65,7 @@ const FILES = [
   'js/scenes/free.js',
   'js/scenes/lobby.js',
   'js/scenes/notebook.js',
+  'js/scenes/notes.js',
   'js/scenes/operation.js',
   'js/scenes/options.js',
   'js/scenes/orders.js',
@@ -86,6 +84,7 @@ const FILES = [
   'lang/fr.json',
   'manifest-en.webmanifest',
   'manifest.webmanifest',
+  'og.jpg',
 ];
 const TIMEOUT = 4000;
 
