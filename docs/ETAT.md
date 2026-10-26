@@ -1,9 +1,10 @@
 # Pico-Clinic — État du projet
-Mis à jour : 2026-10-25 (C13 V5 publication, version 1.0.0). Jeu : https://keismey.github.io/Pico-Clinic/ · Essai : https://keismey.github.io/Pico-Clinic/?essai
+Mis à jour : 2026-10-26 (recette automatique + icône et couverture Gemini, version 1.0.0). Jeu : https://keismey.github.io/Pico-Clinic/ · Essai : https://keismey.github.io/Pico-Clinic/?essai
 
 ## Fait
+- 2026-10-26 : icône (`icons/`, 5 tailles, maskable réduite à 80 %) et couverture `couverture.webp` (titre ajouté en code) tirées des images Gemini ; le hub les reprend tout seul. Recette robot : 56 commandes sur 60 jouées au doigt simulé, aucune erreur, FR/EN sans débordement, sons et cache complets.
 - Correctifs recette : bandes de l'abeille découpées à la forme du ventre (ne dépassent plus) ; fumée de la puce grillée cachée pendant les vues rapprochées (gestes secondaires) ; Gribouille explique la dévisseuse à sa première utilisation (leçon `tool_electric_driver`, montrée même sur une commande déjà réussie).
-- C13 V5 : hors ligne (`sw.js` : en ligne la dernière version, sinon la copie ; réseau lent > 4 s → copie ; liste refaite par `node tools/maj-cache.mjs`). Installation : `manifest.webmanifest` (FR) et `manifest-en.webmanifest` (choisi selon la langue), icônes `icons/` et couverture `couverture.webp` dessinées en code (provisoires). Lien `?lang=fr|en`. `tools/verif-langues.mjs` : 678 clés FR = EN, aucune clé manquante, variables identiques. Relecture : EN harmonisé (trace, customer, fried chip, magnifier, power vacuum, racing drone, blueprint), FR « morceau {i} sur {n} », « Version {v} » à l'écran titre. Hub : carte Pico-Clinic (`games.js`, progression rang / étoiles / crédits), raccourci du manifest, nouvelle dans `news.json` (sans notification).
+- C13 V5 : hors ligne (`sw.js` : en ligne la dernière version, sinon la copie ; réseau lent > 4 s → copie ; liste refaite par `node tools/maj-cache.mjs`). Installation : `manifest.webmanifest` (FR) et `manifest-en.webmanifest` (choisi selon la langue), icônes et couverture. Lien `?lang=fr|en`. `tools/verif-langues.mjs` : 678 clés FR = EN, aucune clé manquante, variables identiques. Relecture : EN harmonisé (trace, customer, fried chip, magnifier, power vacuum, racing drone, blueprint), FR « morceau {i} sur {n} », « Version {v} » à l'écran titre. Hub : carte Pico-Clinic (`games.js`, progression rang / étoiles / crédits), raccourci du manifest, nouvelle dans `news.json` (sans notification).
 - C12 V4b : écran Options (langue, volumes, vibrations, tremblement réduit, gaucher, contrastes, effacer) ; défi quotidien dès le rang 3 (`js/daily.js`).
 - C11 V4a : musiques Gemini en boucle, ~35 effets en code (`js/audio.js`, `audio/LISEZMOI.md`), vibrations, particules (max 150), relecture des textes, générique.
 - C9-C10 V3 : 60 commandes, 5 rangs, examens, prototypes et pièces rares exigées, décorations, Atelier libre, textes des chapitres 3 à 5 et de la fin.
@@ -20,9 +21,12 @@ Mis à jour : 2026-10-25 (C13 V5 publication, version 1.0.0). Jeu : https://keis
 
 ## Bugs connus
 - En diagnostic, la fiche peut attraper le doigt avant la loupe. Indices longs un peu serrés.
+- Circuit oxydé : la main de démonstration frotte sur les composants fragiles (montre le mauvais geste).
+- Boutique, 1re visite : la bulle de Gribouille cache la ligne « Pince ».
+- Temps cibles peut-être trop larges (robot : 10 à 30 s pour 90 à 120 s) : à juger au doigt.
 
 ## Prochaine étape
-- Plan terminé (C13 était la dernière étape). Ensuite : correctifs de la recette, puis images Gemini.
+- Correctifs de la recette (bugs ci-dessus), puis recette au doigt sur téléphone.
 
 ## Plus tard
-- Images Gemini (clients, Gribouille, pièces rares, gestes secondaires, image finale, Mamie, icône et couverture du hub). Remplacer `js/back.js` par `ks-back.js` du hub. Succès. Indice 20 s ; pause ; gaucher dans les vues rapprochées ; Options depuis l'atelier ; sauver une réparation en cours ; revoir le tutoriel ; pannes cachées dans la loupe ; retour qui ferme d'abord la vue rapprochée.
+- Images Gemini : non conseillées dans le jeu (mélange de styles, zones à toucher décalées). Remplacer `js/back.js` par `ks-back.js` du hub. Succès. Indice 20 s ; pause ; gaucher dans les vues rapprochées ; Options depuis l'atelier ; sauver une réparation en cours ; revoir le tutoriel ; pannes cachées dans la loupe ; retour qui ferme d'abord la vue rapprochée.
