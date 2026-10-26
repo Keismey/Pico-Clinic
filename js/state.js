@@ -42,7 +42,7 @@ function layoutOf(o, part) {
   return (o.n * 5 + part * 3) % 4;
 }
 
-// Niveau d'un outil (1 à 3) dans la sauvegarde.
+// Niveau d'un outil (1 à 4) dans la sauvegarde.
 export function toolLevel(k) {
   const n = game.data.tools[k] ? game.data.tools[k].levels.length : 3;
   return Math.max(1, Math.min(n, (save.tools && save.tools[k]) || 1));
@@ -55,6 +55,8 @@ export function toolGestures() {
   const e = (k, name) => T[k].effect[name][toolLevel(k) - 1];
   // dévisseuse (niveau 3) : maintenir le doigt sur la vis suffit
   g.unscrew.hold_turns = T.driver ? e('driver', 'hold_turns') : 0;
+  // visseuse turbo (niveau 4) : un toucher suffit, la vis sort toute seule
+  g.unscrew.tap_turns = T.driver ? e('driver', 'tap_turns') || 0 : 0;
   // tournevis à cliquet : moins de tours à faire (vis rouillées comprises)
   const tf = T.driver ? e('driver', 'turns_factor') : 1;
   g.unscrew.turns *= tf;
@@ -62,6 +64,8 @@ export function toolGestures() {
   g.solder.tolerance_bonus = e('iron', 'tolerance_bonus');
   g.solder.burn_time *= e('iron', 'burn_factor');
   g.vacuum.radius = Math.round(g.vacuum.radius * e('vacuum', 'radius_factor'));
+  // aspirateur cyclone : même taille, mais chaque passage enlève plus de rouille
+  g.vacuum.rate *= e('vacuum', 'rate_factor') || 1;
   g.magnifier.hold *= e('lens', 'hold_factor');
   g.magnifier.scan = e('lens', 'scan');
   g.chip.snap_radius = Math.round(g.chip.snap_radius * e('tweezers', 'snap_factor'));

@@ -1,4 +1,4 @@
-// Boutique d'outils : 4 outils, 3 niveaux chacun, chaque niveau demande un rang minimum.
+// Boutique d'outils : 5 outils, 3 ou 4 niveaux chacun, chaque niveau demande un rang minimum.
 import { W } from '../canvas.js';
 import { t } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawToast, roundRect, fitText } from '../ui.js';
@@ -19,9 +19,10 @@ const TUTO = ['tuto.shop_here', 'tuto.shop_here2'];
 const TAU = Math.PI * 2;
 // 5 outils : cartes un peu plus serrées (la dévisseuse en premier)
 const CARD = { x: 40, y: 360, w: W - 80, h: 220, step: 238 };
-// V3b : onglet des décorations (2 colonnes × 4 lignes)
+// V3b : onglet des décorations (2 colonnes × 6 lignes, dont 4 de prestige au rang 5)
 const TABS = { x: 40, y: 250, w: W - 80, h: 86 };
-const DCARD = { x: 40, y: 360, w: (W - 100) / 2, h: 270, stepX: (W - 100) / 2 + 20, stepY: 290 };
+const DCARD = { x: 40, y: 350, w: (W - 100) / 2, h: 186, stepX: (W - 100) / 2 + 20, stepY: 200 };
+const DICON = { x: 92, y: 112, r: 62, s: 0.72 };
 
 let buttons, toast, time, tuto, page = 'tools';
 
@@ -40,9 +41,14 @@ function drawIcon(ctx, k, x, y) {
     ctx.strokeStyle = '#9aa3ad'; ctx.lineWidth = 10;
     ctx.beginPath(); ctx.moveTo(0, -75); ctx.lineTo(0, -15); ctx.stroke();
     if (toolLevel('driver') > 2) {
-      ctx.fillStyle = C.turquoise; roundRect(ctx, -30, -20, 60, 50, 14); ctx.fill();
+      // visseuse turbo (niveau 4) : corps orange et éclair doré
+      const turbo = toolLevel('driver') > 3;
+      ctx.fillStyle = turbo ? C.orange : C.turquoise; roundRect(ctx, -30, -20, 60, 50, 14); ctx.fill();
       ctx.fillStyle = '#374151'; roundRect(ctx, -16, 24, 32, 50, 10); ctx.fill();
-      ctx.fillStyle = '#ffd166'; ctx.fillRect(-20, -6, 10, 20);
+      if (turbo) {
+        ctx.fillStyle = '#ffd166';
+        ctx.beginPath(); ctx.moveTo(4, -16); ctx.lineTo(-12, 6); ctx.lineTo(0, 6); ctx.lineTo(-6, 26); ctx.lineTo(12, 0); ctx.lineTo(0, 0); ctx.closePath(); ctx.fill();
+      } else { ctx.fillStyle = '#ffd166'; ctx.fillRect(-20, -6, 10, 20); }
     } else {
       // manche jaune strié et bout plat (différent du fer à souder)
       ctx.fillStyle = '#ffd166'; roundRect(ctx, -17, -15, 34, 80, 14); ctx.fill();
@@ -56,8 +62,11 @@ function drawIcon(ctx, k, x, y) {
     ctx.rotate(-0.8);
     ctx.strokeStyle = '#9aa3ad'; ctx.lineWidth = 10;
     ctx.beginPath(); ctx.moveTo(0, -70); ctx.lineTo(0, -10); ctx.stroke();
-    ctx.strokeStyle = C.orange; ctx.lineWidth = 30;
+    // soudeuse de maître (niveau 4) : manche doré à bague cuivre
+    const master = toolLevel('iron') > 3;
+    ctx.strokeStyle = master ? '#e8b53a' : C.orange; ctx.lineWidth = 30;
     ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 60); ctx.stroke();
+    if (master) { ctx.strokeStyle = C.copperDark; ctx.lineWidth = 32; ctx.beginPath(); ctx.moveTo(0, 18); ctx.lineTo(0, 26); ctx.stroke(); }
   } else if (k === 'vacuum') {
     ctx.strokeStyle = '#6b7684'; ctx.lineWidth = 16;
     ctx.beginPath(); ctx.moveTo(-10, 0); ctx.quadraticCurveTo(50, 10, 40, 60); ctx.stroke();
@@ -65,6 +74,13 @@ function drawIcon(ctx, k, x, y) {
     ctx.beginPath(); ctx.arc(-20, -20, 40, 0, TAU); ctx.fill();
     ctx.fillStyle = '#374151';
     ctx.beginPath(); ctx.arc(-20, -20, 18, 0, TAU); ctx.fill();
+    // aspirateur cyclone (niveau 4) : tourbillon blanc au centre
+    if (toolLevel('vacuum') > 3) {
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 5;
+      ctx.beginPath();
+      for (let a = 0; a < 3.4 * Math.PI; a += 0.2) { const r = 3 + a * 3.2; const px = -20 + Math.cos(a) * r, py = -20 + Math.sin(a) * r; a ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+      ctx.stroke();
+    }
   } else if (k === 'lens') {
     ctx.strokeStyle = C.copperDark; ctx.lineWidth = 18;
     ctx.beginPath(); ctx.moveTo(25, 25); ctx.lineTo(62, 62); ctx.stroke();
@@ -86,7 +102,7 @@ function tapDeco(d, x, y) {
     buyDeco(d);
     vibrate([10, 20, 40]);
     sfx('buy');
-    fx.spawn(x + 110, y + 150, { count: 26, color: '#ffd36b', speed: 480, size: 8 });
+    fx.spawn(x + DICON.x, y + DICON.y, { count: 26, color: '#ffd36b', speed: 480, size: 8 });
     showToast('shop.deco_bought', { name: t('deco.' + d.id) }, C.green);
   } else {
     vibrate([15, 25, 15]);
@@ -145,7 +161,7 @@ export default {
       decoList().forEach((d, i) => {
         const x = DCARD.x + (i % 2) * DCARD.stepX, y = DCARD.y + Math.floor(i / 2) * DCARD.stepY;
         buttons.add({
-          x: x + DCARD.w - 210, y: y + 150, w: 190, h: 100, size: 34, style: 'secondary', deco: d,
+          x: x + DCARD.w - 196, y: y + 82, w: 178, h: 88, size: 32, style: 'secondary', deco: d,
           label: () => {
             const st = decoState(d);
             if (st === 'owned') return t('shop.owned');
@@ -234,16 +250,19 @@ export default {
       roundRect(ctx, x, y + 10, w, h - 4, 34); ctx.fill();
       ctx.fillStyle = owned ? '#eaf6ee' : C.paper;
       roundRect(ctx, x, y, w, h - 8, 34); ctx.fill();
+      const ix = x + DICON.x, iy = y + DICON.y;
       ctx.fillStyle = 'rgba(196, 122, 60, 0.12)';
-      ctx.beginPath(); ctx.arc(x + 110, y + 150, 80, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(ix, iy, DICON.r, 0, TAU); ctx.fill();
       if (d.id === 'neon_sign') {
         // l'enseigne seule, en petit, pour montrer le cadre lumineux autour
         ctx.fillStyle = '#c47a3c';
-        roundRect(ctx, x + 110 - 62, y + 150 - 16, 124, 32, 8); ctx.fill();
+        roundRect(ctx, ix - 45, iy - 12, 90, 24, 6); ctx.fill();
       }
-      drawDeco(ctx, d.id, x + 110, y + 150, ICON_SCALE[d.id] || 0.7, time);
-      fitText(ctx, t('deco.' + d.id), x + w / 2, y + 50, w - 50, 38, C.ink, 900);
-      if (owned) fitText(ctx, t('shop.in_workshop'), x + w - 115, y + 120, 200, 26, C.green, 800);
+      // vignette rognée au rond (le fil du drone suspendu ne déborde pas sur le titre)
+      ctx.save(); ctx.beginPath(); ctx.arc(ix, iy, DICON.r, 0, TAU); ctx.clip();
+      drawDeco(ctx, d.id, ix, iy, (ICON_SCALE[d.id] || 0.7) * DICON.s, time, !owned);
+      ctx.restore();
+      fitText(ctx, t('deco.' + d.id), x + w / 2, y + 40, w - 40, 34, C.ink, 900);
     });
   },
 

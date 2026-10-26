@@ -2,7 +2,11 @@
 // En ligne : on prend toujours la version la plus récente sur le site (et on la garde en cache).
 // Hors ligne (ou réseau trop lent) : on sert la copie en cache.
 // La liste FILES est refaite par « node tools/maj-cache.mjs » (à lancer après chaque ajout de fichier).
-const VERSION = 'pico-clinic-bef41b74';
+<<<<<<< HEAD
+const VERSION = 'pico-clinic-696563f1';
+=======
+const VERSION = 'pico-clinic-ad8df536';
+>>>>>>> fe2ad10 (Achats de fin de jeu au rang 5 : visseuse turbo, aspirateur cyclone, soudeuse de maître et 4 décorations de prestige)
 const FILES = [
   './',
   'audio/music_op.mp3',

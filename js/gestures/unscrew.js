@@ -3,17 +3,21 @@
 // Dérapage si le doigt s'éloigne de plus de slip_factor × le rayon de la vis.
 // Dévisseuse (params.hold_turns > 0, outil acheté à la boutique) : il suffit de maintenir
 // le doigt sur la vis, elle tourne toute seule (hold_turns tours par seconde).
+// Visseuse turbo (params.tap_turns > 0, niveau 4) : un simple toucher, la vis sort toute seule
+// (tap_turns tours par seconde) ; on peut toucher les vis suivantes sans attendre.
 const TAU = Math.PI * 2;
 
 export function createUnscrew(screws, params, hooks = {}) {
   let active = null;
-  const hold = params.hold_turns > 0;
+  const tap = params.tap_turns > 0;
+  const hold = !tap && params.hold_turns > 0;
+  const spinning = new Set(); // visseuse turbo : vis qui tournent seules
 
   function find(x, y) {
     let best = null;
     let bd = Infinity;
     for (const s of screws) {
-      if (s.out) continue;
+      if (s.out || spinning.has(s)) continue;
       const d = Math.hypot(x - s.x, y - s.y);
       if (d < s.r * params.grab_factor && d < bd) { best = s; bd = d; }
     }
@@ -27,25 +31,30 @@ export function createUnscrew(screws, params, hooks = {}) {
     const need = (s.rusty ? params.turns_rusty : params.turns) * TAU;
     s.progress = Math.min(1, Math.abs(s.turned) / need);
     const q = Math.floor(Math.abs(s.turned) / (TAU / 4));
-    if (q !== active.quarter) {
-      active.quarter = q;
+    if (q !== s.quarter) {
+      s.quarter = q;
       if (hooks.onTick) hooks.onTick(s);
     }
     if (s.progress >= 1) {
       s.out = true;
-      active = null;
+      spinning.delete(s);
+      if (active && active.s === s) active = null;
       if (hooks.onOut) hooks.onOut(s);
     }
   }
 
   return {
     get active() { return active && active.s; },
-    get hold() { return hold; },
+    get hold() { return hold || tap; },
+    get tap() { return tap; },
+    get spinning() { return spinning.size > 0; },
 
     down(x, y) {
       const s = find(x, y);
       if (!s) return false;
-      active = { s, last: Math.atan2(y - s.y, x - s.x), quarter: Math.floor(Math.abs(s.turned) / (TAU / 4)) };
+      s.quarter = Math.floor(Math.abs(s.turned) / (TAU / 4));
+      if (tap) { spinning.add(s); if (hooks.onTap) hooks.onTap(s); return true; }
+      active = { s, last: Math.atan2(y - s.y, x - s.x) };
       return true;
     },
 
@@ -72,6 +81,7 @@ export function createUnscrew(screws, params, hooks = {}) {
     // Dévisseuse : la vis tourne tant que le doigt reste dessus.
     update(dt) {
       if (active && hold) turn(active.s, -params.hold_turns * TAU * dt);
+      for (const s of [...spinning]) turn(s, -params.tap_turns * TAU * dt);
     },
 
     up() {
@@ -82,8 +92,8 @@ export function createUnscrew(screws, params, hooks = {}) {
     drawGuides(ctx, time) {
       for (const s of screws) {
         if (s.out || s.fly) continue;
-        const isActive = active && active.s === s;
-        if (isActive) {
+        const isActive = (active && active.s === s) || spinning.has(s);
+        if (isActive && !tap) {
           ctx.save();
           ctx.setLineDash([10, 14]);
           ctx.lineDashOffset = -time * 40;

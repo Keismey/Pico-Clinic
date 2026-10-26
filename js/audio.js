@@ -157,6 +157,8 @@ const SYNTH = {
     tone(t, 700, 0.12, { type: 'triangle', vol: 0.18, to: 1500 });
     noise(t + 0.1, 0.05, { vol: 0.2, freq: 5000, q: 4 });
   },
+  // visseuse turbo : petit « bzzz » qui monte
+  turbo: (t) => { tone(t, 220, 0.28, { type: 'sawtooth', vol: 0.05, to: 660, filter: { freq: 1800 } }); noise(t, 0.25, { vol: 0.06, freq: 2500, to: 5000, q: 3 }); },
   screw_tray: (t) => tone(t, 2400 + Math.random() * 300, 0.12, { type: 'sine', vol: 0.08 }),
   slip: (t) => { noise(t, 0.12, { vol: 0.25, freq: 3000, to: 900, q: 3 }); tone(t, 300, 0.12, { type: 'square', vol: 0.04, to: 180 }); },
   plate: (t) => { tone(t, 150, 0.2, { vol: 0.35, to: 70 }); noise(t, 0.08, { vol: 0.18, type: 'lowpass', freq: 900 }); },

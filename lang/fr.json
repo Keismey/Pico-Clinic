@@ -622,7 +622,6 @@
   "shop.tab.tools": "Outils",
   "shop.tab.deco": "Décorations",
   "shop.owned": "Placé",
-  "shop.in_workshop": "Dans l'atelier",
   "shop.deco_bought": "{name} : placé dans l'atelier !",
   "shop.deco_owned": "Déjà dans l'atelier !",
   "deco.lamp": "Lampe d'établi",
@@ -703,5 +702,18 @@
   "nb.daily.open": "Pas encore tenté",
   "nb.daily.missed": "Pas joué",
   "nb.daily.failed": "Pas réussi",
-  "nb.daily.result": "{b} · {t}"
+  "nb.daily.result": "{b} · {t}",
+  "tool.turbo_driver": "Visseuse turbo",
+  "tool.turbo_driver.desc": "Un toucher : la vis saute toute seule",
+  "tool.cyclone_vacuum": "Aspirateur cyclone",
+  "tool.cyclone_vacuum.desc": "Même taille, rouille enlevée bien plus vite",
+  "tool.master_iron": "Soudeuse de maître",
+  "tool.master_iron.desc": "Piste encore plus large, ne brûle presque plus",
+  "tuto.driver_turbo": "La visseuse turbo ! Touche une vis une seule fois et passe à la suivante : elles sautent toutes seules.",
+  "tuto.driver_turbo_ok": "Vrouuum ! Record battu.",
+  "op.hint.unscrew_tap": "Visseuse turbo : touche chaque vis une fois, elle saute toute seule.",
+  "deco.polaroids": "Mur de polaroïds",
+  "deco.rare_showcase": "Vitrine des pièces rares",
+  "deco.firefly_jar": "Bocal à lucioles",
+  "deco.robot": "Robot assistant"
 }

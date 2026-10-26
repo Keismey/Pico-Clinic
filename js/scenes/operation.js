@@ -77,7 +77,9 @@ export default {
     if (rep.coverOpen) rep.coverAnim = 1;
 
     unscrew = createUnscrew(rep.screws, g.unscrew, {
-      onTick: (s) => { vibrate(s.rusty ? 12 : 7); sfx('screw_turn', { rusty: s.rusty }); },
+      // visseuse turbo : la vis tourne très vite, un clic sur deux suffit (pas de vibration)
+      onTick: (s) => { if (g.unscrew.tap_turns > 0) { if (s.quarter % 2 === 0) sfx('screw_turn', { rusty: s.rusty }); return; } vibrate(s.rusty ? 12 : 7); sfx('screw_turn', { rusty: s.rusty }); },
+      onTap: () => { vibrate(12); sfx('turbo'); },
       onSlip: (s) => {
         s.damaged++;
         rep.slips++;
@@ -284,8 +286,9 @@ export default {
   // Première utilisation de la dévisseuse : Gribouille montre qu'il suffit de garder le doigt sur la vis.
   driverLesson(left) {
     const firstScrew = () => rep.screws.find((s) => !s.out) || rep.screws[0];
+    const turbo = unscrew.tap;
     return {
-      id: 'tool_electric_driver', key: 'tuto.driver', praise: 'tuto.driver_ok', always: true,
+      id: turbo ? 'tool_turbo_driver' : 'tool_electric_driver', key: turbo ? 'tuto.driver_turbo' : 'tuto.driver', praise: turbo ? 'tuto.driver_turbo_ok' : 'tuto.driver_ok', always: true,
       start: () => intro >= 1 && !rep.coverOpen,
       done: () => rep.screws.filter((s) => !s.out).length < left,
       demo: () => { const s = firstScrew(); return demo.path([[s.x, s.y], [s.x + 1, s.y]], 1.6, 220, false); },
@@ -657,6 +660,7 @@ export default {
   hintKey() {
     if (!rep.coverOpen && rep.coverLoose) return 'op.hint.lift';
     if (!rep.coverOpen) {
+      if (unscrew.tap) return 'op.hint.unscrew_tap';
       if (unscrew.hold) return unscrew.active && unscrew.active.rusty ? 'op.hint.rusty_hold' : 'op.hint.unscrew_hold';
       return unscrew.active && unscrew.active.rusty ? 'op.hint.rusty' : 'op.hint.unscrew';
     }

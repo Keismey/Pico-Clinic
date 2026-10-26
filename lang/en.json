@@ -622,7 +622,6 @@
   "shop.tab.tools": "Tools",
   "shop.tab.deco": "Decorations",
   "shop.owned": "Placed",
-  "shop.in_workshop": "In the workshop",
   "shop.deco_bought": "{name}: placed in the workshop!",
   "shop.deco_owned": "Already in the workshop!",
   "deco.lamp": "Bench lamp",
@@ -703,5 +702,18 @@
   "nb.daily.open": "Not tried yet",
   "nb.daily.missed": "Not played",
   "nb.daily.failed": "Not fixed",
-  "nb.daily.result": "{b} · {t}"
+  "nb.daily.result": "{b} · {t}",
+  "tool.turbo_driver": "Turbo screwdriver",
+  "tool.turbo_driver.desc": "One tap: the screw pops out by itself",
+  "tool.cyclone_vacuum": "Cyclone vacuum",
+  "tool.cyclone_vacuum.desc": "Same size, removes rust much faster",
+  "tool.master_iron": "Master soldering iron",
+  "tool.master_iron.desc": "Even wider path, almost never burns",
+  "tuto.driver_turbo": "The turbo screwdriver! Tap a screw just once and move on to the next: they pop out by themselves.",
+  "tuto.driver_turbo_ok": "Vroom! New record.",
+  "op.hint.unscrew_tap": "Turbo screwdriver: tap each screw once, it pops out by itself.",
+  "deco.polaroids": "Polaroid wall",
+  "deco.rare_showcase": "Rare parts showcase",
+  "deco.firefly_jar": "Firefly jar",
+  "deco.robot": "Robot helper"
 }

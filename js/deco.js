@@ -3,6 +3,7 @@
 import { game } from './state.js';
 import { save, persist } from './save.js';
 import { roundRect } from './ui.js';
+import { drawRarePart } from './portraits.js';
 
 const TAU = Math.PI * 2;
 
@@ -25,6 +26,29 @@ export function buyDeco(d) {
   save.deco = [...(save.deco || []), d.id];
   persist();
   return true;
+}
+
+// Décorations de prestige (rang 5) : modèles déjà réparés (polaroïds), dans l'ordre des commandes.
+function repairedLooks() {
+  const seen = new Set(), out = [];
+  for (const o of game.data.orders || []) {
+    const r = save.orders[o.id];
+    if (!r || !r.paid || seen.has(o.model)) continue;
+    seen.add(o.model);
+    const m = game.data.patients[o.model];
+    if (m && m.look) out.push(m.look);
+  }
+  return out;
+}
+
+// Un petit patient tout rond (photo, robot) : corps, deux yeux, une joue.
+function tinyFace(ctx, x, y, r, body, accent) {
+  ctx.fillStyle = body;
+  roundRect(ctx, x - r, y - r * 0.8, r * 2, r * 1.6, r * 0.5); ctx.fill();
+  ctx.fillStyle = '#1f2937';
+  for (const sx of [-1, 1]) { ctx.beginPath(); ctx.arc(x + sx * r * 0.38, y - r * 0.1, r * 0.17, 0, TAU); ctx.fill(); }
+  ctx.fillStyle = accent;
+  ctx.beginPath(); ctx.arc(x, y + r * 0.42, r * 0.16, 0, TAU); ctx.fill();
 }
 
 const DRAW = {
@@ -140,6 +164,105 @@ const DRAW = {
     ctx.closePath(); ctx.fill();
     ctx.restore();
   },
+  rare_showcase(ctx, time, shop) {
+    // vitrine éclairée : les pièces rares gagnées, 4 × 3 (cases vides tant qu'elles manquent)
+    ctx.fillStyle = '#8f5426'; roundRect(ctx, -88, 52, 176, 18, 6); ctx.fill();
+    ctx.fillStyle = '#6b3f1c'; roundRect(ctx, -82, -66, 164, 120, 10); ctx.fill();
+    ctx.fillStyle = '#fff3d6'; roundRect(ctx, -74, -58, 148, 104, 6); ctx.fill();
+    const parts = game.data.rareParts || [];
+    parts.slice(0, 12).forEach((p, i) => {
+      const x = -54 + (i % 4) * 36, y = -38 + Math.floor(i / 4) * 32;
+      const own = shop ? i % 3 !== 2 : (save.rare_parts || []).includes(p.id);
+      if (own) drawRarePart(ctx, p.id, x, y, 13, true, time);
+      else { ctx.fillStyle = 'rgba(122, 99, 80, 0.18)'; ctx.beginPath(); ctx.arc(x, y, 9, 0, TAU); ctx.fill(); }
+    });
+    // vitre et reflet qui passe
+    ctx.fillStyle = 'rgba(159, 245, 231, 0.18)'; roundRect(ctx, -74, -58, 148, 104, 6); ctx.fill();
+    const k = (time * 0.25) % 1.6;
+    if (k < 1) {
+      ctx.save(); roundRect(ctx, -74, -58, 148, 104, 6); ctx.clip();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      const x = -110 + k * 220;
+      ctx.beginPath(); ctx.moveTo(x, -60); ctx.lineTo(x + 22, -60); ctx.lineTo(x - 8, 48); ctx.lineTo(x - 30, 48); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(0, -66, 6, 0, TAU); ctx.fill();
+  },
+  polaroids(ctx, time, shop) {
+    // guirlande de photos des modèles déjà réparés (6 au plus, les plus anciens d'abord)
+    const looks = shop
+      ? [{ body: '#3fd0bb', accent: '#ff8a3d' }, { body: '#ffd166', accent: '#e0453a' }, { body: '#8bc34a', accent: '#c47a3c' }]
+      : repairedLooks().slice(0, 6);
+    const n = shop ? 3 : 6, span = shop ? 220 : 300;
+    ctx.strokeStyle = '#6b4a2a'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-span / 2 - 10, -40); ctx.quadraticCurveTo(0, -10, span / 2 + 10, -40); ctx.stroke();
+    for (let i = 0; i < n; i++) {
+      const u = n === 1 ? 0.5 : i / (n - 1);
+      const x = -span / 2 + u * span, y = -40 + 30 * (1 - Math.pow(2 * u - 1, 2)) * 0.98;
+      const lk = looks[i];
+      ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(time * 1.1 + i * 1.7) * 0.06 + (i % 2 ? 0.08 : -0.08));
+      if (!lk) {
+        // emplacement libre : juste la pince à linge
+        ctx.fillStyle = '#c9a24a'; ctx.fillRect(-4, -6, 8, 14);
+        ctx.restore(); continue;
+      }
+      ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fillRect(-23, 2, 50, 60);
+      ctx.fillStyle = '#fffdf7'; ctx.fillRect(-26, -2, 52, 62);
+      ctx.fillStyle = '#cfe8f3'; ctx.fillRect(-21, 3, 42, 40);
+      tinyFace(ctx, 0, 24, 14, lk.body, lk.accent || '#ff8a3d');
+      ctx.fillStyle = '#c9a24a'; ctx.fillRect(-4, -8, 8, 14);
+      ctx.restore();
+    }
+  },
+  firefly_jar(ctx, time) {
+    // petite étagère murale et bocal de lucioles-drones lumineuses
+    ctx.fillStyle = '#8f5426'; roundRect(ctx, -52, 58, 104, 14, 5); ctx.fill();
+    ctx.fillStyle = '#6b3f1c'; ctx.beginPath(); ctx.moveTo(-34, 72); ctx.lineTo(-34, 92); ctx.lineTo(-18, 72); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(34, 72); ctx.lineTo(34, 92); ctx.lineTo(18, 72); ctx.closePath(); ctx.fill();
+    const glow = ctx.createRadialGradient(0, 10, 4, 0, 10, 70);
+    glow.addColorStop(0, 'rgba(255, 236, 140, 0.35)'); glow.addColorStop(1, 'rgba(255, 236, 140, 0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0, 10, 70, 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(200, 236, 245, 0.45)'; roundRect(ctx, -38, -48, 76, 106, 22); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 4; ctx.stroke();
+    ctx.fillStyle = '#c47a3c'; roundRect(ctx, -32, -62, 64, 18, 6); ctx.fill();
+    for (let k = 0; k < 5; k++) {
+      const x = Math.sin(time * (0.9 + k * 0.23) + k * 2.1) * 22;
+      const y = 6 + Math.cos(time * (0.7 + k * 0.19) + k) * 34;
+      const on = 0.55 + 0.45 * Math.sin(time * 3 + k * 1.3);
+      ctx.fillStyle = `rgba(255, 236, 140, ${0.35 * on})`; ctx.beginPath(); ctx.arc(x, y, 11, 0, TAU); ctx.fill();
+      ctx.fillStyle = `rgba(255, 214, 90, ${0.6 + 0.4 * on})`; ctx.beginPath(); ctx.arc(x, y, 5, 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      const fl = Math.abs(Math.sin(time * 30 + k));
+      for (const sx of [-1, 1]) { ctx.beginPath(); ctx.ellipse(x + sx * 6, y - 4, 5 * fl + 1, 2.5, sx * 0.5, 0, TAU); ctx.fill(); }
+    }
+  },
+  robot(ctx, time) {
+    // petit robot assis : toutes les 7 s, il fait coucou et ses yeux clignent
+    const c = time % 7, wave = c < 1.6 ? Math.sin((c / 1.6) * Math.PI * 4) : 0, blink = c > 3 && c < 3.15;
+    ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(0, 50, 46, 7, 0, 0, TAU); ctx.fill();
+    // jambes qui pendent
+    ctx.strokeStyle = '#6b7684'; ctx.lineWidth = 8; ctx.lineCap = 'round';
+    for (const sx of [-1, 1]) { ctx.beginPath(); ctx.moveTo(sx * 14, 40); ctx.lineTo(sx * 16, 62 + Math.sin(time * 2 + sx) * 3); ctx.stroke(); }
+    ctx.fillStyle = '#c47a3c'; roundRect(ctx, -30, 4, 60, 44, 12); ctx.fill();
+    ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(0, 26, 7, 0, TAU); ctx.fill();
+    // bras gauche posé, bras droit qui fait coucou
+    ctx.strokeStyle = '#6b7684'; ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.moveTo(-30, 14); ctx.lineTo(-40, 40); ctx.stroke();
+    const a = -0.4 - (c < 1.6 ? 1.6 : 0) + wave * 0.35;
+    ctx.beginPath(); ctx.moveTo(30, 14); ctx.lineTo(30 + Math.cos(a) * 30, 14 + Math.sin(a) * 30 + (c < 1.6 ? 0 : 38)); ctx.stroke();
+    ctx.fillStyle = '#9aa3ad'; ctx.beginPath(); ctx.arc(30 + Math.cos(a) * 30, 14 + Math.sin(a) * 30 + (c < 1.6 ? 0 : 38), 7, 0, TAU); ctx.fill();
+    // tête et antenne
+    ctx.strokeStyle = '#6b7684'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(0, -36); ctx.lineTo(0, -50); ctx.stroke();
+    ctx.fillStyle = c < 1.6 ? '#ff8a3d' : '#3fd0bb'; ctx.beginPath(); ctx.arc(0, -52, 6, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#3fd0bb'; roundRect(ctx, -32, -38, 64, 44, 14); ctx.fill();
+    ctx.fillStyle = '#1f2937'; roundRect(ctx, -24, -30, 48, 28, 9); ctx.fill();
+    ctx.fillStyle = '#9ff5e7';
+    for (const sx of [-1, 1]) {
+      if (blink) ctx.fillRect(sx * 10 - 6, -17, 12, 3);
+      else { ctx.beginPath(); ctx.arc(sx * 10, -16, 5, 0, TAU); ctx.fill(); }
+    }
+  },
 };
 
 // Place dans l'atelier : [x, y, échelle] ; wall = dessiné sur le mur, sinon sur le comptoir.
@@ -152,22 +275,28 @@ const PLACE = {
   neon_sign: [290, 304, 1, 'wall'],
   rug: [840, 995, 1, 'counter'],
   plant: [585, 905, 0.9, 'counter'],
+  // prestige (rang 5)
+  polaroids: [732, 180, 1, 'wall'],
+  robot: [975, 168, 1, 'wall'],
+  firefly_jar: [534, 600, 0.85, 'wall'],
+  rare_showcase: [92, 918, 0.92, 'counter'],
 };
 
 // Objet seul (boutique) : centré en (x, y), agrandi de s.
-export function drawDeco(ctx, id, x, y, s = 1, time = 0) {
+// shop = vignette de la boutique (polaroïds et vitrine d'exemple, avant l'achat).
+export function drawDeco(ctx, id, x, y, s = 1, time = 0, shop = false) {
   if (!DRAW[id]) return;
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(s, s);
-  DRAW[id](ctx, time);
+  DRAW[id](ctx, time, shop);
   ctx.restore();
 }
 
 // Toutes les décorations achetées, au mur ('wall') ou sur le comptoir ('counter').
 // Ordre de dessin fixe (de l'arrière vers l'avant), quel que soit l'ordre d'achat :
 // le drone suspendu passe par-dessus l'enseigne lumineuse.
-const LAYER = ['neon_sign', 'poster', 'aquarium', 'gear_clock', 'lamp', 'hanging_drone', 'rug', 'plant'];
+const LAYER = ['neon_sign', 'poster', 'aquarium', 'gear_clock', 'lamp', 'hanging_drone', 'polaroids', 'robot', 'firefly_jar', 'rug', 'plant', 'rare_showcase'];
 
 export function drawOwnedDecos(ctx, where, time = 0) {
   const owned = save.deco || [];
@@ -178,4 +307,4 @@ export function drawOwnedDecos(ctx, where, time = 0) {
 }
 
 // Petite vignette pour la boutique (taille à peu près égale pour tous).
-export const ICON_SCALE = { lamp: 0.8, plant: 0.8, poster: 0.6, rug: 0.32, hanging_drone: 1.1, aquarium: 0.75, neon_sign: 0.3, gear_clock: 1.1 };
+export const ICON_SCALE = { lamp: 0.8, plant: 0.8, poster: 0.6, rug: 0.32, hanging_drone: 1.1, aquarium: 0.75, neon_sign: 0.3, gear_clock: 1.1, rare_showcase: 0.8, polaroids: 0.72, firefly_jar: 0.9, robot: 1.05 };
