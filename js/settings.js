@@ -2,10 +2,13 @@
 import { setLang } from './i18n.js';
 import { save, persist } from './save.js';
 
-export const VERSION = '1.0.1';
+export const VERSION = '1.0.2';
 
 // Notes de mise à jour, la plus récente en premier (affichées dans les Options, et une fois après chaque mise à jour).
 export const NOTES = [
+  { v: '1.0.2', d: ['26 octobre 2026', '26 October 2026'],
+    fr: ['Défi du jour : un bouton « Partager mon résultat » envoie ta médaille, tes étoiles et ton temps à tes amis, sans rien dévoiler de la réparation.'],
+    en: ['Daily challenge: a “Share my result” button sends your medal, stars and time to your friends, without giving away anything about the repair.'] },
   { v: '1.0.1', d: ['26 octobre 2026', '26 October 2026'],
     fr: ['Options : notes de mise à jour, sauvegarde à exporter ou importer (pour changer d’appareil), signaler un bug, soutenir le studio, crédits.',
       'Le navigateur est invité à garder ta sauvegarde même quand il fait du ménage.',

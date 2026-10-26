@@ -2,6 +2,7 @@
 import { W } from '../canvas.js';
 import { t } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawText, fitText, roundRect } from '../ui.js';
+import { canShare, shareResult, shareToast as makeShareToast, drawShareToast } from '../share.js';
 import { withDrone, drawShadow, drawFrame, drawCover } from '../drone.js';
 import { game } from '../state.js';
 import { save, totalStars } from '../save.js';
@@ -27,7 +28,7 @@ const STAR_X = [W / 2 - 290, W / 2, W / 2 + 290];
 const STAR_KEYS = ['done.star.works', 'done.star.clean', 'done.star.precise'];
 const STAR_DELAY = 0.55;
 
-let rep, buttons, time, res, pay, shown, creditsShown, needStars, tuto;
+let rep, buttons, time, res, pay, shown, creditsShown, needStars, tuto, shareToast;
 
 function fmt(sec) {
   const s = Math.round(sec);
@@ -64,6 +65,7 @@ export default {
     rep = game.repair;
     time = 0;
     shown = 0;
+    shareToast = null;
     res = scoreRepair(rep);
     const before = save.credits;
     // atelier d'essai : rien n'est payé ni enregistré ; Atelier libre : payé à chaque fois, sans étoiles enregistrées
@@ -91,8 +93,16 @@ export default {
       // défi quotidien : un 2e essai s'il en reste, l'historique du Carnet, les commandes
       if (triesLeft(o.daily) > 0) buttons.add({ x: 190, y: 1500, w: 700, h: 170, size: 60, label: () => t('daily.retry'), onTap: () => { if (startDaily()) go('operation', { order: 'free' }); else go('daily'); } });
       else buttons.add({ x: 190, y: 1500, w: 700, h: 170, size: 60, label: () => t('daily.history'), onTap: () => go('notebook', { tab: 'daily' }) });
-      buttons.add({ x: 110, y: 1700, w: 410, h: 150, style: 'secondary', label: () => t('daily.title'), onTap: () => go('daily') });
-      buttons.add({ x: 560, y: 1700, w: 410, h: 150, style: 'secondary', label: () => t('done.orders'), onTap: () => go('orders') });
+      // rangée du bas : « Partager mon résultat » prend une place, les deux autres se serrent (pas la place d'une 3e rangée)
+      buttons.add({ x: 50, y: 1700, w: 310, h: 150, size: 42, wrap: true, style: 'secondary', label: () => t('daily.title'), onTap: () => go('daily') });
+      buttons.add({ x: 385, y: 1700, w: 310, h: 150, size: 42, wrap: true, style: 'secondary', label: () => t('done.orders'), onTap: () => go('orders') });
+      if (canShare(o.daily)) {
+        buttons.add({
+          x: 720, y: 1700, w: 310, h: 150, size: 42, wrap: true, style: 'secondary',
+          label: () => t('daily.share.btn'),
+          onTap: async () => { shareToast = makeShareToast(await shareResult(o.daily)) || shareToast; },
+        });
+      }
       return;
     }
     if (free) {
@@ -121,6 +131,7 @@ export default {
 
   update(dt) {
     time += dt;
+    if (shareToast) { shareToast.t -= dt; if (shareToast.t <= 0) shareToast = null; }
     for (const b of buttons.list) b.visible = !tuto;
     if (tuto && time > 0.6 + 3 * STAR_DELAY + 0.5) tuto.shown = Math.min(t(TUTO[tuto.i]).length, tuto.shown + CPS * dt);
     // une étoile toutes les 0,55 s, avec vibration et étincelles si elle est gagnée
@@ -202,6 +213,7 @@ export default {
       ctx.restore();
     }
     buttons.draw(ctx);
+    if (shareToast) drawShareToast(ctx, shareToast);
     if (tuto && time > 0.6 + 3 * STAR_DELAY + 0.5) this.drawTuto(ctx);
   },
 

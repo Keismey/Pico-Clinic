@@ -2,6 +2,7 @@
 import { W } from '../canvas.js';
 import { t, getLang } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawText, fitText, roundRect } from '../ui.js';
+import { canShare, shareResult, shareToast, drawShareToast } from '../share.js';
 import { withDrone, drawShadow, drawFrame, drawCover, setLook } from '../drone.js';
 import { buildPatient } from '../state.js';
 import { go } from '../scenes.js';
@@ -9,7 +10,7 @@ import { drawGribouille } from '../portraits.js';
 import { dateKey, makeDaily, startDaily, triesLeft, dayEntry, badgeOf, drawBadge, DAILY_TRIES } from '../daily.js';
 import { leftText, miniStar } from './orders.js';
 
-let buttons, time, key, order, look, test;
+let buttons, time, key, order, look, test, toast;
 
 // « dimanche 25 octobre » / « Sunday, October 25 »
 export function dayLabel(k, opts = { weekday: 'long', day: 'numeric', month: 'long' }) {
@@ -41,12 +42,25 @@ export default {
         if (startDaily()) go('operation', { order: 'free' });
       },
     });
+    toast = null;
+    if (!test && canShare(key)) {
+      // au moins un essai joué : « Partager mon résultat » prend une place dans la rangée du bas (pas la place d'une 3e rangée)
+      buttons.add({ x: 50, y: 1700, w: 310, h: 150, size: 42, wrap: true, style: 'secondary', label: () => t('daily.history'), onTap: () => go('notebook', { tab: 'daily' }) });
+      buttons.add({ x: 385, y: 1700, w: 310, h: 150, size: 42, wrap: true, style: 'secondary', label: () => t('shop.back'), onTap: () => this.back() });
+      buttons.add({
+        x: 720, y: 1700, w: 310, h: 150, size: 42, wrap: true, style: 'secondary',
+        label: () => t('daily.share.btn'),
+        onTap: async () => { toast = shareToast(await shareResult(key)) || toast; },
+      });
+      return;
+    }
     buttons.add({ x: 110, y: 1700, w: 410, h: 150, size: 50, style: 'secondary', label: () => t('daily.history'), visible: !test, onTap: () => go('notebook', { tab: 'daily' }) });
     buttons.add({ x: 560, y: 1700, w: 410, h: 150, size: 50, style: 'secondary', label: () => t('shop.back'), onTap: () => this.back() });
   },
 
   update(dt) {
     time += dt;
+    if (toast) { toast.t -= dt; if (toast.t <= 0) toast = null; }
   },
 
   draw(ctx) {
@@ -93,6 +107,7 @@ export default {
       fitText(ctx, t('daily.note'), W / 2, 1365, W - 140, 32, C.inkSoft, 700);
     }
     buttons.draw(ctx);
+    if (toast) drawShareToast(ctx, toast);
   },
 
   back() {

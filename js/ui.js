@@ -154,8 +154,26 @@ export function drawButton(ctx, b, pressed) {
   roundRect(ctx, 0, push, b.w, b.h - depth, 36);
   ctx.fill();
   if (ACCESS.contrast) { ctx.strokeStyle = C.ink; ctx.lineWidth = 5; ctx.stroke(); }
-  fitText(ctx, b.label(), b.w / 2, push + (b.h - depth) / 2 + 2, b.w - 48, b.size || 60, st.text);
+  if (b.wrap) wrapLabel(ctx, b.label(), b.w / 2, push + (b.h - depth) / 2 + 2, b.w - 40, b.size || 60, st.text);
+  else fitText(ctx, b.label(), b.w / 2, push + (b.h - depth) / 2 + 2, b.w - 48, b.size || 60, st.text);
   ctx.restore();
+}
+
+// Libellé sur une ou deux lignes (bouton avec « wrap: true ») : la taille baisse tant que ça ne tient pas.
+function wrapLabel(ctx, text, x, cy, maxW, size, color) {
+  let s = size;
+  let lines;
+  for (;;) {
+    ctx.font = font(s, 800);
+    lines = wrapLines(ctx, text, maxW);
+    if ((lines.length <= 2 && lines.every((l) => ctx.measureText(l).width <= maxW)) || s <= 20) break;
+    s -= 2;
+  }
+  const lh = s * 1.15;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = color;
+  lines.forEach((l, i) => ctx.fillText(l, x, cy + (i - (lines.length - 1) / 2) * lh));
 }
 
 function hit(b, x, y) {
