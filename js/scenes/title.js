@@ -6,7 +6,8 @@ import { W, H } from '../canvas.js';
 import { t, getLang } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawText, fitText, roundRect, font } from '../ui.js';
 import { withDrone, drawShadow, drawFrame, drawCover, setLook } from '../drone.js';
-import { go } from '../scenes.js';
+import { go, fadeFrom } from '../scenes.js';
+import { sfx } from '../audio.js';
 import { changeLang, VERSION } from '../settings.js';
 import { save, totalStars } from '../save.js';
 import { seen } from '../tutorial.js';
@@ -19,10 +20,13 @@ function play() {
 }
 
 // Images : logo du studio (commun aux jeux) et fond vertical de l'écran « Appuie pour continuer ».
+// done : chargée ou introuvable (le logo attend les deux images pour ne rien faire apparaître d'un coup).
 function loadImage(src) {
   const img = new Image();
   img.ok = false;
-  img.onload = () => { img.ok = true; };
+  img.done = false;
+  img.onload = () => { img.ok = true; img.done = true; };
+  img.onerror = () => { img.done = true; };
   img.src = src;
   return img;
 }
@@ -31,14 +35,25 @@ const COVER = loadImage('img/titre.webp');
 
 // Logo du studio : apparaît en 1 s, reste jusqu'à 2,3 s, puis s'efface en 0,7 s sur l'écran titre.
 const LOGO_IN = 0.15, LOGO_FADE = 1, LOGO_OUT = 2.3, LOGO_GONE = 0.7;
-let logo = null;    // { time, out } tant que le logo est affiché
+const LOGO_WAIT = 2;  // au plus 2 s d'attente des images (réseau lent)
+let logo = null;    // { time, out, wait } tant que le logo est affiché
 let menu = false;   // l'écran « Appuie pour continuer » a déjà été passé
+let menuTime = 1;   // temps depuis l'arrivée du menu (boutons qui montent)
 let buttons;
 let time = 0;
 
+// Le logo s'efface (après son temps ou au toucher) ; les bandes autour du jeu repassent au beige en même temps.
 function skipLogo() {
   if (!logo || logo.out !== null) return;
   logo.out = logo.time;
+  document.body.classList.remove('noir');
+}
+
+function openMenu() {
+  fadeFrom();
+  menu = true;
+  menuTime = 0;
+  sfx('click');
 }
 
 // halo : contour crème autour du titre, comme sur la couverture du hub (lisible sur le bois)
@@ -106,10 +121,15 @@ function drawMenu(ctx) {
   drawTitleLogo(ctx, 250);
   drawText(ctx, t('title.subtitle'), W / 2, 420, 860, 52, { color: C.inkSoft, weight: 700 });
   drawDrone(ctx, 860, 0.82);
+  // à l'arrivée du menu, le bas de l'écran monte doucement en place
+  const k = Math.min(1, menuTime / 0.5);
+  ctx.save();
+  ctx.translate(0, 90 * (1 - k) * (1 - k));
   fitText(ctx, t('title.wallet', { n: save.credits, s: totalStars() }), W / 2, 1318, 860, 40, C.copperDark, 800);
   fitText(ctx, t('title.language'), W / 2, 1562, 600, 36, C.inkSoft, 700);
   buttons.draw(ctx);
   fitText(ctx, t('title.version', { v: VERSION }), W / 2, 1885, 800, 30, C.inkSoft, 500);
+  ctx.restore();
 }
 
 function drawStudio(ctx) {
@@ -122,6 +142,8 @@ function drawStudio(ctx) {
   if (STUDIO.ok) {
     ctx.globalAlpha = (1 - out) * Math.max(0, Math.min(1, (l.time - LOGO_IN) / LOGO_FADE));
     const w = 640, h = w * STUDIO.naturalHeight / STUDIO.naturalWidth;
+    // le logo est sur fond noir : en « lighter », son carré noir ne se voit pas pendant le fondu
+    ctx.globalCompositeOperation = 'lighter';
     ctx.drawImage(STUDIO, (W - w) / 2, (H - h) / 2, w, h);
   }
   ctx.restore();
@@ -131,9 +153,10 @@ export default {
   init(params = {}) {
     setLook(null); // le mini-drone jouet de l'écran titre
     time = 0;
+    menuTime = 1;
     if (params.intro) {
-      logo = { time: 0, out: null };
-      document.body.style.background = '#000'; // bandes autour du jeu en noir pendant le logo
+      logo = { time: 0, out: null, wait: 0 };
+      document.body.classList.add('noir'); // bandes autour du jeu en noir pendant le logo
     }
     buttons = new Buttons();
     buttons.add({ x: 200, y: 1360, w: 680, h: 170, size: 72, label: () => t('title.play'), onTap: () => play() });
@@ -145,13 +168,15 @@ export default {
 
   update(dt) {
     time += dt;
+    menuTime += dt;
     if (logo) {
+      // le logo ne démarre qu'une fois son image chargée, et ne part pas avant l'image de l'écran titre
+      const ready = STUDIO.done && COVER.done;
+      if (logo.time === 0 && !STUDIO.done && logo.wait < LOGO_WAIT) { logo.wait += dt; return; }
+      if (logo.out === null && logo.time >= LOGO_OUT && !ready && logo.wait < LOGO_WAIT) { logo.wait += dt; return; }
       logo.time += dt;
-      if (logo.out === null && logo.time >= LOGO_OUT) logo.out = logo.time;
-      if (logo.out !== null && logo.time - logo.out >= LOGO_GONE) {
-        logo = null;
-        document.body.style.background = '';
-      }
+      if (logo.out === null && logo.time >= LOGO_OUT) skipLogo();
+      if (logo.out !== null && logo.time - logo.out >= LOGO_GONE) logo = null;
     }
   },
 
@@ -168,7 +193,7 @@ export default {
 
   pointer(type, x, y) {
     if (logo) { if (type === 'up') skipLogo(); return; }
-    if (!menu) { if (type === 'up') menu = true; return; }
+    if (!menu) { if (type === 'up') openMenu(); return; }
     buttons.pointer(type, x, y);
   },
 };

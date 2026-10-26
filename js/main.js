@@ -3,7 +3,7 @@ import { canvas, ctx, resize, beginFrame, toLogical } from './canvas.js';
 import { loadLanguages, detectLang, setLang, LANGS } from './i18n.js';
 import { save, persist } from './save.js';
 import { loadData } from './state.js';
-import { register, go, scene } from './scenes.js';
+import { register, go, scene, tickFade, drawFade } from './scenes.js';
 import { tickUI } from './ui.js';
 import * as fx from './particles.js';
 import { unlock, loopStopAll } from './audio.js';
@@ -41,9 +41,11 @@ function loop(ts) {
   // « Quitter la réparation ? » : le jeu est en pause derrière la question
   if (asking()) { tickAsk(dt); loopStopAll(); }
   else { scene().update(dt); fx.update(dt); }
+  tickFade(dt);
   beginFrame();
   scene().draw(ctx);
   fx.draw(ctx);
+  drawFade(ctx);
   if (asking()) drawAsk(ctx);
 }
 
@@ -110,7 +112,7 @@ async function boot() {
   const loading = document.getElementById('loading');
   if (loading) loading.remove();
   // lien de test « ?essai » : l'atelier d'essai des gestes secondaires
-  if (new URLSearchParams(location.search).has('essai')) go('bench');
+  if (new URLSearchParams(location.search).has('essai')) { document.body.classList.remove('noir'); go('bench'); }
   else go('title', { intro: true }); // logo Keismey Studio, puis « Appuie pour continuer »
   // bouton retour du téléphone : on remonte d'un écran (commun/ks-back.js gère l'historique)
   initBack(() => {
