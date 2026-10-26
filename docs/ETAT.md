@@ -21,9 +21,7 @@ Mis à jour : 2026-10-26 (recette automatique + icône et couverture Gemini, ver
 
 ## Bugs connus
 - En diagnostic, la fiche peut attraper le doigt avant la loupe. Indices longs un peu serrés.
-- Circuit oxydé : la main de démonstration frotte sur les composants fragiles (montre le mauvais geste).
-- Boutique, 1re visite : la bulle de Gribouille cache la ligne « Pince ».
-- Temps cibles peut-être trop larges (robot : 10 à 30 s pour 90 à 120 s) : à juger au doigt.
+- Circuit oxydé : la main de démonstration frotte sur les composants fragiles. Boutique, 1re visite : la bulle de Gribouille cache « Pince ». Temps cibles peut-être trop larges (robot : 10 à 30 s pour 90 à 120 s) : à juger au doigt.
 
 ## Prochaine étape
 - Correctifs de la recette (bugs ci-dessus), puis recette au doigt sur téléphone.
