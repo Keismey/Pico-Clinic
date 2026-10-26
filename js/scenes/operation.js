@@ -742,12 +742,11 @@ export default {
     fitText(ctx, t('op.speed.fast'), x + w - 60, y + h + 34, 200, 30, C.inkSoft, 700);
   },
 
-  // Quel outil prend le doigt ? Diagnostic : la loupe (le connecteur visible reste branchable).
+  // Quel outil prend le doigt ? Diagnostic : toujours la loupe (la fiche se branche après).
   // Ensuite : puce, fiche (si on la touche vraiment), rouille, fer, et l'aspirateur partout sur la carte.
   routeDown(x, y) {
     const onPlug = !rep.plug.connected && Math.abs(x - rep.plug.x) < 70 && Math.abs(y - rep.plug.y) < 55;
     if (rep.phase === 'diag') {
-      if (onPlug && connector.down(x, y)) return;
       lens.down(x, y);
       return;
     }

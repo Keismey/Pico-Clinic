@@ -67,6 +67,36 @@ export function createOxide(params, fx, { cost = 5 } = {}) {
     return Math.hypot(x - nx, y - ny) <= r;
   }
 
+  // Démo de Gribouille : un zigzag sur l'oxyde où le pinceau ne touche aucun composant.
+  function clear(x, y) {
+    return !comps.some((c) => !c.removed && overlaps(x, y, params.radius + 3, c));
+  }
+  function segClear(a, b) {
+    const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 6));
+    for (let i = 0; i <= n; i++) {
+      if (!clear(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n)) return false;
+    }
+    return true;
+  }
+  let sweepCache = null; // { cell, pts } : recalculé quand sa tache d'oxyde est nettoyée
+  function safeSweep() {
+    if (sweepCache && sweepCache.cell && sweepCache.cell.a > 0) return sweepCache.pts;
+    const dirty = cells.filter((q) => q.a > 0);
+    if (sweepCache && !sweepCache.cell && sweepCache.left === dirty.length) return null;
+    for (const [w, h] of [[120, 80], [100, 50], [80, 30], [120, 0], [70, 0], [40, 0]]) {
+      for (const c of dirty) {
+        const pts = [];
+        for (let i = 0; i <= 6; i++) pts.push([c.x + (i % 2 ? w / 2 : -w / 2), c.y - h / 2 + (i / 6) * h]);
+        if (pts.every((p, i) => i === 0 || segClear(pts[i - 1], p))) {
+          sweepCache = { cell: c, pts };
+          return pts;
+        }
+      }
+    }
+    sweepCache = { cell: null, pts: null, left: dirty.length }; // rien de sûr : pas de démo
+    return null;
+  }
+
   return {
     get done() { return done; },
 
@@ -191,8 +221,9 @@ export function createOxide(params, fx, { cost = 5 } = {}) {
     tutoKey() { return toFix().length ? 'tuto.sec.oxide3' : 'tuto.sec.oxide2'; },
     demo() {
       if (done) return null;
-      const c = cells.find((q) => q.a > 0) || cells[0];
-      return demo.sweep(c.x, c.y + params.offset_y, 120, 80);
+      const pts = safeSweep();
+      if (!pts) return null;
+      return demo.path(pts.map(([x, y]) => [x, y + params.offset_y]), 0.1, 700, false);
     },
 
     draw(ctx, time) {
