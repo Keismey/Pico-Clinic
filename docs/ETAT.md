@@ -2,7 +2,7 @@
 Mis à jour : 2026-10-26 (correctifs de la recette, version 1.0.0). Jeu : https://keismey.github.io/Pico-Clinic/ · Essai : https://keismey.github.io/Pico-Clinic/?essai
 
 ## Fait
-- Correctifs recette 2 : la main de Gribouille (circuit oxydé) ne frotte plus sur les composants (zigzag vérifié, sinon pas de démo) ; en diagnostic, la loupe prend toujours le doigt (la fiche se branche après) ; bulle de la boutique descendue sous la ligne Pince.
+- Correctifs recette 2 : la main de Gribouille (circuit oxydé) ne frotte plus sur les composants (zigzag vérifié, sinon pas de démo) ; en diagnostic, la loupe prend toujours le doigt (la fiche se branche après) ; bulle de la boutique descendue sous la ligne Pince ; texte d'aide qui rétrécit pour rester dans son cadre (circuit oxydé, rouille en FR).
 - 2026-10-26 : icône (`icons/`, 5 tailles, maskable réduite à 80 %) et couverture `couverture.webp` (titre ajouté en code) tirées des images Gemini ; le hub les reprend tout seul. Recette robot : 56 commandes sur 60 jouées au doigt simulé, aucune erreur, FR/EN sans débordement, sons et cache complets.
 - Correctifs recette : bandes de l'abeille découpées à la forme du ventre (ne dépassent plus) ; fumée de la puce grillée cachée pendant les vues rapprochées (gestes secondaires) ; Gribouille explique la dévisseuse à sa première utilisation (leçon `tool_electric_driver`, montrée même sur une commande déjà réussie).
 - C13 V5 : hors ligne (`sw.js` : en ligne la dernière version, sinon la copie ; réseau lent > 4 s → copie ; liste refaite par `node tools/maj-cache.mjs`). Installation : `manifest.webmanifest` (FR) et `manifest-en.webmanifest` (choisi selon la langue), icônes et couverture. Lien `?lang=fr|en`. `tools/verif-langues.mjs` : 678 clés FR = EN, aucune clé manquante, variables identiques. Relecture : EN harmonisé (trace, customer, fried chip, magnifier, power vacuum, racing drone, blueprint), FR « morceau {i} sur {n} », « Version {v} » à l'écran titre. Hub : carte Pico-Clinic (`games.js`, progression rang / étoiles / crédits), raccourci du manifest, nouvelle dans `news.json` (sans notification).
@@ -21,7 +21,7 @@ Mis à jour : 2026-10-26 (correctifs de la recette, version 1.0.0). Jeu : https:
 - Vitesses (dévisseuse, batterie, cœur, ressort, broches), temps cibles de Turbo, tremblement réduit, volumes, vibrations iPhone (iOS 18+).
 
 ## Bugs connus
-- Indices longs un peu serrés. Temps cibles peut-être trop larges (robot : 10 à 30 s pour 90 à 120 s) : à juger au doigt.
+- Temps cibles peut-être trop larges (robot : 10 à 30 s pour 90 à 120 s) : à juger au doigt.
 
 ## Prochaine étape
 - Recette au doigt sur téléphone (rubrique « À vérifier »), puis correctifs éventuels.

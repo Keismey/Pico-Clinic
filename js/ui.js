@@ -70,11 +70,20 @@ export function wrapLines(ctx, text, maxW) {
 
 // Texte centré verticalement autour de cy, avec retour à la ligne automatique.
 export function drawText(ctx, text, x, cy, maxW, size, opts = {}) {
-  const { color = C.ink, weight = 700, align = 'center', lineH = size * 1.25, stroke = null } = opts;
+  const { color = C.ink, weight = 700, align = 'center', stroke = null, maxH = 0 } = opts;
+  const k = (opts.lineH || size * 1.25) / size; // interligne proportionnel à la taille
+  let lineH = size * k;
   ctx.font = font(size, weight);
   ctx.textAlign = align;
   ctx.textBaseline = 'middle';
-  const lines = wrapLines(ctx, text, maxW);
+  let lines = wrapLines(ctx, text, maxW);
+  // maxH : le texte rétrécit tant qu'il ne tient pas dans cette hauteur
+  while (maxH && lines.length * lineH > maxH && size > 26) {
+    size -= 2;
+    lineH = size * k;
+    ctx.font = font(size, weight);
+    lines = wrapLines(ctx, text, maxW);
+  }
   let y = cy - ((lines.length - 1) * lineH) / 2;
   for (const l of lines) {
     if (stroke) {

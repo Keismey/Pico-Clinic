@@ -710,7 +710,9 @@ export default {
     }
     drawPanel(ctx, 70, 1370, W - 140, 262);
     const gauge = solder.active;
-    drawText(ctx, t(key, { i: CUTS.i + 1, n: CUTS.n }), W / 2, sub || gauge ? 1460 : 1501, W - 220, 44, { color: key === 'op.fault_here' ? C.red : C.ink });
+    // le texte rétrécit pour rester dans le panneau (au-dessus de la ligne du bas s'il y en a une)
+    drawText(ctx, t(key, { i: CUTS.i + 1, n: CUTS.n }), W / 2, sub || gauge ? 1460 : 1501, W - 220, 44,
+      { color: key === 'op.fault_here' ? C.red : C.ink, maxH: sub || gauge ? 165 : 225 });
     if (gauge) this.drawGauge(ctx);
     else if (sub) fitText(ctx, sub, W / 2, 1592, W - 220, 38, C.inkSoft, 700);
   },
