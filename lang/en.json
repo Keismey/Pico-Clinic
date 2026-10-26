@@ -715,5 +715,7 @@
   "deco.polaroids": "Polaroid wall",
   "deco.rare_showcase": "Rare parts showcase",
   "deco.firefly_jar": "Firefly jar",
-  "deco.robot": "Robot helper"
+  "deco.robot": "Robot helper",
+  "lobby.status_rank": "Rank {r}: {name}",
+  "lobby.status_credits": "{n} credits  ·  {s} ★"
 }

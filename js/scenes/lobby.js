@@ -116,7 +116,9 @@ export default {
     drawCounter(ctx);
     drawGribouille(ctx, GRIB.x, GRIB.y, GRIB.s, { time, talk: false });
     leftText(ctx, t('lobby.done'), 60, 85, W - 120, 64, C.copperDark, 900);
-    leftText(ctx, t('orders.status', { r: save.rank, name: t('rank.' + save.rank), n: save.credits, s: totalStars() }), 60, 170, W - 120, 38, C.inkSoft, 800);
+    // sur deux lignes à gauche : la guirlande de polaroïds et le robot (décos de prestige) occupent le haut à droite
+    leftText(ctx, t('lobby.status_rank', { r: save.rank, name: t('rank.' + save.rank) }), 60, 160, 470, 36, C.inkSoft, 800);
+    leftText(ctx, t('lobby.status_credits', { n: save.credits, s: totalStars() }), 60, 204, 470, 36, C.inkSoft, 800);
     for (const b of big.list) drawBig(ctx, b, b === big.pressed);
     bottom.draw(ctx);
   },

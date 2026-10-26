@@ -715,5 +715,7 @@
   "deco.polaroids": "Mur de polaroïds",
   "deco.rare_showcase": "Vitrine des pièces rares",
   "deco.firefly_jar": "Bocal à lucioles",
-  "deco.robot": "Robot assistant"
+  "deco.robot": "Robot assistant",
+  "lobby.status_rank": "Rang {r} : {name}",
+  "lobby.status_credits": "{n} crédits  ·  {s} ★"
 }
