@@ -1,31 +1,21 @@
 # Pico-Clinic — État du projet
-Mis à jour : 2026-10-26 (harmonisation avec les autres jeux du hub, v1.0.1). Jeu : https://keismey.github.io/Pico-Clinic/ · Essai : https://keismey.github.io/Pico-Clinic/?essai
+Mis à jour : 2026-10-26. **Statut : TERMINÉ (version 1.0.1).**
+Jeu : https://keismey.github.io/Pico-Clinic/ · Essai : https://keismey.github.io/Pico-Clinic/?essai
 
-## Fait
-- Harmonisation avec les autres jeux du hub (v1.0.1) : `commun/ks-studio.js` ; Options avec notes de mise à jour (`js/scenes/notes.js`, données dans `js/settings.js`, affichées une fois aux joueurs qui ont déjà joué), Sauvegarde (exporter / importer), Signaler un bug, Soutenir le studio, « v1.0.1 · Keismey Studio » et crédits ; « Bruitages » au lieu de « Sons » ; écran titre « Touche pour commencer » (« Clique pour commencer » à la souris), langue seulement dans les Options ; mesure d'audience Cloudflare ; aperçu de lien `og.jpg` 1200 × 630 ; `sw.js` réparé (il contenait un conflit de fusion depuis le commit 63ab5fa, ce qui bloquait la mise à jour du mode hors ligne).
-- Achats de fin de jeu (rang 5) : avant, tout était acheté dès la commande 50 (boutique 8 820, histoire 14 747 avec pourboires). Ajout de 3 outils niveau 4 (visseuse turbo 2 000 : un toucher par vis, 0,3 s, plusieurs vis à la fois ; aspirateur cyclone 1 800 : même taille, rouille enlevée 2,5× plus vite ; soudeuse de maître 2 200) et 4 décos de prestige (polaroïds des modèles réparés 1 000, vitrine des pièces rares 1 200, bocal à lucioles 1 300, robot qui fait coucou 1 500). Boutique : 19 820 ; il reste ~5 000 crédits à gagner après l'histoire (~20 réparations libres ou ~5 défis). Onglet décos en 2 × 6.
-- Écran de fin (`js/scenes/lobby.js`) : une fois les 60 commandes réparées, « Jouer » mène à Défi du jour / Atelier libre / Rejouer les niveaux (étoiles manquantes), avec Boutique · Carnet · Menu, sur l’atelier en fond (décorations, Gribouille). « Rejouer » ouvre la liste sur le premier chapitre incomplet ; son bouton « Retour » ramène à l'écran de fin.
-- Gribouille présente le Défi du jour (rang 3) et l'Atelier libre (rang 5), après le chapitre ou au premier appui (scènes `daily`, `free`).
-- Transitions jusqu'au menu : le logo attend ses images (2 s max), fondus enchaînés autour de l'écran titre (`fadeFrom` dans `scenes.js`), boutons du menu qui montent, bandes noir → beige en fondu, son au toucher. Lancement comme les autres jeux : logo Keismey Studio (`img/keismey-studio.webp`, 2,3 s, un toucher le passe), puis « Appuie pour continuer » sur l'image Gemini `img/titre.webp` (titre ajouté en code avec contour crème), puis le menu. Retour : `commun/ks-back.js` du hub ; liste des commandes (retour ou bouton Menu) → « Revenir à l'écran titre ? » ; écran titre → « Aller au hub ? ».
-- Correctifs recette 2 : la main de Gribouille (circuit oxydé) ne frotte plus sur les composants (zigzag vérifié, sinon pas de démo) ; en diagnostic, la loupe prend toujours le doigt (la fiche se branche après) ; bulle de la boutique descendue sous la ligne Pince ; texte d'aide qui rétrécit pour rester dans son cadre (circuit oxydé, rouille en FR) ; 2026-10-26 : icône (`icons/`, 5 tailles, maskable réduite à 80 %) et couverture `couverture.webp` (titre ajouté en code) tirées des images Gemini ; le hub les reprend tout seul. Recette robot : 56 commandes sur 60 jouées au doigt simulé, aucune erreur, FR/EN sans débordement, sons et cache complets.
-- C13 V5 : hors ligne (`sw.js` : en ligne la dernière version, sinon la copie ; réseau lent > 4 s → copie ; liste refaite par `node tools/maj-cache.mjs`). Installation : `manifest.webmanifest` (FR) et `manifest-en.webmanifest` (choisi selon la langue), icônes et couverture. Lien `?lang=fr|en`. `tools/verif-langues.mjs` : 678 clés FR = EN, aucune clé manquante, variables identiques. Relecture : EN harmonisé (trace, customer, fried chip, magnifier, power vacuum, racing drone, blueprint), FR « morceau {i} sur {n} », « Version {v} » à l'écran titre. Hub : carte Pico-Clinic (`games.js`, progression rang / étoiles / crédits), raccourci du manifest, nouvelle dans `news.json` (sans notification).
-- C12 V4b : écran Options (langue, volumes, vibrations, tremblement réduit, gaucher, contrastes, effacer) ; défi quotidien dès le rang 3 (`js/daily.js`) ; C11 V4a : musiques Gemini en boucle, ~35 effets en code (`js/audio.js`, `audio/LISEZMOI.md`), vibrations, particules (max 150), relecture des textes, générique.
-- C9-C10 V3 : 60 commandes, 5 rangs, examens, prototypes et pièces rares exigées, décorations, Atelier libre, textes des chapitres 3 à 5 et de la fin ; C1-C8 : gestes de base et secondaires, loupe, aspirateur, étoiles, paie, sauvegarde `pico_save_v1`, boutique, comptoir, Carnet, tutoriel, chapitres 1-2, bouton retour.
+## Fait (les 13 étapes du plan, C1 à C13)
+- Gestes de base et secondaires, loupe, aspirateur, 3 étoiles, pourboires, sauvegarde `pico_save_v1` (export / import).
+- 60 commandes, 5 rangs et examens, prototypes, pièces rares, Carnet, boutique (outils niveaux 1 à 4, décorations dont 4 de prestige), Atelier libre, Défi du jour (rang 3), écran de fin après les 60 commandes.
+- Tutoriel avec Gribouille, histoire complète (chapitres 1 à 5 et fin), FR/EN (678 clés, aucune manquante).
+- Musiques Gemini en boucle, ~35 bruitages en code, vibrations, particules ; Options (langue, volumes, accessibilité, notes de mise à jour, sauvegarde, signaler un bug, soutenir le studio).
+- Lancement commun aux jeux du hub (logo Keismey Studio, « Appuie pour continuer », retour `ks-back`), PWA hors ligne (`sw.js`, `tools/maj-cache.mjs`), icônes, couverture, aperçu de lien, carte et nouvelle sur le hub.
 
-## Écarts au GDD
+## Écarts au GDD (assumés)
 - Absents : élytres à clips (7), coutures (17), mécanisme à clé (29), 3 engrenages de la tortue (55) ; un geste de chaque type par patient ; pas de panne secondaire cachée.
-- Clients de passage sans texte dans le GDD (dialogues d'origine). Défi quotidien : 2 essais, une seule paie.
+- Clients de passage avec dialogues d'origine. Défi quotidien : 2 essais, une seule paie.
 
-## À vérifier au doigt (recette)
-- Installation depuis le hub, jeu complet en mode avion, sauvegarde après fermeture, les deux langues.
-- Visseuse turbo, aspirateur cyclone, soudeuse de maître ; décos de prestige au comptoir.
-- Vitesses (dévisseuse, batterie, cœur, ressort, broches), temps cibles de Turbo, tremblement réduit, volumes, vibrations iPhone (iOS 18+).
+## Si un bug remonte
+- Ouvrir une conversation « Correctifs Pico-Clinic 1.0.x » avec la liste des bugs ; augmenter la version dans `js/settings.js` et lancer `node tools/maj-cache.mjs` avant le commit.
+- Points jamais vérifiés au doigt : vitesses des gestes, temps cibles de Turbo (peut-être trop larges), outils niveau 4, vibrations iPhone, jeu complet en mode avion.
 
-## Bugs connus
-- Temps cibles peut-être trop larges (robot : 10 à 30 s pour 90 à 120 s) : à juger au doigt.
-
-## Prochaine étape
-- Recette au doigt sur téléphone (rubrique « À vérifier »), puis correctifs éventuels.
-
-## Plus tard
-- Images Gemini : non conseillées dans le jeu (mélange de styles, zones à toucher décalées). Succès. Indice 20 s ; pause ; gaucher dans les vues rapprochées ; Options depuis l'atelier ; sauver une réparation en cours ; revoir le tutoriel ; pannes cachées dans la loupe ; retour qui ferme d'abord la vue rapprochée.
+## Idées pour une éventuelle 1.1
+- Succès ; indice après 20 s ; pause ; gaucher dans les vues rapprochées ; Options depuis l'atelier ; sauver une réparation en cours ; revoir le tutoriel ; pannes cachées dans la loupe ; retour qui ferme d'abord la vue rapprochée.
