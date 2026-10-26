@@ -9,7 +9,7 @@ import { sfx } from '../audio.js';
 import * as fx from '../particles.js';
 import { go } from '../scenes.js';
 import { miniStar } from './orders.js';
-import { chapterStory } from './story.js';
+import { rankStories, playStories } from './story.js';
 import { save } from '../save.js';
 
 const TAU = Math.PI * 2;
@@ -23,8 +23,8 @@ export default {
     buttons = new Buttons();
     buttons.add({ x: 190, y: 1680, w: 700, h: 170, size: 64, label: () => t('done.continue'), onTap: () => {
       // nouveau chapitre : Gribouille raconte la suite (une seule fois)
-      const ch = chapterStory(save.rank);
-      if (ch) go('story', { id: ch, then: { scene: 'orders' } }); else go('orders');
+      // puis il présente les modes que ce rang ouvre (Défi du jour, Atelier libre)
+      playStories(rankStories(save.rank), { scene: 'orders' });
     } });
   },
 

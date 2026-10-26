@@ -1,7 +1,8 @@
 # Pico-Clinic — État du projet
-Mis à jour : 2026-10-26 (logo du studio et écran titre). Jeu : https://keismey.github.io/Pico-Clinic/ · Essai : https://keismey.github.io/Pico-Clinic/?essai
+Mis à jour : 2026-10-26 (Gribouille présente le Défi du jour et l'Atelier libre). Jeu : https://keismey.github.io/Pico-Clinic/ · Essai : https://keismey.github.io/Pico-Clinic/?essai
 
 ## Fait
+- Gribouille présente le Défi du jour (au rang 3) et l'Atelier libre (au rang 5) : 4 bulles chacun, juste après le chapitre du rang, ou au premier appui sur leur bouton pour une partie déjà avancée (scènes `daily` et `free` de `story.json`, une seule fois).
 - Transitions jusqu'au menu : le logo attend ses images (2 s max), fondus enchaînés autour de l'écran titre (`fadeFrom` dans `scenes.js`), boutons du menu qui montent, bandes noir → beige en fondu, son au toucher.
 - Lancement comme les autres jeux : logo Keismey Studio (`img/keismey-studio.webp`, 2,3 s, un toucher le passe), puis « Appuie pour continuer » sur l'image Gemini `img/titre.webp` (titre ajouté en code avec contour crème), puis le menu. Retour : `commun/ks-back.js` du hub ; liste des commandes (retour ou bouton Menu) → « Revenir à l'écran titre ? » ; écran titre → « Aller au hub ? ».
 - Correctifs recette 2 : la main de Gribouille (circuit oxydé) ne frotte plus sur les composants (zigzag vérifié, sinon pas de démo) ; en diagnostic, la loupe prend toujours le doigt (la fiche se branche après) ; bulle de la boutique descendue sous la ligne Pince ; texte d'aide qui rétrécit pour rester dans son cadre (circuit oxydé, rouille en FR).

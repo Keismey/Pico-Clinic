@@ -135,6 +135,12 @@ function open(o) {
   else go('counter', { order: o.id, mode: 'intro' });
 }
 
+// Défi du jour / Atelier libre : au premier appui, Gribouille présente le mode s'il ne l'a pas encore fait.
+function openMode(s) {
+  if (seen(s)) go(s);
+  else go('story', { id: s, then: { scene: s } });
+}
+
 export default {
   init() {
     toast = null;
@@ -154,12 +160,12 @@ export default {
     });
     buttons.add({ x: 720, y: 1570, w: 310, h: 160, size: 52, style: 'secondary', label: () => t('orders.menu'), onTap: () => askMenu() });
     // V3b : Atelier libre, ouvert au rang 5
-    buttons.add({ x: 760, y: 30, w: 280, h: 120, size: 40, label: () => t('orders.free'), visible: save.rank >= 5, onTap: () => go('free') });
+    buttons.add({ x: 760, y: 30, w: 280, h: 120, size: 40, label: () => t('orders.free'), visible: save.rank >= 5, onTap: () => openMode('free') });
     // V4b : défi quotidien, ouvert au rang 3 (il clignote tant qu'il n'est pas tenté aujourd'hui)
     buttons.add({
       x: save.rank >= 5 ? 460 : 760, y: 30, w: 280, h: 120, size: 40, style: 'on',
       label: () => t('orders.daily'), visible: dailyOpen(), pulse: triesLeft() >= DAILY_TRIES,
-      onTap: () => go('daily'),
+      onTap: () => openMode('daily'),
     });
   },
 

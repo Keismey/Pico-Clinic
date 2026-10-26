@@ -37,6 +37,25 @@ export function chapterStory(rank) {
   return game.data.story && game.data.story.scenes[s] && !seen(s) ? s : null;
 }
 
+// Présentations des modes ouverts par un rang : Défi du jour (rang 3), Atelier libre (rang 5).
+const MODE_STORIES = [['daily', 3], ['free', 5]];
+
+// Scènes à jouer après l'écran d'un nouveau rang : le chapitre, puis les modes qu'il ouvre (pas encore vus).
+export function rankStories(rank) {
+  const out = [];
+  const ch = chapterStory(rank);
+  if (ch) out.push(ch);
+  for (const [s, r] of MODE_STORIES) if (rank >= r && !seen(s)) out.push(s);
+  return out;
+}
+
+// Enchaîne plusieurs scènes d'histoire, puis va vers `last` ({ scene, params }).
+export function playStories(ids, last) {
+  let next = last;
+  for (let i = ids.length - 1; i >= 0; i--) next = { scene: 'story', params: { id: ids[i], then: next } };
+  go(next.scene, next.params || {});
+}
+
 function text() {
   return t(sc.lines[idx]);
 }
