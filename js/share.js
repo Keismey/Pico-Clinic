@@ -46,7 +46,7 @@ export function shareText(key) {
   return [p.head, p.line, SHARE_URL + '?lang=' + getLang()].join('\n');
 }
 
-// L'image partagée (1080×1080) : illustration du jeu en haut, carte du résultat en bas.
+// L'image partagée (1080×1080) : illustration du jeu en fond, carte du résultat centrée.
 function shareImage(key) {
   const p = resultParts(key);
   if (!p) return Promise.resolve(null);
@@ -57,20 +57,23 @@ function shareImage(key) {
   g.fillStyle = C.turquoiseDark;
   g.fillRect(0, 0, S, S);
   if (cover.complete && cover.naturalWidth) {
-    // remplit la largeur, cadré sur le haut de l'illustration
-    const k = S / cover.naturalWidth;
-    g.drawImage(cover, 0, 0, S, cover.naturalHeight * k);
+    // remplit le carré, cadré au centre de l'illustration
+    const k = Math.max(S / cover.naturalWidth, S / cover.naturalHeight);
+    const w = cover.naturalWidth * k, h = cover.naturalHeight * k;
+    g.drawImage(cover, (S - w) / 2, (S - h) / 2, w, h);
   }
-  // carte blanche du résultat
+  // carte blanche du résultat, centrée
+  const CW = 880, CH = 440, X = (S - CW) / 2, Y = (S - CH) / 2;
   g.fillStyle = 'rgba(255,255,255,0.95)';
-  roundRect(g, 60, 560, S - 120, 460, 48);
+  roundRect(g, X, Y, CW, CH, 48);
   g.fill();
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  fitText(g, p.head, S / 2, 640, S - 200, 52, C.turquoiseDark, 900);
-  fitText(g, p.medal + ' ' + p.stars, S / 2, 770, S - 200, 110, '#222', 900);
-  fitText(g, p.rest, S / 2, 890, S - 200, 56, '#333', 700);
-  fitText(g, 'keismey.github.io/Pico-Clinic', S / 2, 970, S - 200, 36, '#777', 600);
+  const M = CW - 100; // largeur max du texte, marge dans la carte
+  fitText(g, p.head, S / 2, Y + 75, M, 50, C.turquoiseDark, 900);
+  fitText(g, p.medal + ' ' + p.stars, S / 2, Y + 195, M, 100, '#222', 900);
+  fitText(g, p.rest, S / 2, Y + 310, M, 52, '#333', 700);
+  fitText(g, 'keismey.github.io/Pico-Clinic', S / 2, Y + 385, M, 34, '#777', 600);
   return new Promise((res) => {
     try { c.toBlob((b) => res(b), 'image/png'); } catch (e) { res(null); }
   });
