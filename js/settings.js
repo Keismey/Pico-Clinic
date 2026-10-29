@@ -2,10 +2,13 @@
 import { setLang } from './i18n.js';
 import { save, persist } from './save.js';
 
-export const VERSION = '1.0.2';
+export const VERSION = '1.0.3';
 
 // Notes de mise à jour, la plus récente en premier (affichées dans les Options, et une fois après chaque mise à jour).
 export const NOTES = [
+  { v: '1.0.3', d: ['29 octobre 2026', '29 October 2026'],
+    fr: ['Options : bouton « Retour au hub », et le même ordre que dans les autres jeux du studio (son, langue, sauvegarde, puis le studio).'],
+    en: ['Options: a “Back to the hub” button, in the same order as the studio’s other games (sound, language, save, then the studio).'] },
   { v: '1.0.2', d: ['26 octobre 2026', '26 October 2026'],
     fr: ['Défi du jour : un bouton « Partager mon résultat » envoie ta médaille, tes étoiles et ton temps à tes amis, sans rien dévoiler de la réparation.'],
     en: ['Daily challenge: a “Share my result” button sends your medal, stars and time to your friends, without giving away anything about the repair.'] },

@@ -741,6 +741,7 @@
   "opt.save": "Save data",
   "opt.bug": "Report a bug",
   "opt.support": "Support the studio",
+  "opt.hub": "Back to the hub",
   "opt.credits": "Design and direction: Keismey · Developed with the help of AI tools",
   "notes.title": "Patch notes",
   "notes.version": "Version {v} · {d}"
