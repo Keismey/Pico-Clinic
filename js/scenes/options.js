@@ -1,6 +1,6 @@
-// V4b — Écran « Options » : langue, volumes, vibrations, tremblement réduit, gaucher, contrastes forts,
-// puis, comme dans tous les jeux du studio : notes de mise à jour, sauvegarde (exporter / importer),
-// signaler un bug, soutenir le studio, version et crédits ; effacer la sauvegarde (deux confirmations).
+// V4b — Écran « Options », dans l'ordre commun aux jeux du studio : volumes, vibrations, langue,
+// puis tremblement réduit, gaucher, contrastes forts ; sauvegarde (exporter / importer), notes de mise à jour,
+// signaler un bug, soutenir le studio, retour au hub, version et crédits ; effacer la sauvegarde (deux confirmations).
 // Ouvert depuis l'écran titre.
 import { W, H } from '../canvas.js';
 import { t, getLang } from '../i18n.js';
@@ -18,10 +18,10 @@ import { leftText } from './orders.js';
 const X0 = 50, CW = W - 100;          // cartes des réglages
 const SL = { x0: 110, x1: W - 110 };  // piste des curseurs de volume
 const ROWS = {
-  lang: { y: 200, h: 136 },
-  music: { y: 346, h: 158 },
-  sound: { y: 514, h: 158 },
-  vibration: { y: 682, h: 124 },
+  music: { y: 200, h: 158 },
+  sound: { y: 368, h: 158 },
+  vibration: { y: 536, h: 124 },
+  lang: { y: 670, h: 136 },
   tremor: { y: 816, h: 124 },
   lefty: { y: 950, h: 124 },
   contrast: { y: 1084, h: 124 },
@@ -110,12 +110,13 @@ export default {
     }
     // communs aux jeux du studio (commun/ks-studio.js)
     const lang = () => (getLang() === 'en' ? 'en' : 'fr');
-    buttons.add({ x: 50, y: 1222, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.notes'), onTap: () => go('notes', { from: 'options' }) });
-    buttons.add({ x: 550, y: 1222, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.save'),
+    buttons.add({ x: 50, y: 1222, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.save'),
       onTap: () => { if (window.KS) window.KS.saveDialog({ jeu: 'Pico-Clinic', keys: ['pico_save_v1'], lang: lang(), save: persist, file: 'pico-clinic', accent: '#3fd0bb' }); } });
+    buttons.add({ x: 550, y: 1222, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.notes'), onTap: () => go('notes', { from: 'options' }) });
     buttons.add({ x: 50, y: 1338, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.bug'), onTap: () => { persist(); if (window.KS) window.KS.bug('Pico-Clinic', lang()); } });
     buttons.add({ x: 550, y: 1338, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.support'), onTap: () => { if (window.KS) window.KS.support(); } });
-    buttons.add({ x: 190, y: 1458, w: 700, h: 104, size: 36, style: 'secondary', label: () => t('opt.erase'), onTap: () => openConfirm(1) });
+    buttons.add({ x: 50, y: 1458, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.hub'), onTap: () => { persist(); if (window.KSBack) window.KSBack.toHub(); } });
+    buttons.add({ x: 550, y: 1458, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.erase'), onTap: () => openConfirm(1) });
     buttons.add({ x: 240, y: 1590, w: 600, h: 150, size: 58, label: () => t('opt.back'), onTap: () => go(from) });
   },
 

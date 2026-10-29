@@ -741,6 +741,7 @@
   "opt.save": "Sauvegarde",
   "opt.bug": "Signaler un bug",
   "opt.support": "Soutenir le studio",
+  "opt.hub": "Retour au hub",
   "opt.credits": "Conception et direction : Keismey · Développé avec l’aide d’outils IA",
   "notes.title": "Notes de mise à jour",
   "notes.version": "Version {v} · {d}"
