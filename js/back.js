@@ -60,7 +60,11 @@ function onBack() {
 
 // cancelFinger : relâche le doigt en cours avant de changer d'écran.
 export function initBack(cancelFinger) {
-  window.KSBack.init({ back: () => { cancelFinger(); onBack(); }, lang: () => getLang() });
+  window.KSBack.init({
+    back: () => { cancelFinger(); onBack(); },
+    lang: () => getLang(),
+    title: () => sceneName() === 'title' && !ask && !scene().showsLogo(),
+  });
 }
 
 // Pendant la question, le jeu est en pause.

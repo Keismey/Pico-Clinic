@@ -194,6 +194,11 @@ export default {
     return false;
   },
 
+  // Bouton « Hub » de commun/ks-back.js : caché pendant le logo du studio.
+  showsLogo() {
+    return !!logo;
+  },
+
   pointer(type, x, y) {
     if (logo) { if (type === 'up') skipLogo(); return; }
     if (!menu) { if (type === 'up') openMenu(); return; }
