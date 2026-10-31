@@ -2,10 +2,13 @@
 import { setLang } from './i18n.js';
 import { save, persist } from './save.js';
 
-export const VERSION = '1.0.3';
+export const VERSION = '1.0.4';
 
 // Notes de mise à jour, la plus récente en premier (affichées dans les Options, et une fois après chaque mise à jour).
 export const NOTES = [
+  { v: '1.0.4', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Réparation : un bouton pause en haut de l’écran met le jeu en pause et permet de quitter la réparation (utile sur iPhone, où l’appli installée n’a pas de bouton retour).'],
+    en: ['Repairs: a pause button at the top of the screen pauses the game and lets you leave the repair (handy on iPhone, where the installed app has no back button).'] },
   { v: '1.0.3', d: ['29 octobre 2026', '29 October 2026'],
     fr: ['Options : bouton « Retour au hub », et le même ordre que dans les autres jeux du studio (son, langue, sauvegarde, puis le studio).'],
     en: ['Options: a “Back to the hub” button, in the same order as the studio’s other games (sound, language, save, then the studio).'] },
