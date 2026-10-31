@@ -203,6 +203,7 @@ export default {
     const tw = (W - 100 + 20) / tabs.length;
     tabs.forEach((id, i) => buttons.add({
       x: 50 + i * tw, y: 150, w: tw - 20, h: 120, size: tabs.length > 3 ? 34 : 40, style: 'secondary',
+      hit: { x: 50 + i * tw - 10, y: 142, w: tw, h: 136 },
       label: () => t('nb.tab.' + id),
       selected: () => tab === id,
       onTap: () => { tab = id; },

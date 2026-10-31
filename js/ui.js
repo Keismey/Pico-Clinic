@@ -176,8 +176,10 @@ function wrapLabel(ctx, text, x, cy, maxW, size, color) {
   lines.forEach((l, i) => ctx.fillText(l, x, cy + (i - (lines.length - 1) / 2) * lh));
 }
 
+// b.hit (facultatif) : zone de toucher plus grande que le bouton dessiné ({ x, y, w, h }).
 function hit(b, x, y) {
-  return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+  const r = b.hit || b;
+  return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
 }
 
 // Un groupe de boutons : appui, relâchement sur le bouton = action.
