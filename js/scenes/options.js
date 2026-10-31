@@ -17,21 +17,23 @@ import { leftText } from './orders.js';
 
 const X0 = 50, CW = W - 100;          // cartes des réglages
 const SL = { x0: 110, x1: W - 110 };  // piste des curseurs de volume
+// Boutons et curseurs d'au moins 128 px de haut (46 px à l'écran sur un téléphone de 390 px).
 const ROWS = {
-  music: { y: 200, h: 158 },
-  sound: { y: 368, h: 158 },
-  vibration: { y: 536, h: 124 },
-  lang: { y: 670, h: 136 },
-  tremor: { y: 816, h: 124 },
-  lefty: { y: 950, h: 124 },
-  contrast: { y: 1084, h: 124 },
+  music: { y: 185, h: 150 },
+  sound: { y: 343, h: 150 },
+  vibration: { y: 501, h: 140 },
+  lang: { y: 649, h: 140 },
+  tremor: { y: 797, h: 140 },
+  lefty: { y: 945, h: 140 },
+  contrast: { y: 1093, h: 140 },
 };
+const STUDIO = { y: 1245, h: 128, step: 136 }; // 3 lignes de 2 boutons communs aux jeux du studio
 const SLIDERS = { music: 'musicVol', sound: 'sfxVol' };
 const TOGGLES = ['vibration', 'tremor', 'lefty', 'contrast'];
 
 let buttons, from, time, drag, confirm, toast;
 
-const sliderY = (k) => ROWS[k].y + 106;
+const sliderY = (k) => ROWS[k].y + 100;
 
 function setVol(k, v) {
   v = Math.round(clamp(v, 0, 1) * 20) / 20; // pas de 5 %
@@ -98,11 +100,11 @@ export default {
     confirm = null;
     toast = null;
     buttons = new Buttons();
-    buttons.add({ x: 520, y: ROWS.lang.y + 12, w: 240, h: 106, size: 36, style: 'secondary', label: () => 'Français', selected: () => getLang() === 'fr', onTap: () => changeLang('fr') });
-    buttons.add({ x: 780, y: ROWS.lang.y + 12, w: 240, h: 106, size: 36, style: 'secondary', label: () => 'English', selected: () => getLang() === 'en', onTap: () => changeLang('en') });
+    buttons.add({ x: 520, y: ROWS.lang.y + 2, w: 240, h: 128, size: 38, style: 'secondary', label: () => 'Français', selected: () => getLang() === 'fr', onTap: () => changeLang('fr') });
+    buttons.add({ x: 780, y: ROWS.lang.y + 2, w: 240, h: 128, size: 38, style: 'secondary', label: () => 'English', selected: () => getLang() === 'en', onTap: () => changeLang('en') });
     for (const k of TOGGLES) {
       buttons.add({
-        x: 790, y: ROWS[k].y + 8, w: 210, h: 100, size: 38, style: 'secondary',
+        x: 790, y: ROWS[k].y + 2, w: 210, h: 128, size: 40, style: 'secondary',
         label: () => t(save.settings[k] ? 'opt.on' : 'opt.off'),
         selected: () => !!save.settings[k],
         onTap: () => toggle(k),
@@ -110,14 +112,14 @@ export default {
     }
     // communs aux jeux du studio (commun/ks-studio.js)
     const lang = () => (getLang() === 'en' ? 'en' : 'fr');
-    buttons.add({ x: 50, y: 1222, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.save'),
+    buttons.add({ x: 50, y: STUDIO.y, w: 480, h: STUDIO.h, size: 38, style: 'secondary', label: () => t('opt.save'),
       onTap: () => { if (window.KS) window.KS.saveDialog({ jeu: 'Pico-Clinic', keys: ['pico_save_v1'], lang: lang(), save: persist, file: 'pico-clinic', accent: '#3fd0bb' }); } });
-    buttons.add({ x: 550, y: 1222, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.notes'), onTap: () => go('notes', { from: 'options' }) });
-    buttons.add({ x: 50, y: 1338, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.bug'), onTap: () => { persist(); if (window.KS) window.KS.bug('Pico-Clinic', lang()); } });
-    buttons.add({ x: 550, y: 1338, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.support'), onTap: () => { if (window.KS) window.KS.support(); } });
-    buttons.add({ x: 50, y: 1458, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.hub'), onTap: () => { persist(); if (window.KSBack) window.KSBack.toHub(); } });
-    buttons.add({ x: 550, y: 1458, w: 480, h: 104, size: 34, style: 'secondary', label: () => t('opt.erase'), onTap: () => openConfirm(1) });
-    buttons.add({ x: 240, y: 1590, w: 600, h: 150, size: 58, label: () => t('opt.back'), onTap: () => go(from) });
+    buttons.add({ x: 550, y: STUDIO.y, w: 480, h: STUDIO.h, size: 38, style: 'secondary', label: () => t('opt.notes'), onTap: () => go('notes', { from: 'options' }) });
+    buttons.add({ x: 50, y: STUDIO.y + STUDIO.step, w: 480, h: STUDIO.h, size: 38, style: 'secondary', label: () => t('opt.bug'), onTap: () => { persist(); if (window.KS) window.KS.bug('Pico-Clinic', lang()); } });
+    buttons.add({ x: 550, y: STUDIO.y + STUDIO.step, w: 480, h: STUDIO.h, size: 38, style: 'secondary', label: () => t('opt.support'), onTap: () => { if (window.KS) window.KS.support(); } });
+    buttons.add({ x: 50, y: STUDIO.y + 2 * STUDIO.step, w: 480, h: STUDIO.h, size: 38, style: 'secondary', label: () => t('opt.hub'), onTap: () => { persist(); if (window.KSBack) window.KSBack.toHub(); } });
+    buttons.add({ x: 550, y: STUDIO.y + 2 * STUDIO.step, w: 480, h: STUDIO.h, size: 38, style: 'secondary', label: () => t('opt.erase'), onTap: () => openConfirm(1) });
+    buttons.add({ x: 240, y: 1657, w: 600, h: 140, size: 58, label: () => t('opt.back'), onTap: () => go(from) });
   },
 
   update(dt) {
@@ -134,20 +136,20 @@ export default {
     for (const [k, r] of Object.entries(ROWS)) {
       card(ctx, r);
       if (k === 'lang') {
-        leftText(ctx, t('opt.lang'), 90, r.y + 64, 400, 44, C.ink, 800);
+        leftText(ctx, t('opt.lang'), 90, r.y + 66, 400, 44, C.ink, 800);
       } else if (SLIDERS[k]) {
         const v = Math.round((save.settings[SLIDERS[k]] || 0) * 100);
-        leftText(ctx, t('opt.' + k), 90, r.y + 44, 600, 44, C.ink, 800);
-        fitText(ctx, v ? t('opt.pct', { n: v }) : t('opt.muted'), 880, r.y + 44, 240, 40, v ? C.turquoiseDark : C.inkSoft, 900);
+        leftText(ctx, t('opt.' + k), 90, r.y + 40, 600, 44, C.ink, 800);
+        fitText(ctx, v ? t('opt.pct', { n: v }) : t('opt.muted'), 880, r.y + 40, 240, 40, v ? C.turquoiseDark : C.inkSoft, 900);
         drawSlider(ctx, k);
       } else {
-        leftText(ctx, t('opt.' + k), 90, r.y + 38, 680, 40, C.ink, 800);
-        leftText(ctx, t('opt.' + k + '.sub'), 90, r.y + 82, 680, 28, C.inkSoft, 700);
+        leftText(ctx, t('opt.' + k), 90, r.y + 44, 680, 40, C.ink, 800);
+        leftText(ctx, t('opt.' + k + '.sub'), 90, r.y + 92, 680, 32, C.inkSoft, 700);
       }
     }
     buttons.draw(ctx);
-    fitText(ctx, t('title.version', { v: VERSION }), W / 2, 1790, W - 120, 30, C.inkSoft, 700);
-    fitText(ctx, t('opt.credits'), W / 2, 1838, W - 120, 28, C.inkSoft, 600);
+    fitText(ctx, t('title.version', { v: VERSION }), W / 2, 1832, W - 120, 30, C.inkSoft, 700);
+    fitText(ctx, t('opt.credits'), W / 2, 1874, W - 120, 28, C.inkSoft, 600);
 
     if (toast) {
       const a = Math.min(1, toast.t * 2);
@@ -190,7 +192,8 @@ export default {
     if (type === 'down') {
       // curseur : on attrape n'importe où sur la piste (zone large pour le pouce)
       for (const k of Object.keys(SLIDERS)) {
-        if (Math.abs(y - sliderY(k)) < 55 && x > SL.x0 - 60 && x < SL.x1 + 60) {
+        // 122 px de haut, sans déborder sur l'interrupteur Vibrations juste en dessous
+        if (y > sliderY(k) - 66 && y < sliderY(k) + 56 && x > SL.x0 - 60 && x < SL.x1 + 60) {
           drag = k;
           setVol(k, (x - SL.x0) / (SL.x1 - SL.x0));
           vibrate(8);

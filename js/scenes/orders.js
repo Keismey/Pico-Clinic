@@ -88,12 +88,13 @@ function rowAt(x, y) {
   const L = layout();
   const i = Math.floor((y - ROW.top) / L.step);
   if (x < ROW.x || x > ROW.x + ROW.w || i < 0 || i >= rows().length) return -1;
-  return y - ROW.top - i * L.step <= L.h ? i : -1;
+  return i; // toute la hauteur de la ligne, espace compris
 }
 
 function tabAt(x, y) {
   const list = chapters();
-  if (y < TABS.y || y > TABS.y + TABS.h || x < TABS.x || x > TABS.x + TABS.w) return -1;
+  // zone de toucher plus haute que l'onglet dessiné (44 px à l'écran au moins)
+  if (y < TABS.y - 30 || y > TABS.y + TABS.h + 25 || x < TABS.x || x > TABS.x + TABS.w) return -1;
   return list[Math.floor((x - TABS.x) / (TABS.w / list.length))] || -1;
 }
 
@@ -170,10 +171,11 @@ export default {
     const replay = !!game.replay;
     buttons.add({ x: 720, y: 1570, w: 310, h: 160, size: 52, style: 'secondary', label: () => t(replay ? 'shop.back' : 'orders.menu'), onTap: () => (replay ? go('lobby') : askMenu()) });
     // V3b : Atelier libre, ouvert au rang 5
-    buttons.add({ x: 760, y: 30, w: 280, h: 120, size: 40, label: () => t('orders.free'), visible: save.rank >= 5, onTap: () => openMode('free') });
+    buttons.add({ x: 760, y: 30, w: 280, h: 120, hit: { x: 760, y: 22, w: 280, h: 136 }, size: 40, label: () => t('orders.free'), visible: save.rank >= 5, onTap: () => openMode('free') });
     // V4b : défi quotidien, ouvert au rang 3 (il clignote tant qu'il n'est pas tenté aujourd'hui)
     buttons.add({
       x: save.rank >= 5 ? 460 : 760, y: 30, w: 280, h: 120, size: 40, style: 'on',
+      hit: { x: save.rank >= 5 ? 460 : 760, y: 22, w: 280, h: 136 },
       label: () => t('orders.daily'), visible: dailyOpen(), pulse: triesLeft() >= DAILY_TRIES,
       onTap: () => openMode('daily'),
     });
@@ -248,7 +250,7 @@ export default {
     const w = TABS.w / list.length;
     list.forEach((c, i) => {
       const x = TABS.x + i * w, on = c === chapter;
-      ctx.fillStyle = on ? C.copper : 'rgba(196, 122, 60, 0.15)';
+      ctx.fillStyle = on ? C.copperDark : 'rgba(196, 122, 60, 0.15)'; // blanc sur cuivre foncé : 6,1:1
       roundRect(ctx, x + 4, TABS.y, w - 8, TABS.h, 30); ctx.fill();
       const label = list.length > 1 ? t('chapter.n', { n: c }) : t('chapter.n', { n: c }) + ' · ' + t('chapter.' + c + '.title');
       fitText(ctx, label, x + w / 2, TABS.y + TABS.h / 2 + 2, w - 40, 34, on ? '#fff' : C.copperDark, 900);
