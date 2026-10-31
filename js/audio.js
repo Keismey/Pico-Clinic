@@ -6,6 +6,9 @@ import { save } from './save.js';
 
 let ac = null, master, musicBus, sfxBus, noiseBuf = null;
 const files = {};      // nom -> AudioBuffer décodé
+// Musiques : gardées compressées (4 Mo), une seule décodée à la fois (une musique décodée pèse 40 à 60 Mo).
+const raw = {};        // nom -> fichier MP3 (ArrayBuffer)
+const decoding = {};   // nom -> décodage en cours
 let manifestLoaded = false;
 const loopPoints = {}; // nom -> [début, fin] de la boucle en secondes (sons.json « loops »)
 
@@ -49,7 +52,8 @@ const FILE_MUSIC_GAIN = 0.6;
 export function unlock() {
   const a = ctx();
   if (!a) return;
-  if (a.state === 'suspended') { try { a.resume(); } catch (e) { /* rien */ } }
+  // « suspended », ou « interrupted » sur iPhone après un appel ou une alarme
+  if (a.state !== 'running') { try { a.resume(); } catch (e) { /* rien */ } }
   // iPhone : un son muet joué pendant le toucher débloque l'audio
   if (!unlock.done) {
     unlock.done = true;
@@ -82,11 +86,37 @@ async function loadFiles() {
       const r = await fetch('audio/' + name + '.mp3');
       if (!r.ok) return;
       const buf = await r.arrayBuffer();
-      files[name] = await new Promise((ok, ko) => ac.decodeAudioData(buf, ok, ko));
+      if (isMusic(name)) raw[name] = buf;
+      else files[name] = await decode(buf);
     } catch (e) { /* le son en code prend le relais */ }
   }));
-  // une musique en fichier est arrivée : on remplace la version en code
-  if (wantedMusic && files['music_' + wantedMusic]) { stopMusic(); startMusic(wantedMusic); }
+  // la musique en fichier est arrivée : elle remplace la version en code
+  if (wantedMusic && raw['music_' + wantedMusic]) prepareMusic(wantedMusic);
+}
+
+const isMusic = (name) => name.startsWith('music_');
+
+function decode(buf) {
+  return new Promise((ok, ko) => ac.decodeAudioData(buf, ok, ko));
+}
+
+// Décode la musique demandée et libère l'autre. Pendant le décodage, la musique attend (pas de version en code).
+function prepareMusic(name) {
+  const key = 'music_' + name;
+  if (files[key] || decoding[key] || !raw[key]) return;
+  decoding[key] = true;
+  for (const k of Object.keys(files)) if (isMusic(k)) delete files[k];
+  decode(raw[key].slice(0)).then((buf) => {
+    // l'écran a changé de musique pendant le décodage : on ne garde pas celle-ci
+    if (wantedMusic !== name) return;
+    for (const k of Object.keys(files)) if (isMusic(k)) delete files[k];
+    files[key] = buf;
+  }, () => {
+    delete raw[key]; // fichier illisible : la version en code prend le relais
+  }).then(() => {
+    delete decoding[key];
+    if (wantedMusic === name && !(playing && playing.src && playing.name === name)) { stopMusic(); startMusic(name); }
+  });
 }
 
 function playFile(name, vol = 1, rate = 1, bus = sfxBus) {
@@ -395,12 +425,14 @@ function startMusic(name) {
   const a = ctx();
   if (!a || a.state !== 'running' || !save.settings.music) return;
   if (playing && playing.name === name) return;
+  const file = files['music_' + name];
+  // musique en fichier pas encore décodée : elle démarrera à la fin du décodage
+  if (!file && raw['music_' + name]) { prepareMusic(name); return; }
   const g = a.createGain();
   g.gain.setValueAtTime(0.0001, a.currentTime);
   g.gain.exponentialRampToValueAtTime(1, a.currentTime + 1.5);
   g.connect(musicBus);
   playing = { name, out: g };
-  const file = files['music_' + name];
   // les vrais morceaux sont plus forts que la version en code : on les baisse un peu
   if (file) g.gain.cancelScheduledValues(a.currentTime), g.gain.setValueAtTime(0.0001, a.currentTime), g.gain.exponentialRampToValueAtTime(FILE_MUSIC_GAIN, a.currentTime + 1.5);
   if (file) {

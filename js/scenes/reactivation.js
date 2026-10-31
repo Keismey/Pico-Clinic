@@ -138,7 +138,7 @@ export default {
     // textes
     const said = coach.text();
     if (state === 'idle' && said) {
-      drawGribBox(ctx, { x: 60, y: 1010, w: W - 120, h: 170 }, said, coach.shown, coach.time, { size: 38 });
+      drawGribBox(ctx, { x: 60, y: 1010, w: W - 120, h: 170 }, said, coach.shown, coach.time, {});
     } else if (state === 'idle') {
       drawPanel(ctx, 110, 1055, W - 220, 115);
       drawText(ctx, t('reac.hint'), W / 2, 1112, W - 280, 50);

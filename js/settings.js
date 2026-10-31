@@ -2,10 +2,34 @@
 import { setLang } from './i18n.js';
 import { save, persist } from './save.js';
 
-export const VERSION = '1.0.4';
+export const VERSION = '1.0.12';
 
 // Notes de mise à jour, la plus récente en premier (affichées dans les Options, et une fois après chaque mise à jour).
 export const NOTES = [
+  { v: '1.0.12', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Une copie de secours de ta partie est gardée : si la sauvegarde est abîmée, le jeu la reprend au lieu de repartir de zéro.', 'Sur iPhone, le son revient après un appel ou une alarme.'],
+    en: ['A backup copy of your game is kept: if the save gets damaged, the game uses it instead of starting over.', 'On iPhone, sound comes back after a call or an alarm.'] },
+  { v: '1.0.11', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Défi du jour : après le partage avec l’image, le bouton devient « Copier le texte », pour les applis (comme Threads) qui oublient le texte.'],
+    en: ['Daily challenge: after sharing with the picture, the button becomes “Copy the text”, for apps (like Threads) that drop the text.'] },
+  { v: '1.0.10', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Téléphone tourné à l’horizontale : le jeu se met en pause et te demande de le redresser, au lieu de s’afficher en tout petit.'],
+    en: ['Phone turned sideways: the game pauses and asks you to turn it upright, instead of showing up tiny.'] },
+  { v: '1.0.9', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Boutons orange et turquoise plus lisibles : texte foncé au lieu de blanc. Onglets choisis et nom de Maître Ohm plus contrastés.'],
+    en: ['Orange and turquoise buttons are easier to read: dark text instead of white. Selected tabs and Master Ohm’s name have more contrast.'] },
+  { v: '1.0.8', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Textes plus grands : conseils de Gribouille pendant les réparations, à la boutique et après une commande, boutons et descriptions des Options.'],
+    en: ['Bigger text: Gribouille’s tips during repairs, in the shop and after an order, plus the buttons and descriptions in Options.'] },
+  { v: '1.0.7', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Boutons plus faciles à toucher : Options, onglets des commandes, de la boutique et du carnet, cartes des décorations (on peut toucher toute la carte).'],
+    en: ['Buttons that are easier to tap: Options, tabs in the orders, shop and notebook, decoration cards (the whole card can be tapped).'] },
+  { v: '1.0.6', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Le jeu prend moins de mémoire sur le téléphone : une seule musique est prête à la fois (environ 40 % de mémoire en moins pour la musique).'],
+    en: ['The game uses less memory on your phone: only one piece of music is loaded at a time (about 40% less memory for music).'] },
+  { v: '1.0.5', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Première visite plus légère : environ 1 Mo à télécharger au lieu de 5,4 Mo. Les musiques sont gardées pour jouer hors ligne dès leur première écoute, et ne sont plus téléchargées deux fois.'],
+    en: ['Lighter first visit: about 1 MB to download instead of 5.4 MB. Music is kept for offline play from the first time it plays, and is no longer downloaded twice.'] },
   { v: '1.0.4', d: ['31 octobre 2026', '31 October 2026'],
     fr: ['Réparation : un bouton pause en haut de l’écran met le jeu en pause et permet de quitter la réparation (utile sur iPhone, où l’appli installée n’a pas de bouton retour).'],
     en: ['Repairs: a pause button at the top of the screen pauses the game and lets you leave the repair (handy on iPhone, where the installed app has no back button).'] },

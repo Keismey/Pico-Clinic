@@ -52,20 +52,28 @@ function migrate(d) {
   return out;
 }
 
+// Copie de secours (KEY.bak) : si la sauvegarde est illisible, on reprend la dernière copie lisible
+// au lieu de repartir de zéro et de l'écraser.
 function load() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return defaults();
-    return migrate(JSON.parse(raw));
-  } catch (e) {
-    return defaults();
+  for (const k of [KEY, KEY + '.bak']) {
+    try {
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      const d = JSON.parse(raw);
+      if (d && typeof d === 'object') return migrate(d);
+    } catch (e) { /* illisible : on essaie la copie de secours */ }
   }
+  return defaults();
 }
 
 export const save = load();
 
 export function persist() {
-  try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { /* stockage indisponible */ }
+  try {
+    const s = JSON.stringify(save);
+    localStorage.setItem(KEY, s);
+    localStorage.setItem(KEY + '.bak', s);
+  } catch (e) { /* stockage indisponible */ }
 }
 
 // Nouvelle partie : tout est remis à zéro sauf les réglages.

@@ -708,7 +708,7 @@ export default {
     // Gribouille parle à la place du panneau d'aide (tutoriel)
     const said = coach.text();
     if (said) {
-      drawGribBox(ctx, { x: 60, y: 1380, w: W - 120, h: 250 }, said, coach.shown, coach.time, { sub: solder.active ? null : sub, size: 40, reserve: solder.active ? 110 : 0 });
+      drawGribBox(ctx, { x: 60, y: 1365, w: W - 120, h: 280 }, said, coach.shown, coach.time, { sub: solder.active ? null : sub, reserve: solder.active ? 110 : 0 });
       if (solder.active) this.drawGauge(ctx);
       return;
     }
