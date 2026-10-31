@@ -112,10 +112,11 @@ export function fitText(ctx, text, x, y, maxW, size, color = C.ink, weight = 800
   ctx.fillText(text, x, y);
 }
 
+// Texte foncé sur l'orange et le turquoise : 5,9:1 et 7,2:1 (le blanc n'y donnait que 2,4:1 et 1,9:1).
 export const STYLES = {
-  primary: { fill: C.orange, shadow: C.orangeDark, text: '#fff' },
+  primary: { fill: C.orange, shadow: C.orangeDark, text: C.ink },
   secondary: { fill: C.paper, shadow: '#d9c3a3', text: C.ink },
-  on: { fill: C.turquoise, shadow: C.turquoiseDark, text: '#fff' },
+  on: { fill: C.turquoise, shadow: C.turquoiseDark, text: C.ink },
 };
 
 // Contrastes forts : textes secondaires plus foncés, boutons cerclés, panneaux opaques.
@@ -126,9 +127,8 @@ export function setContrast(on) {
   C.turquoiseDark = on ? '#13705f' : SOFT.turquoiseDark;
   STYLES.secondary.fill = on ? '#ffffff' : C.paper;
   STYLES.secondary.shadow = on ? '#3a2a1e' : '#d9c3a3';
-  STYLES.on.fill = on ? '#11806f' : C.turquoise;
+  // orange et turquoise gardent leur teinte (le texte foncé y est plus lisible que du blanc sur une teinte foncée)
   STYLES.on.shadow = on ? '#073f37' : C.turquoiseDark;
-  STYLES.primary.fill = on ? '#d9580f' : C.orange;
   STYLES.primary.shadow = on ? '#7a3208' : C.orangeDark;
 }
 
