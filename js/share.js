@@ -194,8 +194,31 @@ async function copy(text) {
 }
 
 // Message « Résultat copié ! » : une pastille qui recouvre un instant la rangée de boutons du bas (k : 1 → 0).
+const TOASTS = { copied: 'daily.share.copied', 'text-copied': 'daily.share.text_copied', failed: 'daily.share.failed' };
 export function shareToast(r) {
-  return r === 'copied' || r === 'failed' ? { key: r === 'copied' ? 'daily.share.copied' : 'daily.share.failed', t: 2, max: 2 } : null;
+  return TOASTS[r] ? { key: TOASTS[r], t: 2, max: 2 } : null;
+}
+
+// Après un partage avec image, certaines applis (Threads…) oublient le texte : le bouton propose alors
+// de le copier pour le coller à la main. Renvoie 'text-copied' | 'failed'.
+export async function copyResultText(key) {
+  const text = shareText(key);
+  return text && (await copy(text)) ? 'text-copied' : 'failed';
+}
+
+// Bouton « Partager mon résultat » des écrans du Défi du jour ; après un partage avec image, il devient
+// « Copier le texte » le temps d'un appui. onToast reçoit la pastille à afficher (ou null).
+export function shareButton(key, onToast) {
+  let copyNext = false;
+  return {
+    label: () => t(copyNext ? 'daily.share.copy_btn' : 'daily.share.btn'),
+    onTap: async () => {
+      if (copyNext) { copyNext = false; onToast(shareToast(await copyResultText(key))); return; }
+      const r = await shareResult(key);
+      if (r === 'shared-image') copyNext = true;
+      onToast(shareToast(r));
+    },
+  };
 }
 
 export function drawShareToast(ctx, toast) {
@@ -210,7 +233,7 @@ export function drawShareToast(ctx, toast) {
 
 let busy = false;
 
-// Renvoie 'shared' | 'cancelled' | 'copied' | 'failed' | 'busy'.
+// Renvoie 'shared-image' | 'shared' | 'cancelled' | 'copied' | 'failed' | 'busy'.
 // Annuler le partage natif n'est pas une erreur : on ne copie rien et on n'affiche rien.
 export async function shareResult(key) {
   if (busy) return 'busy'; // la feuille de partage est déjà ouverte
@@ -226,7 +249,7 @@ export async function shareResult(key) {
           const file = new File([blob], 'pico-clinic.png', { type: 'image/png' });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({ files: [file], text });
-            return 'shared';
+            return 'shared-image';
           }
         }
       } catch (e) {

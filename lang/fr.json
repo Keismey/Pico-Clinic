@@ -698,6 +698,8 @@
   "daily.share.btn": "Partager mon résultat",
   "daily.share.copied": "Résultat copié !",
   "daily.share.failed": "Copie impossible",
+  "daily.share.copy_btn": "Copier le texte",
+  "daily.share.text_copied": "Texte copié : colle-le dans ton message",
   "daily.share.head": "Pico-Clinic · Défi du {d}",
   "daily.share.date": "{d} {m}",
   "daily.share.try1": "1er essai",

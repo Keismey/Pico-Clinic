@@ -209,7 +209,8 @@ export function drawRing(ctx, x, y, r, time, color = '255, 138, 61') {
 // ---------- Bulle de Gribouille ----------
 
 // Panneau avec Gribouille à gauche et son texte qui s'écrit. r = {x, y, w, h}.
-export function drawGribBox(ctx, r, text, shown, time, { sub = null, more = false, size = 40, reserve = 0 } = {}) {
+// Texte à 44 px logiques (16 px à l'écran sur un téléphone de 390 px) ; s'il ne tient pas, il descend jusqu'à 36 au plus bas.
+export function drawGribBox(ctx, r, text, shown, time, { sub = null, more = false, size = 44, reserve = 0 } = {}) {
   const talk = shown < text.length;
   ctx.fillStyle = '#d9c3a3';
   roundRect(ctx, r.x, r.y + 10, r.w, r.h, 40); ctx.fill();
@@ -237,7 +238,7 @@ export function drawGribBox(ctx, r, text, shown, time, { sub = null, more = fals
     ctx.font = font(size, 700);
     lines = wrapLines(ctx, text, tw);
     lh = size * 1.22;
-    if (size <= 30 || lines.length * lh + (sub ? 50 : 0) <= r.h - reserve - 56) break;
+    if (size <= 36 || lines.length * lh + (sub ? 50 : 0) <= r.h - reserve - 56) break;
     size -= 2;
   }
   const block = lines.length * lh + (sub ? 50 : 0);
@@ -251,7 +252,7 @@ export function drawGribBox(ctx, r, text, shown, time, { sub = null, more = fals
     left -= line.length + 1;
     y += lh;
   }
-  if (sub) fitText(ctx, sub, tx + tw / 2, y + 6, tw, 32, C.inkSoft, 700);
+  if (sub) fitText(ctx, sub, tx + tw / 2, y + 6, tw, 36, C.inkSoft, 700);
   // flèche « toucher pour continuer »
   if (more && !talk && Math.sin(time * 6) > -0.3) {
     ctx.fillStyle = C.orange;

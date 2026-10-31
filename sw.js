@@ -5,7 +5,7 @@
 // FILES : préchargé à l'installation. Ni les musiques (gardées à leur première écoute), ni les grandes icônes
 // (le navigateur les demande lui-même à l'installation), ni og.jpg (aperçu de lien, inutile hors ligne).
 // MUSIC : musique → empreinte ; une musique modifiée change d'empreinte, l'ancienne copie est retirée.
-const VERSION = 'pico-clinic-66a7bc83';
+const VERSION = 'pico-clinic-7e2a8b16';
 const FILES = [
   'audio/sons.json',
   'commun/ks-back.js',

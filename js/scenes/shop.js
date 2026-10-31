@@ -199,14 +199,14 @@ export default {
 
     buttons.draw(ctx);
     // sous la dernière carte (Pince, finie à y 1538) : l'étiquette du nom monte de 30
-    if (tuto) drawGribBox(ctx, { x: 60, y: 1590, w: W - 120, h: 290 }, t(TUTO[tuto.i]), tuto.shown, time, { more: true, size: 42 });
+    if (tuto) drawGribBox(ctx, { x: 60, y: 1590, w: W - 120, h: 290 }, t(TUTO[tuto.i]), tuto.shown, time, { more: true });
     if (toast) drawToast(ctx, t(toast.key, toast.vars), W / 2, 1800, toast.t / toast.max, toast.color);
   },
 
   drawTabs(ctx) {
     ['tools', 'deco'].forEach((pg, i) => {
       const w = TABS.w / 2, x = TABS.x + i * w, on = pg === page;
-      ctx.fillStyle = on ? C.copper : 'rgba(196, 122, 60, 0.15)';
+      ctx.fillStyle = on ? C.copperDark : 'rgba(196, 122, 60, 0.15)'; // blanc sur cuivre foncé : 6,1:1
       roundRect(ctx, x + 4, TABS.y, w - 8, TABS.h, 30); ctx.fill();
       fitText(ctx, t('shop.tab.' + pg), x + w / 2, TABS.y + TABS.h / 2 + 2, w - 40, 38, on ? '#fff' : C.copperDark, 900);
     });
