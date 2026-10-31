@@ -1,10 +1,12 @@
 // Bouton retour du téléphone (ou du navigateur, ou Échap) : on remonte d'un écran.
 // L'historique est géré par commun/ks-back.js (même fichier dans tous les jeux du hub).
+// Pendant une réparation, un bouton pause à l'écran ouvre la même question (seule sortie sur iPhone
+// quand le jeu est installé : il n'y a ni bouton ni geste retour).
 // Questions : pendant une réparation « Quitter la réparation ? », sur la liste des commandes
 // « Revenir à l'écran titre ? », sur l'écran titre « Aller au hub ? ».
 import { W, H } from './canvas.js';
 import { t, getLang } from './i18n.js';
-import { Buttons, C, drawText, roundRect } from './ui.js';
+import { Buttons, C, ACCESS, STYLES, drawText, roundRect } from './ui.js';
 import { go, scene, sceneName } from './scenes.js';
 import { drawGribouille } from './portraits.js';
 import { game } from './state.js';
@@ -94,5 +96,52 @@ export function drawAsk(ctx) {
   drawText(ctx, t(ask.key + 'title'), W / 2, 900, W - 220, 56, { color: C.copperDark, weight: 900 });
   drawText(ctx, t(ask.key + 'text'), W / 2, 1000, W - 240, 38, { color: C.inkSoft, weight: 700, lineH: 48 });
   ask.buttons.draw(ctx);
+  ctx.restore();
+}
+
+// Bouton pause des réparations : en haut, du côté de la boîte de pièces (l'autre coin a la coupelle des vis).
+const PAUSE_R = 62;
+let pauseHeld = false;
+
+function pausePos() {
+  return { x: ACCESS.lefty ? 84 : W - 84, y: 84 };
+}
+
+export function showsPause() {
+  return !ask && REPAIR.includes(sceneName());
+}
+
+// true si le doigt est pour le bouton pause (il le garde jusqu'au relâchement).
+export function pausePointer(type, x, y) {
+  const p = pausePos();
+  const on = Math.hypot(x - p.x, y - p.y) < PAUSE_R + 14;
+  if (type === 'down') {
+    pauseHeld = false;
+    if (!showsPause() || !on) return false;
+    pauseHeld = true;
+    return true;
+  }
+  if (!pauseHeld) return false;
+  if (type === 'up' || type === 'cancel') {
+    pauseHeld = false;
+    if (type === 'up' && on && showsPause()) openAsk('repair');
+  }
+  return true;
+}
+
+export function drawPause(ctx) {
+  if (!showsPause()) return;
+  const p = pausePos();
+  const st = STYLES.secondary;
+  const push = pauseHeld ? 6 : 0;
+  ctx.save();
+  ctx.fillStyle = st.shadow;
+  ctx.beginPath(); ctx.arc(p.x, p.y + 8, PAUSE_R, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = st.fill;
+  ctx.beginPath(); ctx.arc(p.x, p.y + push, PAUSE_R, 0, Math.PI * 2); ctx.fill();
+  if (ACCESS.contrast) { ctx.strokeStyle = C.ink; ctx.lineWidth = 5; ctx.stroke(); }
+  ctx.fillStyle = C.ink;
+  roundRect(ctx, p.x - 22, p.y + push - 26, 15, 52, 5); ctx.fill();
+  roundRect(ctx, p.x + 7, p.y + push - 26, 15, 52, 5); ctx.fill();
   ctx.restore();
 }

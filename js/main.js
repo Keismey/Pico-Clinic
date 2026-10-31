@@ -25,7 +25,7 @@ import lobby from './scenes/lobby.js';
 import notes from './scenes/notes.js';
 import { setContrast } from './ui.js';
 import { applyHand } from './state.js';
-import { initBack, asking, tickAsk, askPointer, drawAsk } from './back.js';
+import { initBack, asking, tickAsk, askPointer, drawAsk, pausePointer, drawPause } from './back.js';
 
 // La langue se choisit sur l'écran titre, dans les Options ou par le lien « ?lang= ».
 
@@ -47,6 +47,7 @@ function loop(ts) {
   beginFrame();
   scene().draw(ctx);
   fx.draw(ctx);
+  drawPause(ctx);
   drawFade(ctx);
   if (asking()) drawAsk(ctx);
 }
@@ -63,6 +64,7 @@ function onPointer(type, e) {
   const p = toLogical(e);
   if (type === 'down') { owner = 'scene'; unlock(); }
   if (asking()) askPointer(type, p.x, p.y);
+  else if (pausePointer(type, p.x, p.y)) owner = 'pause';
   else scene().pointer(type, p.x, p.y);
   if (type === 'up') unlock();
   if (type === 'up' || type === 'cancel') { activeId = null; owner = null; }
@@ -108,6 +110,7 @@ async function boot() {
     paused = document.hidden;
     if (paused && activeId !== null) {
       if (owner === 'scene') scene().pointer('cancel', 0, 0);
+      else if (owner === 'pause') pausePointer('cancel', 0, 0);
       activeId = null;
       owner = null;
     }
