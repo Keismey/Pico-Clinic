@@ -199,7 +199,7 @@ export default {
 
     buttons.draw(ctx);
     // sous la dernière carte (Pince, finie à y 1538) : l'étiquette du nom monte de 30
-    if (tuto) drawGribBox(ctx, { x: 60, y: 1590, w: W - 120, h: 290 }, t(TUTO[tuto.i]), tuto.shown, time, { more: true, size: 42 });
+    if (tuto) drawGribBox(ctx, { x: 60, y: 1590, w: W - 120, h: 290 }, t(TUTO[tuto.i]), tuto.shown, time, { more: true });
     if (toast) drawToast(ctx, t(toast.key, toast.vars), W / 2, 1800, toast.t / toast.max, toast.color);
   },
 

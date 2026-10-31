@@ -112,13 +112,13 @@ export default {
     }
     // communs aux jeux du studio (commun/ks-studio.js)
     const lang = () => (getLang() === 'en' ? 'en' : 'fr');
-    buttons.add({ x: 50, y: STUDIO.y, w: 480, h: STUDIO.h, size: 34, style: 'secondary', label: () => t('opt.save'),
+    buttons.add({ x: 50, y: STUDIO.y, w: 480, h: STUDIO.h, size: 38, style: 'secondary', label: () => t('opt.save'),
       onTap: () => { if (window.KS) window.KS.saveDialog({ jeu: 'Pico-Clinic', keys: ['pico_save_v1'], lang: lang(), save: persist, file: 'pico-clinic', accent: '#3fd0bb' }); } });
-    buttons.add({ x: 550, y: STUDIO.y, w: 480, h: STUDIO.h, size: 34, style: 'secondary', label: () => t('opt.notes'), onTap: () => go('notes', { from: 'options' }) });
-    buttons.add({ x: 50, y: STUDIO.y + STUDIO.step, w: 480, h: STUDIO.h, size: 34, style: 'secondary', label: () => t('opt.bug'), onTap: () => { persist(); if (window.KS) window.KS.bug('Pico-Clinic', lang()); } });
-    buttons.add({ x: 550, y: STUDIO.y + STUDIO.step, w: 480, h: STUDIO.h, size: 34, style: 'secondary', label: () => t('opt.support'), onTap: () => { if (window.KS) window.KS.support(); } });
-    buttons.add({ x: 50, y: STUDIO.y + 2 * STUDIO.step, w: 480, h: STUDIO.h, size: 34, style: 'secondary', label: () => t('opt.hub'), onTap: () => { persist(); if (window.KSBack) window.KSBack.toHub(); } });
-    buttons.add({ x: 550, y: STUDIO.y + 2 * STUDIO.step, w: 480, h: STUDIO.h, size: 34, style: 'secondary', label: () => t('opt.erase'), onTap: () => openConfirm(1) });
+    buttons.add({ x: 550, y: STUDIO.y, w: 480, h: STUDIO.h, size: 38, style: 'secondary', label: () => t('opt.notes'), onTap: () => go('notes', { from: 'options' }) });
+    buttons.add({ x: 50, y: STUDIO.y + STUDIO.step, w: 480, h: STUDIO.h, size: 38, style: 'secondary', label: () => t('opt.bug'), onTap: () => { persist(); if (window.KS) window.KS.bug('Pico-Clinic', lang()); } });
+    buttons.add({ x: 550, y: STUDIO.y + STUDIO.step, w: 480, h: STUDIO.h, size: 38, style: 'secondary', label: () => t('opt.support'), onTap: () => { if (window.KS) window.KS.support(); } });
+    buttons.add({ x: 50, y: STUDIO.y + 2 * STUDIO.step, w: 480, h: STUDIO.h, size: 38, style: 'secondary', label: () => t('opt.hub'), onTap: () => { persist(); if (window.KSBack) window.KSBack.toHub(); } });
+    buttons.add({ x: 550, y: STUDIO.y + 2 * STUDIO.step, w: 480, h: STUDIO.h, size: 38, style: 'secondary', label: () => t('opt.erase'), onTap: () => openConfirm(1) });
     buttons.add({ x: 240, y: 1657, w: 600, h: 140, size: 58, label: () => t('opt.back'), onTap: () => go(from) });
   },
 
@@ -144,7 +144,7 @@ export default {
         drawSlider(ctx, k);
       } else {
         leftText(ctx, t('opt.' + k), 90, r.y + 44, 680, 40, C.ink, 800);
-        leftText(ctx, t('opt.' + k + '.sub'), 90, r.y + 90, 680, 28, C.inkSoft, 700);
+        leftText(ctx, t('opt.' + k + '.sub'), 90, r.y + 92, 680, 32, C.inkSoft, 700);
       }
     }
     buttons.draw(ctx);

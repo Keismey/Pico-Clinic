@@ -2,10 +2,13 @@
 import { setLang } from './i18n.js';
 import { save, persist } from './save.js';
 
-export const VERSION = '1.0.7';
+export const VERSION = '1.0.8';
 
 // Notes de mise à jour, la plus récente en premier (affichées dans les Options, et une fois après chaque mise à jour).
 export const NOTES = [
+  { v: '1.0.8', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Textes plus grands : conseils de Gribouille pendant les réparations, à la boutique et après une commande, boutons et descriptions des Options.'],
+    en: ['Bigger text: Gribouille’s tips during repairs, in the shop and after an order, plus the buttons and descriptions in Options.'] },
   { v: '1.0.7', d: ['31 octobre 2026', '31 October 2026'],
     fr: ['Boutons plus faciles à toucher : Options, onglets des commandes, de la boutique et du carnet, cartes des décorations (on peut toucher toute la carte).'],
     en: ['Buttons that are easier to tap: Options, tabs in the orders, shop and notebook, decoration cards (the whole card can be tapped).'] },

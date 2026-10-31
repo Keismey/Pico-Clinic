@@ -225,7 +225,7 @@ export default {
       ctx.lineWidth = 9;
       roundRect(ctx, 120 - a * 8, 1380 - a * 6, W - 240 + a * 16, 104 + a * 12, 52); ctx.stroke();
     }
-    drawGribBox(ctx, { x: 60, y: 1540, w: W - 120, h: 300 }, t(TUTO[tuto.i]), tuto.shown, time, { more: true, size: 42 });
+    drawGribBox(ctx, { x: 60, y: 1540, w: W - 120, h: 300 }, t(TUTO[tuto.i]), tuto.shown, time, { more: true });
   },
 
   pointer(type, x, y) {
