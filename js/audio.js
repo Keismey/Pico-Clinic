@@ -52,7 +52,8 @@ const FILE_MUSIC_GAIN = 0.6;
 export function unlock() {
   const a = ctx();
   if (!a) return;
-  if (a.state === 'suspended') { try { a.resume(); } catch (e) { /* rien */ } }
+  // « suspended », ou « interrupted » sur iPhone après un appel ou une alarme
+  if (a.state !== 'running') { try { a.resume(); } catch (e) { /* rien */ } }
   // iPhone : un son muet joué pendant le toucher débloque l'audio
   if (!unlock.done) {
     unlock.done = true;

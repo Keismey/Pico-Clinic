@@ -2,10 +2,13 @@
 import { setLang } from './i18n.js';
 import { save, persist } from './save.js';
 
-export const VERSION = '1.0.11';
+export const VERSION = '1.0.12';
 
 // Notes de mise à jour, la plus récente en premier (affichées dans les Options, et une fois après chaque mise à jour).
 export const NOTES = [
+  { v: '1.0.12', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Une copie de secours de ta partie est gardée : si la sauvegarde est abîmée, le jeu la reprend au lieu de repartir de zéro.', 'Sur iPhone, le son revient après un appel ou une alarme.'],
+    en: ['A backup copy of your game is kept: if the save gets damaged, the game uses it instead of starting over.', 'On iPhone, sound comes back after a call or an alarm.'] },
   { v: '1.0.11', d: ['31 octobre 2026', '31 October 2026'],
     fr: ['Défi du jour : après le partage avec l’image, le bouton devient « Copier le texte », pour les applis (comme Threads) qui oublient le texte.'],
     en: ['Daily challenge: after sharing with the picture, the button becomes “Copy the text”, for apps (like Threads) that drop the text.'] },
