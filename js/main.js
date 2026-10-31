@@ -31,12 +31,14 @@ import { initBack, asking, tickAsk, askPointer, drawAsk, pausePointer, drawPause
 
 let last = 0;
 let paused = false;
+// téléphone tourné : index.html affiche « Tourne ton téléphone » (même règle) et le jeu attend
+const sideways = matchMedia('(orientation: landscape) and (max-height: 600px) and (pointer: coarse)');
 let activeId = null;
 let owner = null; // 'scene' tant qu'un doigt est posé
 
 function loop(ts) {
   requestAnimationFrame(loop);
-  if (paused) { last = ts; return; }
+  if (paused || sideways.matches) { last = ts; return; }
   const dt = last ? Math.min(0.05, (ts - last) / 1000) : 0;
   last = ts;
   tickUI(dt);

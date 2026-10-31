@@ -2,10 +2,13 @@
 import { setLang } from './i18n.js';
 import { save, persist } from './save.js';
 
-export const VERSION = '1.0.9';
+export const VERSION = '1.0.10';
 
 // Notes de mise à jour, la plus récente en premier (affichées dans les Options, et une fois après chaque mise à jour).
 export const NOTES = [
+  { v: '1.0.10', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Téléphone tourné à l’horizontale : le jeu se met en pause et te demande de le redresser, au lieu de s’afficher en tout petit.'],
+    en: ['Phone turned sideways: the game pauses and asks you to turn it upright, instead of showing up tiny.'] },
   { v: '1.0.9', d: ['31 octobre 2026', '31 October 2026'],
     fr: ['Boutons orange et turquoise plus lisibles : texte foncé au lieu de blanc. Onglets choisis et nom de Maître Ohm plus contrastés.'],
     en: ['Orange and turquoise buttons are easier to read: dark text instead of white. Selected tabs and Master Ohm’s name have more contrast.'] },
