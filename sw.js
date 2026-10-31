@@ -2,7 +2,7 @@
 // En ligne : on prend toujours la version la plus récente sur le site (et on la garde en cache).
 // Hors ligne (ou réseau trop lent) : on sert la copie en cache.
 // La liste FILES est refaite par « node tools/maj-cache.mjs » (à lancer après chaque ajout de fichier).
-const VERSION = 'pico-clinic-f7575b5b';
+const VERSION = 'pico-clinic-92329fee';
 const FILES = [
   './',
   'audio/music_op.mp3',
