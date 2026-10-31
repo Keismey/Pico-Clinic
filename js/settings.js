@@ -2,10 +2,13 @@
 import { setLang } from './i18n.js';
 import { save, persist } from './save.js';
 
-export const VERSION = '1.0.5';
+export const VERSION = '1.0.6';
 
 // Notes de mise à jour, la plus récente en premier (affichées dans les Options, et une fois après chaque mise à jour).
 export const NOTES = [
+  { v: '1.0.6', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Le jeu prend moins de mémoire sur le téléphone : une seule musique est prête à la fois (environ 40 % de mémoire en moins pour la musique).'],
+    en: ['The game uses less memory on your phone: only one piece of music is loaded at a time (about 40% less memory for music).'] },
   { v: '1.0.5', d: ['31 octobre 2026', '31 October 2026'],
     fr: ['Première visite plus légère : environ 1 Mo à télécharger au lieu de 5,4 Mo. Les musiques sont gardées pour jouer hors ligne dès leur première écoute, et ne sont plus téléchargées deux fois.'],
     en: ['Lighter first visit: about 1 MB to download instead of 5.4 MB. Music is kept for offline play from the first time it plays, and is no longer downloaded twice.'] },
