@@ -1,12 +1,12 @@
 // Pico-Clinic hors ligne.
 // En ligne : on prend toujours la version la plus récente sur le site (et on la garde en cache).
 // Hors ligne (ou réseau trop lent) : on sert la copie en cache.
-// La liste FILES est refaite par « node tools/maj-cache.mjs » (à lancer après chaque ajout de fichier).
-const VERSION = 'pico-clinic-f7575b5b';
+// Les listes FILES et MUSIC sont refaites par « node tools/maj-cache.mjs » (à lancer après chaque modification).
+// FILES : préchargé à l'installation. Ni les musiques (gardées à leur première écoute), ni les grandes icônes
+// (le navigateur les demande lui-même à l'installation), ni og.jpg (aperçu de lien, inutile hors ligne).
+// MUSIC : musique → empreinte ; une musique modifiée change d'empreinte, l'ancienne copie est retirée.
+const VERSION = 'pico-clinic-c7bb35a0';
 const FILES = [
-  './',
-  'audio/music_op.mp3',
-  'audio/music_workshop.mp3',
   'audio/sons.json',
   'commun/ks-back.js',
   'commun/ks-studio.js',
@@ -23,8 +23,6 @@ const FILES = [
   'icons/apple-touch-icon.png',
   'icons/favicon.png',
   'icons/icon-192.png',
-  'icons/icon-512.png',
-  'icons/maskable-512.png',
   'img/keismey-studio.webp',
   'img/titre.webp',
   'index.html',
@@ -85,8 +83,12 @@ const FILES = [
   'lang/fr.json',
   'manifest-en.webmanifest',
   'manifest.webmanifest',
-  'og.jpg',
 ];
+const MUSIC = {
+  'audio/music_op.mp3': 'f4b3ff25',
+  'audio/music_workshop.mp3': '16c9a477',
+};
+const MUSIC_CACHE = 'pico-clinic-music';
 const TIMEOUT = 4000;
 
 self.addEventListener('install', (e) => {
@@ -100,10 +102,25 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('pico-clinic-') && k !== VERSION).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('pico-clinic-') && k !== VERSION && k !== MUSIC_CACHE).map((k) => caches.delete(k))))
+      .then(() => caches.open(MUSIC_CACHE))
+      .then((c) => c.keys().then((reqs) => Promise.all(reqs
+        .filter((r) => { const u = new URL(r.url); return MUSIC[u.pathname.slice(BASE.length)] !== u.searchParams.get('v'); })
+        .map((r) => c.delete(r)))))
       .then(() => self.clients.claim())
   );
 });
+
+const BASE = new URL('./', self.location).pathname;
+
+// Une musique : la copie gardée si elle est à jour, sinon un seul téléchargement, gardé pour la prochaine fois.
+function music(req, path) {
+  const key = path + '?v=' + MUSIC[path];
+  return caches.open(MUSIC_CACHE).then((c) => c.match(key).then((hit) => hit || fetch(req.url, { cache: 'no-cache' }).then((res) => {
+    if (res.ok) return c.put(key, res.clone()).catch(() => {}).then(() => res);
+    return res;
+  })));
+}
 
 function fromCache(req) {
   return caches.open(VERSION).then((c) => c.match(req, { ignoreSearch: true })
@@ -113,6 +130,8 @@ function fromCache(req) {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || !req.url.startsWith(self.registration.scope)) return;
+  const path = new URL(req.url).pathname.slice(BASE.length);
+  if (MUSIC[path]) { e.respondWith(music(req, path)); return; }
   e.respondWith(new Promise((resolve) => {
     let done = false;
     const fallback = () => fromCache(req).then((r) => {
@@ -125,7 +144,8 @@ self.addEventListener('fetch', (e) => {
       clearTimeout(timer);
       if (res.ok && res.type === 'basic') {
         const copy = res.clone();
-        const key = new URL(req.url);
+        // la page n'est gardée qu'une fois, sous « index.html » (et pas aussi sous « ./ »)
+        const key = new URL(req.mode === 'navigate' ? 'index.html' : req.url, self.registration.scope);
         key.search = '';
         caches.open(VERSION).then((c) => c.put(key.href, copy));
       }
