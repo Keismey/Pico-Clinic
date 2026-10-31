@@ -2,10 +2,13 @@
 import { setLang } from './i18n.js';
 import { save, persist } from './save.js';
 
-export const VERSION = '1.0.8';
+export const VERSION = '1.0.9';
 
 // Notes de mise à jour, la plus récente en premier (affichées dans les Options, et une fois après chaque mise à jour).
 export const NOTES = [
+  { v: '1.0.9', d: ['31 octobre 2026', '31 October 2026'],
+    fr: ['Boutons orange et turquoise plus lisibles : texte foncé au lieu de blanc. Onglets choisis et nom de Maître Ohm plus contrastés.'],
+    en: ['Orange and turquoise buttons are easier to read: dark text instead of white. Selected tabs and Master Ohm’s name have more contrast.'] },
   { v: '1.0.8', d: ['31 octobre 2026', '31 October 2026'],
     fr: ['Textes plus grands : conseils de Gribouille pendant les réparations, à la boutique et après une commande, boutons et descriptions des Options.'],
     en: ['Bigger text: Gribouille’s tips during repairs, in the shop and after an order, plus the buttons and descriptions in Options.'] },

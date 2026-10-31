@@ -250,7 +250,7 @@ export default {
     const w = TABS.w / list.length;
     list.forEach((c, i) => {
       const x = TABS.x + i * w, on = c === chapter;
-      ctx.fillStyle = on ? C.copper : 'rgba(196, 122, 60, 0.15)';
+      ctx.fillStyle = on ? C.copperDark : 'rgba(196, 122, 60, 0.15)'; // blanc sur cuivre foncé : 6,1:1
       roundRect(ctx, x + 4, TABS.y, w - 8, TABS.h, 30); ctx.fill();
       const label = list.length > 1 ? t('chapter.n', { n: c }) : t('chapter.n', { n: c }) + ' · ' + t('chapter.' + c + '.title');
       fitText(ctx, label, x + w / 2, TABS.y + TABS.h / 2 + 2, w - 40, 34, on ? '#fff' : C.copperDark, 900);
