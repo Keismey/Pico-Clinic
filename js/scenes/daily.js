@@ -2,7 +2,7 @@
 import { W } from '../canvas.js';
 import { t, getLang } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawText, fitText, roundRect } from '../ui.js';
-import { canShare, shareResult, shareToast, drawShareToast } from '../share.js';
+import { canShare, shareButton, drawShareToast } from '../share.js';
 import { withDrone, drawShadow, drawFrame, drawCover, setLook } from '../drone.js';
 import { buildPatient } from '../state.js';
 import { go } from '../scenes.js';
@@ -49,8 +49,7 @@ export default {
       buttons.add({ x: 385, y: 1700, w: 310, h: 150, size: 42, wrap: true, style: 'secondary', label: () => t('shop.back'), onTap: () => this.back() });
       buttons.add({
         x: 720, y: 1700, w: 310, h: 150, size: 42, wrap: true, style: 'secondary',
-        label: () => t('daily.share.btn'),
-        onTap: async () => { toast = shareToast(await shareResult(key)) || toast; },
+        ...shareButton(key, (tt) => { toast = tt || toast; }),
       });
       return;
     }

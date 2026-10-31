@@ -20,6 +20,9 @@ export function setLang(l) {
   lang = dicts[l] ? l : 'en';
   document.documentElement.lang = lang;
   document.title = t('game.title');
+  // nom du jeu lu par les lecteurs d'écran (le canevas n'a pas de texte)
+  const cv = document.getElementById('game');
+  if (cv) cv.setAttribute('aria-label', t('game.title'));
 }
 
 export function getLang() {

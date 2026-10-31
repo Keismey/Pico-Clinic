@@ -48,11 +48,27 @@
   body.noir { background: #000; }
   canvas { display: block; touch-action: none; }
   #loading { position: fixed; font: 600 18px system-ui, sans-serif; color: #6b5a4a; }
+  /* téléphone tourné : le jeu (en portrait) serait minuscule, on demande de le redresser (même règle dans js/main.js) */
+  #rotate { display: none; }
+  @media (orientation: landscape) and (max-height: 600px) and (pointer: coarse) {
+    #rotate {
+      display: flex; position: fixed; inset: 0; z-index: 2147482000; flex-direction: column; gap: 16px;
+      align-items: center; justify-content: center; padding: 24px; text-align: center;
+      background: #f4e9d8; color: #3a2a1e; font: 700 20px system-ui, sans-serif;
+    }
+  }
+  #rotate svg { width: 64px; height: 64px; }
+  html:lang(en) #rotate .fr, html:not(:lang(en)) #rotate .en { display: none; }
 </style>
 </head>
 <body class="noir">
 <div id="loading">…</div>
-<canvas id="game"></canvas>
+<div id="rotate" role="alert">
+  <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="20" y="6" width="24" height="44" rx="5" fill="none" stroke="#c47a3c" stroke-width="4"/><path d="M14 44a20 20 0 0 0 20 14" fill="none" stroke="#3a2a1e" stroke-width="4" stroke-linecap="round"/><path d="M30 52l5 6-7 3" fill="none" stroke="#3a2a1e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <p class="fr">Tourne ton téléphone en portrait pour jouer.</p>
+  <p class="en">Turn your phone upright to play.</p>
+</div>
+<canvas id="game" role="img" aria-label="Pico-Clinic"></canvas>
 <script src="commun/ks-studio.js"></script>
 <script src="commun/ks-back.js"></script>
 <script type="module" src="js/main.js"></script>

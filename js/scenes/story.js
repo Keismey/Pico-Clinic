@@ -21,7 +21,7 @@ const CREDITS_SPEED = 110; // pixels par seconde
 const CREDITS_GAP = 190;
 const ENDING_CLIENTS = ['lea', 'volute', 'turbo', 'ampere', 'brindille', 'quartz'];
 // couleur de l'étiquette de celui qui parle (Gribouille par défaut ; Maître Ohm pour sa lettre)
-const SPEAKER_COLORS = { gribouille: '#6b7684', ohm: '#a8822a' };
+const SPEAKER_COLORS = { gribouille: '#6b7684', ohm: '#86661c' }; // nom en blanc : 4,6:1 et 5,3:1
 
 let sc, id, then, phase, time, idx, shown, wrapped, buttons, sparkled, speaker, creditsTime;
 
