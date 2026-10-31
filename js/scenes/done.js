@@ -2,7 +2,7 @@
 import { W } from '../canvas.js';
 import { t } from '../i18n.js';
 import { Buttons, C, drawCreamBackground, drawText, fitText, roundRect } from '../ui.js';
-import { canShare, shareResult, shareToast as makeShareToast, drawShareToast } from '../share.js';
+import { canShare, shareButton, drawShareToast } from '../share.js';
 import { withDrone, drawShadow, drawFrame, drawCover } from '../drone.js';
 import { game } from '../state.js';
 import { save, totalStars } from '../save.js';
@@ -99,8 +99,7 @@ export default {
       if (canShare(o.daily)) {
         buttons.add({
           x: 720, y: 1700, w: 310, h: 150, size: 42, wrap: true, style: 'secondary',
-          label: () => t('daily.share.btn'),
-          onTap: async () => { shareToast = makeShareToast(await shareResult(o.daily)) || shareToast; },
+          ...shareButton(o.daily, (tt) => { shareToast = tt || shareToast; }),
         });
       }
       return;

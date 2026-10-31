@@ -698,6 +698,8 @@
   "daily.share.btn": "Share my result",
   "daily.share.copied": "Result copied!",
   "daily.share.failed": "Couldn't copy",
+  "daily.share.copy_btn": "Copy the text",
+  "daily.share.text_copied": "Text copied: paste it into your post",
   "daily.share.head": "Pico-Clinic · Daily challenge, {d}",
   "daily.share.date": "{m} {d}",
   "daily.share.try1": "1 try",
